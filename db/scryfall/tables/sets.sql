@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS sets (
+    object TEXT NOT NULL,
+    id TEXT NOT NULL PRIMARY KEY,
+    code TEXT NOT NULL,
+    mtgo_code TEXT,
+    arena_code TEXT,
+    tcgplayer_id INTEGER,
+    name TEXT NOT NULL,
+    set_type TEXT NOT NULL,
+    released_at DATE,
+    block_code TEXT,
+    block TEXT,
+    parent_set_code TEXT,
+    card_count INTEGER NOT NULL,
+    printed_size INTEGER,
+    digital BOOLEAN NOT NULL,
+    foil_only BOOLEAN NOT NULL,
+    nonfoil_only BOOLEAN NOT NULL,
+    scryfall_uri TEXT NOT NULL,
+    uri TEXT NOT NULL,
+    icon_svg_uri TEXT NOT NULL,
+    search_uri TEXT NOT NULL
+);
