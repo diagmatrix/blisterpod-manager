@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS sets (
+CREATE TABLE IF NOT EXISTS scryfall_sets (
     object TEXT NOT NULL,
     id TEXT NOT NULL PRIMARY KEY,
     code TEXT NOT NULL,

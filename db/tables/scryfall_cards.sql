@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS cards (
+CREATE TABLE IF NOT EXISTS scryfall_cards (
     arena_id INTEGER,
     id TEXT PRIMARY KEY,
     lang TEXT,
@@ -89,4 +89,4 @@ CREATE TABLE IF NOT EXISTS cards (
     nonfoil BOOLEAN
 );
 
-CREATE INDEX IF NOT EXISTS scryfall_cards_set_number ON cards (set_code, collector_number);
+CREATE INDEX IF NOT EXISTS scryfall_cards_set_number ON scryfall_cards (set_code, collector_number);
