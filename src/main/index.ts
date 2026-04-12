@@ -45,7 +45,7 @@ async function createWindow() {
     minHeight: 768,
     title: 'Blisterpod Manager',
     show: false, // Don't show until ready-to-show
-    icon: join(__dirname, '../../resources/icon.svg'),
+    icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
