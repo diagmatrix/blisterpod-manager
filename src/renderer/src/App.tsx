@@ -1,5 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import ScrollToTop from '@/components/ScrollToTop'
+import Layout from '@/components/Layout'
 import CollectionPage from '@/pages/CollectionPage'
 import AddCardPage from '@/pages/AddCardPage'
 import CardDetailPage from '@/pages/CardDetailPage'
@@ -11,8 +12,8 @@ function App() {
   return (
     <HashRouter>
       <ScrollToTop />
-      <div className="min-h-screen bg-background text-foreground">
-        <Routes>
+      <Routes>
+        <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/collection" replace />} />
           <Route path="/collection" element={<CollectionPage />} />
           <Route path="/add-card" element={<AddCardPage />} />
@@ -24,8 +25,8 @@ function App() {
           <Route path="/statistics" element={<DashboardPage />} />
           <Route path="/duplicates" element={<DuplicatesPage />} />
           <Route path="/settings" element={<SettingsPage />} />
-        </Routes>
-      </div>
+        </Route>
+      </Routes>
     </HashRouter>
   )
 }
