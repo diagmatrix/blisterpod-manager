@@ -10,29 +10,36 @@
     "preview": "electron-vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-separator": "^1.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-tooltip": "^1.2.8",
+    "autoprefixer": "10.4.20",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "2.1.1",
     "electron-store": "8.1.0",
+    "lucide-react": "^1.8.0",
+    "postcss": "8.4.41",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "6.24.0",
-    "tailwindcss": "3.4.1",
-    "postcss": "8.4.41",
-    "autoprefixer": "10.4.20",
-    "class-variance-authority": "0.7.0",
-    "clsx": "2.1.1",
     "tailwind-merge": "2.4.0",
-    "lucide-react": "0.408.0"
+    "tailwindcss": "3.4.1"
   },
   "devDependencies": {
-    "electron": "32.0.0",
-    "electron-vite": "2.2.0",
-    "@vitejs/plugin-react": "4.3.0",
-    "typescript": "5.6.3",
+    "@types/node": "22.10.2",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",
-    "@types/node": "22.10.2"
+    "@vitejs/plugin-react": "4.3.0",
+    "electron": "32.0.0",
+    "electron-vite": "2.2.0",
+    "typescript": "5.6.3"
   },
-  "keywords": ["mtg", "magic-the-gathering", "collection"],
+  "keywords": [
+    "mtg",
+    "magic-the-gathering",
+    "collection"
+  ],
   "author": "",
   "license": "MIT"
 }
-
