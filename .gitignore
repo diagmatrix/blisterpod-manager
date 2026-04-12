@@ -2,3 +2,7 @@
 db/*.db
 *.pyc
 requirements/
+node_modules/
+out/
+dist/
+package-lock.json
