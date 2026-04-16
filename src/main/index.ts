@@ -88,6 +88,8 @@ async function createWindow() {
       ...bounds,
       isMaximized
     })
+
+    console.log(`Saved window bounds: ${JSON.stringify({ ...bounds, isMaximized })}`)
   }
 
   mainWindow.on('close', saveWindowBounds)
