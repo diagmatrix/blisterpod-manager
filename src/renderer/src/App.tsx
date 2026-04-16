@@ -24,7 +24,6 @@ function App() {
               path="/card-detail/:setCode/:collectorNumber"
               element={<CardDetailPage />}
             />
-            <Route path="/card-detail/:id" element={<CardDetailPage />} />
             <Route path="/statistics" element={<DashboardPage />} />
             <Route path="/duplicates" element={<DuplicatesPage />} />
             <Route path="/settings" element={<SettingsPage />} />

@@ -323,7 +323,7 @@ const SidebarRail = React.forwardRef<
 SidebarRail.displayName = "SidebarRail"
 
 const SidebarInset = React.forwardRef<
-  HTMLDivElement,
+  HTMLElement,
   React.ComponentProps<"main">
 >(({ className, ...props }, ref) => {
   return (

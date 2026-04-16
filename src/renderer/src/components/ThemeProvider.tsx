@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import type { Theme } from '../../../shared/types'
 
-type Theme = 'dark' | 'light'
+const isTheme = (v: unknown): v is Theme => v === 'dark' || v === 'light'
 
 interface ThemeProviderProps {
   children: React.ReactNode
@@ -23,7 +24,7 @@ export function ThemeProvider({
   // Load initial theme from persistence
   useEffect(() => {
     window.api.settingsGet('theme').then((savedTheme) => {
-      if (savedTheme) {
+      if (isTheme(savedTheme)) {
         setThemeState(savedTheme)
         updateDocument(savedTheme)
       } else {
@@ -46,7 +47,7 @@ export function ThemeProvider({
     
     setThemeState(newTheme)
     updateDocument(newTheme)
-    window.api.settingsSet('theme', newTheme)
+    window.api.settingsSet('theme', newTheme).catch(console.error)
 
     // Remove transition class after animation finishes
     setTimeout(() => {

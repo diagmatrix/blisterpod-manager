@@ -8,7 +8,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={theme}
       richColors
       position="bottom-right"
       duration={4000}
