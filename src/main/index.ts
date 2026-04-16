@@ -2,19 +2,7 @@ import { app, BrowserWindow, nativeTheme, ipcMain } from 'electron'
 import { join } from 'path'
 import Store from 'electron-store'
 import { initDatabase } from './db'
-
-interface WindowBounds {
-  x?: number
-  y?: number
-  width: number
-  height: number
-  isMaximized: boolean
-}
-
-interface AppSettings {
-  windowBounds: WindowBounds
-  theme: 'dark' | 'light'
-}
+import type { WindowBounds, AppSettings } from '../shared/types'
 
 const DEFAULT_WINDOW_BOUNDS: WindowBounds = {
   width: 1280,
@@ -38,10 +26,10 @@ ipcMain.handle('settings:get', (_, key: keyof AppSettings) => {
   return store.get(key)
 })
 
-ipcMain.handle('settings:set', (_, key: keyof AppSettings, value: any) => {
-  store.set(key, value)
+ipcMain.handle('settings:set', (_, key: keyof AppSettings, value: unknown) => {
+  store.set(key, value as AppSettings[typeof key])
   if (key === 'theme') {
-    nativeTheme.themeSource = value as 'dark' | 'light'
+    nativeTheme.themeSource = value as AppSettings['theme']
   }
 })
 
@@ -102,9 +90,8 @@ async function createWindow() {
     })
   }
 
-  mainWindow.on('resize', saveWindowBounds)
-  mainWindow.on('move', saveWindowBounds)
   mainWindow.on('close', saveWindowBounds)
+  mainWindow.on('blur', saveWindowBounds)
 }
 
 // App lifecycle

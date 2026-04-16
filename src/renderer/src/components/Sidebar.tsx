@@ -14,18 +14,24 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 
-const navItems = [
+interface NavItemProps {
+  label: string
+  icon: React.ElementType
+  route: string
+}
+
+const navItems: NavItemProps[] = [
   { label: 'Collection', icon: Layers, route: '/collection' },
   { label: 'Add Cards', icon: LayersPlus, route: '/add-card' },
   { label: 'Statistics', icon: BarChart2, route: '/statistics' },
   { label: 'Duplicates', icon: AlertTriangle, route: '/duplicates' },
 ] as const
 
-const bottomNavItems = [
+const bottomNavItems: NavItemProps[] = [
   { label: 'Settings', icon: Settings, route: '/settings' },
 ] as const
 
-function NavItem({ label, icon: Icon, route }: { label: string; icon: React.ElementType; route: string }) {
+function NavItem({ label, icon: Icon, route }: NavItemProps) {
   const { pathname } = useLocation()
   const isActive = pathname === route || pathname.startsWith(route + '/')
   return (
@@ -68,7 +74,7 @@ function SidebarCollapseButton() {
         aria-label={open ? 'Collapse sidebar' : 'Expand sidebar'}
       >
         {open ? <PanelLeftClose /> : <PanelLeftOpen />}
-        <span>Collapse</span>
+        <span>{ open? 'Collapse' : 'Expand'}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   )

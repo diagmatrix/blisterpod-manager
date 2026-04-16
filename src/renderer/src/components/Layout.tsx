@@ -7,9 +7,9 @@ export default function Layout() {
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />
       <SidebarInset>
-        <main className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4">
           <Outlet />
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )
