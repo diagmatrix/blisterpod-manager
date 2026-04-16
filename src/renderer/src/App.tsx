@@ -8,6 +8,7 @@ import DashboardPage from '@/pages/DashboardPage'
 import DuplicatesPage from '@/pages/DuplicatesPage'
 import SettingsPage from '@/pages/SettingsPage'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { Toaster } from '@/components/ui/sonner'
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           </Route>
         </Routes>
       </HashRouter>
+      <Toaster />
     </ThemeProvider>
   )
 }
