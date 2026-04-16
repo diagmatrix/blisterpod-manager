@@ -1,10 +1,7 @@
-import { app, BrowserWindow, nativeTheme } from 'electron'
+import { app, BrowserWindow, nativeTheme, ipcMain } from 'electron'
 import { join } from 'path'
 import Store from 'electron-store'
 import { initDatabase } from './db'
-
-// Set default dark mode (dark title bar on Windows)
-nativeTheme.themeSource = 'dark'
 
 interface WindowBounds {
   x?: number
@@ -14,16 +11,37 @@ interface WindowBounds {
   isMaximized: boolean
 }
 
+interface AppSettings {
+  windowBounds: WindowBounds
+  theme: 'dark' | 'light'
+}
+
 const DEFAULT_WINDOW_BOUNDS: WindowBounds = {
   width: 1280,
   height: 800,
   isMaximized: false
 }
 
-// Window state persistence using electron-store
-const store = new Store<{ windowBounds: WindowBounds }>({
+// Settings persistence using electron-store
+const store = new Store<AppSettings>({
   defaults: {
-    windowBounds: DEFAULT_WINDOW_BOUNDS
+    windowBounds: DEFAULT_WINDOW_BOUNDS,
+    theme: 'light'
+  }
+})
+
+// Set initial theme (dark title bar on Windows)
+nativeTheme.themeSource = store.get('theme')
+
+// IPC handlers for settings (BM-07-T4, BM-08)
+ipcMain.handle('settings:get', (_, key: keyof AppSettings) => {
+  return store.get(key)
+})
+
+ipcMain.handle('settings:set', (_, key: keyof AppSettings, value: any) => {
+  store.set(key, value)
+  if (key === 'theme') {
+    nativeTheme.themeSource = value as 'dark' | 'light'
   }
 })
 

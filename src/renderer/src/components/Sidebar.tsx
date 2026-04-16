@@ -1,5 +1,6 @@
-import { BarChart2, AlertTriangle, Layers, LayersPlus, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { BarChart2, AlertTriangle, Layers, LayersPlus, Settings, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { useTheme } from '@/components/ThemeProvider'
 import {
   Sidebar,
   SidebarContent,
@@ -34,6 +35,24 @@ function NavItem({ label, icon: Icon, route }: { label: string; icon: React.Elem
           <Icon />
           <span>{label}</span>
         </NavLink>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  )
+}
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme()
+  const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+  
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        tooltip={label}
+        aria-label={label}
+      >
+        {theme === 'dark' ? <Sun /> : <Moon />}
+        <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
       </SidebarMenuButton>
     </SidebarMenuItem>
   )
@@ -75,6 +94,7 @@ export function AppSidebar() {
           {bottomNavItems.map((item) => (
             <NavItem key={item.route} {...item} />
           ))}
+          <ThemeToggle />
           <SidebarCollapseButton />
         </SidebarMenu>
       </SidebarFooter>
