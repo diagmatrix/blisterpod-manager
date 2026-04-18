@@ -16,7 +16,7 @@ SELECT
         ELSE false
     END                                  AS is_token,
     CASE
-        WHEN instr(coalesce(sc.name, 'Not found'), '//') > 0
+        WHEN sc.image_uris IS NULL AND instr(coalesce(sc.name, 'Not found'), '//') > 0
             THEN sc.card_faces -> 0 ->> 'image_uris' ->> 'normal'
         ELSE sc.image_uris ->> 'normal'
     END                                  AS image_url,

@@ -57,9 +57,9 @@ function ImageCell({ card, onClick }: ImageCellProps) {
         )}
       </div>
 
-      <div className="space-y-0.5">
+      <div className="flex flex-col space-y-0.5 items-center justify-center w-full">
         <div className="flex items-center gap-1.5 min-w-0">
-          <SetSymbol setCode={card.set_code} rarity={card.rarity} size="0.9rem" />
+          <SetSymbol setCode={card.set_code} rarity={card.rarity} size="1rem" />
           <span className="text-sm font-medium truncate">{card.card_name}</span>
         </div>
         <div className="text-xs text-muted-foreground tabular-nums">
