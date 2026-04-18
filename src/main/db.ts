@@ -44,9 +44,24 @@ function setupIpcHandlers(): void {
     sortColumn?: string, 
     sortOrder?: 'ASC' | 'DESC',
     search?: string,
-    searchSet?: string
+    searchSet?: string,
+    tokenFilter?: 'all' | 'cards' | 'tokens',
+    rarities?: string[],
+    colors?: string[],
+    colorMode?: 'atMost' | 'atLeast' | 'exactly',
   }) => {
-    const { page, pageSize, sortColumn = 'card_name', sortOrder = 'ASC', search = '', searchSet = '' } = params
+    const {
+      page,
+      pageSize,
+      sortColumn = 'card_name',
+      sortOrder = 'ASC',
+      search = '',
+      searchSet = '',
+      tokenFilter,
+      rarities,
+      colors,
+      colorMode = 'atLeast',
+    } = params
     const offset = (page - 1) * pageSize
 
     let query = `
@@ -67,6 +82,63 @@ function setupIpcHandlers(): void {
       values.push(`%${searchSet}%`)
     }
 
+    // Token filter
+    if (tokenFilter === 'cards') {
+      conditions.push('is_token = 0')
+    } else if (tokenFilter === 'tokens') {
+      conditions.push('is_token = 1')
+    }
+
+    // Rarity filter — validate against known values
+    const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
+    const safeRarities = (rarities ?? []).filter((r) => VALID_RARITIES.includes(r))
+    if (safeRarities.length > 0) {
+      conditions.push(`rarity IN (${safeRarities.map(() => '?').join(', ')})`)
+      values.push(...safeRarities)
+    }
+
+    // Color filter
+    const VALID_COLORS = ['W', 'U', 'B', 'R', 'G', 'C']
+    const VALID_COLOR_MODES = ['atLeast', 'atMost', 'exactly'] as const
+    const safeColors = (colors ?? []).filter((c) => VALID_COLORS.includes(c))
+    const safeColorMode = VALID_COLOR_MODES.includes(colorMode as any) ? colorMode : 'atLeast'
+
+    if (safeColors.length > 0) {
+      switch (safeColorMode) {
+        case 'atLeast':
+          const colorsToInclude = safeColors.filter((c) => c !== 'C')
+          if (colorsToInclude.length > 0) {
+            colorsToInclude.forEach((c) => {
+              conditions.push(`instr(color_identity, ?) > 0`)
+              values.push(c)
+            })
+          }
+          break
+        case 'exactly':
+          const colorsToMatch = safeColors.filter((c) => c !== 'C')
+          conditions.push(`json_array_length(color_identity) = ?`)
+          values.push(colorsToMatch.length)
+          colorsToMatch.forEach((c) => {
+              conditions.push(`instr(color_identity, ?) > 0`)
+              values.push(c)
+            })
+          break
+        case 'atMost':
+          if (safeColors.includes('C') && safeColors.length === 1) {
+            conditions.push('json_array_length(color_identity) = 0')
+          } else {
+            const colorsToExclude = VALID_COLORS.filter((c) => !safeColors.includes(c))
+            colorsToExclude.forEach((c) => {
+              conditions.push(`instr(color_identity, ?) = 0`)
+              values.push(c)
+            })
+          }
+          break
+        default:
+          break
+      }
+    }
+
     if (conditions.length > 0) {
       query += ` AND ${conditions.join(' AND ')}`
     }
@@ -78,6 +150,8 @@ function setupIpcHandlers(): void {
 
     query += ` ORDER BY ${finalSortColumn} ${finalSortOrder} LIMIT ? OFFSET ?`
     
+    global.console.log('Executing query:', query)
+
     const rows = db.prepare(query).all(...values, pageSize, offset)
     
     // Get total count for pagination
