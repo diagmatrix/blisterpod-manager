@@ -20,20 +20,29 @@ export interface AppSettings {
 
 export type Theme = 'dark' | 'light'
 
-// Matches the mapped_collection view columns exactly
-export interface CollectionCard {
+export interface ScryfallCard {
   scryfall_id: string | null
-  card_name: string
+  name: string
+  set_name: string
   set_code: string
   collector_number: string
+  image_url: string | null
+  rarity: string | null
+  value_nonfoil?: number | null
+  value_foil?: number | null
+  collector_number_normalised?: number | null
+  color_identity: string | null  // JSON array string, e.g. '["W","U"]'
+}
+
+// Matches the mapped_collection view — extends ScryfallCard, overrides name alias
+export interface CollectionCard extends Omit<ScryfallCard, 'name'> {
+  collection_id: number         // cards.id (primary key for mutations)
+  card_name: string             // ScryfallCard.name aliased in the view
   quantity_nonfoil: number
   quantity_foil: number
   total: number
-  color_identity: string | null // JSON array string, e.g. '["W","U"]'
-  rarity: string | null
-  is_token: number              // 1 = token, 0 = non-token (SQLite CASE result)
-  image_url: string | null      // Scryfall 'normal' image URI (488x680)
-  value: number | null          // EUR total value (nonfoil * eur + foil * eur_foil)
+  is_token: number              // 1 = token, 0 = non-token
+  value: number | null          // EUR total (nonfoil * eur + foil * eur_foil)
 }
 
 export interface CollectionListParams {
@@ -46,11 +55,45 @@ export interface CollectionListParams {
   tokenFilter?: 'all' | 'cards' | 'tokens'
   rarities?: string[]
   colors?: string[]
-  colorMode?: 'including' | 'atLeast' | 'exactly'
+  colorMode?: 'including' | 'atLeast' | 'exactly' | 'atMost'
 }
 
 export interface CollectionListResponse {
   rows: CollectionCard[]
+  total: number
+}
+
+export interface BatchItem {
+  card: ScryfallCard
+  quantity_nonfoil: number
+  quantity_foil: number
+}
+
+export interface CollectionAddParams {
+  set_code: string
+  collector_number: string
+  quantity_nonfoil: number
+  quantity_foil: number
+}
+
+export interface CollectionUpdateParams {
+  id: number
+  quantity_nonfoil: number
+  quantity_foil: number
+}
+
+export interface CardSearchParams {
+  query?: string
+  set_code?: string
+  rarities?: string[]
+  colors?: string[]
+  colorMode?: 'including' | 'atLeast' | 'exactly' | 'atMost'
+  page?: number
+  pageSize?: number
+}
+
+export interface CardSearchResponse {
+  rows: ScryfallCard[]
   total: number
 }
 
