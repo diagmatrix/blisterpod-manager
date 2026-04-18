@@ -1,8 +1,17 @@
-import { app, BrowserWindow, nativeTheme, ipcMain } from 'electron'
+import { app, BrowserWindow, nativeTheme, ipcMain, protocol } from 'electron'
 import { join } from 'path'
 import Store from 'electron-store'
 import { initDatabase } from './db'
+import { initCardImageProtocol } from './cardImages'
 import type { WindowBounds, AppSettings } from '../shared/types'
+
+// Must run before app.whenReady() so <img src="card-image://..."> is fetched by our handler
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'card-image',
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+  },
+])
 
 const DEFAULT_WINDOW_BOUNDS: WindowBounds = {
   width: 1280,
@@ -97,7 +106,10 @@ async function createWindow() {
 }
 
 // App lifecycle
-app.whenReady().then(createWindow)
+app.whenReady().then(() => {
+  initCardImageProtocol()
+  return createWindow()
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

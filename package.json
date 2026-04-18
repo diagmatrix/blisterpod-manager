@@ -21,6 +21,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "2.1.1",
     "electron-store": "8.1.0",
+    "keyrune": "^3.18.0",
     "lucide-react": "^1.8.0",
     "postcss": "8.4.41",
     "react": "18.3.1",

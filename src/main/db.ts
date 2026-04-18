@@ -5,14 +5,14 @@ import Database from 'better-sqlite3'
 
 let db: Database.Database
 const DB_NAME = 'collection.db'
-const DB_PATH = join(process.cwd(), DB_NAME)
+const DB_PATH = join(join(process.cwd(), 'db'), DB_NAME)
+// Use in prod
+// const DB_PATH = join(app.getPath('userData'), DB_NAME)
 
 export function initDatabase(): void {
-  const dbPath = DB_PATH
-
-  console.log(`Initializing database at: ${dbPath}`)
+  console.log(`Initializing database at: ${DB_PATH}`)
   
-  db = new Database(dbPath)
+  db = new Database(DB_PATH)
   db.pragma('journal_mode = WAL')
 
   // NBM-03: Read and execute all .sql files from db/tables/ and db/views/
@@ -43,9 +43,10 @@ function setupIpcHandlers(): void {
     pageSize: number, 
     sortColumn?: string, 
     sortOrder?: 'ASC' | 'DESC',
-    search?: string 
+    search?: string,
+    searchSet?: string
   }) => {
-    const { page, pageSize, sortColumn = 'card_name', sortOrder = 'ASC', search = '' } = params
+    const { page, pageSize, sortColumn = 'card_name', sortOrder = 'ASC', search = '', searchSet = '' } = params
     const offset = (page - 1) * pageSize
 
     let query = `
@@ -61,12 +62,17 @@ function setupIpcHandlers(): void {
       values.push(`%${search}%`)
     }
 
+    if (searchSet) {
+      conditions.push('set_code LIKE ?')
+      values.push(`%${searchSet}%`)
+    }
+
     if (conditions.length > 0) {
       query += ` AND ${conditions.join(' AND ')}`
     }
 
     // Validation to prevent SQL injection on sortColumn/sortOrder
-    const validColumns = ['card_name', 'set_code', 'collector_number', 'quantity_nonfoil', 'quantity_foil', 'total', 'scryfall_id', 'type_line', 'color_identity']
+    const validColumns = ['card_name', 'set_code', 'collector_number', 'quantity_nonfoil', 'quantity_foil', 'total', 'value', 'scryfall_id', 'color_identity', 'rarity']
     const finalSortColumn = validColumns.includes(sortColumn) ? sortColumn : 'card_name'
     const finalSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC'
 
@@ -75,9 +81,9 @@ function setupIpcHandlers(): void {
     const rows = db.prepare(query).all(...values, pageSize, offset)
     
     // Get total count for pagination
-    let countQuery = 'SELECT COUNT(*) as total FROM mapped_collection'
+    let countQuery = 'SELECT COUNT(*) as total FROM mapped_collection WHERE scryfall_id IS NOT NULL'
     if (conditions.length > 0) {
-      countQuery += ` WHERE ${conditions.join(' AND ')}`
+      countQuery += ` AND ${conditions.join(' AND ')}`
     }
     const { total } = db.prepare(countQuery).get(...values) as { total: number }
 
