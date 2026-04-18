@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { AppSettings } from '../shared/types'
+import type { AppSettings, CollectionListParams, CollectionListResponse } from '../shared/types'
 
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('api', {
   settingsSet: (key: keyof AppSettings, value: AppSettings[keyof AppSettings]) =>
     ipcRenderer.invoke('settings:set', key, value),
 
-  // TODO: Add more IPC channels here when implementing actual functionality
-  // Example: getVersion: () => ipcRenderer.invoke('app:version'),
+  // Database API (BM-01)
+  collectionList: (params: CollectionListParams): Promise<CollectionListResponse> =>
+    ipcRenderer.invoke('db:collection:list', params),
 })
