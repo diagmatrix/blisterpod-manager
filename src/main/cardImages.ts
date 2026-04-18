@@ -59,7 +59,6 @@ export function initCardImageProtocol(): void {
     const cachePath = join(CACHE_DIR, `${scryfallId}.jpg`)
 
     if (existsSync(cachePath)) {
-      console.log(`card-image: cache hit for ${scryfallId}`)
       return net.fetch(pathToFileURL(cachePath).toString())
     }
 
