@@ -1,14 +1,39 @@
 import { app, ipcMain } from 'electron'
-import { join } from 'path'
+import { isAbsolute, join } from 'path'
 import { readFileSync } from 'fs'
 import Database from 'better-sqlite3'
 
 let db: Database.Database
 const DB_NAME = 'collection.db'
-const DB_PATH = join(join(process.cwd(), 'db'), DB_NAME)
-// Use in prod
-// const DB_PATH = join(app.getPath('userData'), DB_NAME)
 
+function resolveDbPath(): string {
+  const fromEnv = process.env.BLISTERPOD_DB_PATH ?? process.env.DB_PATH
+  const fromArg = readArgValue('--db-path')
+  const candidate = fromEnv ?? fromArg
+  
+  if (!candidate || candidate.trim().length === 0) {
+    return join(app.getPath('userData'), DB_NAME)
+  }
+  
+  return isAbsolute(candidate) ? candidate : join(process.cwd(), candidate)
+}
+
+function readArgValue(flag: string): string | undefined {
+  const exactPrefix = `${flag}=`
+  const directMatch = process.argv.find((arg) => arg.startsWith(exactPrefix))
+  if (directMatch) {
+    return directMatch.slice(exactPrefix.length)
+  }
+  
+  const index = process.argv.indexOf(flag)
+  if (index >= 0 && index + 1 < process.argv.length) {
+    return process.argv[index + 1]
+  }
+  
+  return undefined
+}
+
+const DB_PATH = resolveDbPath()
 export function initDatabase(): void {
   console.log(`Initializing database at: ${DB_PATH}`)
   
@@ -18,7 +43,7 @@ export function initDatabase(): void {
   // NBM-03: Read and execute all .sql files from db/tables/ and db/views/
   const sqlDir = join(process.cwd(), 'db')
   const tables = ['cards.sql', 'scryfall_cards.sql', 'scryfall_sets.sql']
-  const views = ['duplicates.sql', 'mapped_collection.sql']
+  const views = ['duplicates.sql', 'mapped_collection.sql', 'available_cards.sql']
 
   tables.forEach((file) => {
     console.log(`Executing SQL from: ${file}`)
@@ -35,6 +60,59 @@ export function initDatabase(): void {
   console.log('Database schema initialized.')
   setupIpcHandlers()
 }
+
+const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
+const VALID_COLORS = ['W', 'U', 'B', 'R', 'G', 'C']
+
+function buildRarityConditions(rarities: string[] | undefined): { conditions: string[]; values: any[] } {
+  const safe = (rarities ?? []).filter((r) => VALID_RARITIES.includes(r))
+  if (safe.length === 0) return { conditions: [], values: [] }
+  return {
+    conditions: [`rarity IN (${safe.map(() => '?').join(', ')})`],
+    values: safe,
+  }
+}
+
+function buildColorConditions(colors: string[] | undefined, colorMode: string): { conditions: string[]; values: any[] } {
+  const safe = (colors ?? []).filter((c) => VALID_COLORS.includes(c))
+  if (safe.length === 0) return { conditions: [], values: [] }
+
+  const conditions: string[] = []
+  const values: any[] = []
+
+  switch (colorMode) {
+    case 'atLeast':
+    case 'including':
+      safe.filter((c) => c !== 'C').forEach((c) => {
+        conditions.push('instr(color_identity, ?) > 0')
+        values.push(c)
+      })
+      break
+    case 'exactly': {
+      const nonColorless = safe.filter((c) => c !== 'C')
+      conditions.push('json_array_length(color_identity) = ?')
+      values.push(nonColorless.length)
+      nonColorless.forEach((c) => {
+        conditions.push('instr(color_identity, ?) > 0')
+        values.push(c)
+      })
+      break
+    }
+    case 'atMost':
+      if (safe.includes('C') && safe.length === 1) {
+        conditions.push('json_array_length(color_identity) = 0')
+      } else {
+        VALID_COLORS.filter((c) => !safe.includes(c)).forEach((c) => {
+          conditions.push('instr(color_identity, ?) = 0')
+          values.push(c)
+        })
+      }
+      break
+  }
+
+  return { conditions, values }
+}
+
 
 function setupIpcHandlers(): void {
   // BM-01-T1: Collection listing with pagination, sorting, and filtering
@@ -89,55 +167,10 @@ function setupIpcHandlers(): void {
       conditions.push('is_token = 1')
     }
 
-    // Rarity filter — validate against known values
-    const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
-    const safeRarities = (rarities ?? []).filter((r) => VALID_RARITIES.includes(r))
-    if (safeRarities.length > 0) {
-      conditions.push(`rarity IN (${safeRarities.map(() => '?').join(', ')})`)
-      values.push(...safeRarities)
-    }
-
-    // Color filter
-    const VALID_COLORS = ['W', 'U', 'B', 'R', 'G', 'C']
-    const VALID_COLOR_MODES = ['atLeast', 'atMost', 'exactly'] as const
-    const safeColors = (colors ?? []).filter((c) => VALID_COLORS.includes(c))
-    const safeColorMode = VALID_COLOR_MODES.includes(colorMode as any) ? colorMode : 'atLeast'
-
-    if (safeColors.length > 0) {
-      switch (safeColorMode) {
-        case 'atLeast':
-          const colorsToInclude = safeColors.filter((c) => c !== 'C')
-          if (colorsToInclude.length > 0) {
-            colorsToInclude.forEach((c) => {
-              conditions.push(`instr(color_identity, ?) > 0`)
-              values.push(c)
-            })
-          }
-          break
-        case 'exactly':
-          const colorsToMatch = safeColors.filter((c) => c !== 'C')
-          conditions.push(`json_array_length(color_identity) = ?`)
-          values.push(colorsToMatch.length)
-          colorsToMatch.forEach((c) => {
-              conditions.push(`instr(color_identity, ?) > 0`)
-              values.push(c)
-            })
-          break
-        case 'atMost':
-          if (safeColors.includes('C') && safeColors.length === 1) {
-            conditions.push('json_array_length(color_identity) = 0')
-          } else {
-            const colorsToExclude = VALID_COLORS.filter((c) => !safeColors.includes(c))
-            colorsToExclude.forEach((c) => {
-              conditions.push(`instr(color_identity, ?) = 0`)
-              values.push(c)
-            })
-          }
-          break
-        default:
-          break
-      }
-    }
+    const { conditions: rarityConds, values: rarityVals } = buildRarityConditions(rarities)
+    const { conditions: colorConds, values: colorVals } = buildColorConditions(colors, colorMode ?? 'atLeast')
+    conditions.push(...rarityConds, ...colorConds)
+    values.push(...rarityVals, ...colorVals)
 
     if (conditions.length > 0) {
       query += ` AND ${conditions.join(' AND ')}`
@@ -150,8 +183,6 @@ function setupIpcHandlers(): void {
 
     query += ` ORDER BY ${finalSortColumn} ${finalSortOrder} LIMIT ? OFFSET ?`
     
-    global.console.log('Executing query:', query)
-
     const rows = db.prepare(query).all(...values, pageSize, offset)
     
     // Get total count for pagination
@@ -162,5 +193,131 @@ function setupIpcHandlers(): void {
     const { total } = db.prepare(countQuery).get(...values) as { total: number }
 
     return { rows, total }
+  })
+
+  // BM-02-T1: Search available_cards by name, set, rarity, color with pagination
+  ipcMain.handle('db:cards:search', (_, params: import('../shared/types').CardSearchParams) => {
+    const { query, set_code, rarities, colors, colorMode = 'including', page = 1, pageSize = 60 } = params
+    const safePageSize = Math.min(pageSize, 120)
+    const offset = (page - 1) * safePageSize
+
+    const conditions: string[] = []
+    const values: any[] = []
+
+    if (query && query.length >= 2) {
+      conditions.push('name LIKE ?')
+      values.push(`%${query}%`)
+    }
+
+    if (set_code) {
+      conditions.push('set_code = ?')
+      values.push(set_code.toUpperCase())
+    }
+
+    const { conditions: rarityConds, values: rarityVals } = buildRarityConditions(rarities)
+    const { conditions: colorConds, values: colorVals } = buildColorConditions(colors, colorMode)
+    conditions.push(...rarityConds, ...colorConds)
+    values.push(...rarityVals, ...colorVals)
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    const sql = `SELECT * FROM available_cards ${where} ORDER BY collector_number_normalised ASC, name ASC LIMIT ? OFFSET ?`
+    global.console.log('Executing query:', sql)
+
+    const rows = db.prepare(sql).all(...values, safePageSize, offset)
+    const { total } = db.prepare(`SELECT COUNT(*) as total FROM available_cards ${where}`).get(...values) as { total: number }
+
+    return { rows, total }
+  })
+
+  // BM-02-T3: Add a single card to the collection
+  ipcMain.handle('db:collection:add', (_, params: {
+    set_code: string
+    collector_number: string
+    quantity_nonfoil: number
+    quantity_foil: number
+  }) => {
+    const { set_code, collector_number, quantity_nonfoil, quantity_foil } = params
+    if (quantity_nonfoil < 0 || quantity_foil < 0) return { error: 'Quantities must be non-negative' }
+    if (quantity_nonfoil + quantity_foil === 0) return { error: 'At least one copy must be owned' }
+
+    const exists = db.prepare('SELECT 1 FROM available_cards WHERE set_code = ? AND collector_number = ?').get(set_code, collector_number)
+    if (!exists) return { error: `Card not found: ${set_code} #${collector_number}` }
+
+    const insert = db.transaction(() => {
+      const result = db.prepare(`
+        INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at)
+        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `).run(set_code, collector_number, quantity_nonfoil, quantity_foil)
+      return { id: result.lastInsertRowid }
+    })
+    return insert()
+  })
+
+  // BM-02-T2b: Batch insert cards into the collection
+  ipcMain.handle('db:collection:add-batch', (_, items: {
+    set_code: string
+    collector_number: string
+    quantity_nonfoil: number
+    quantity_foil: number
+  }[]) => {
+    const insertStmt = db.prepare(`
+      INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `)
+    const checkStmt = db.prepare('SELECT 1 FROM available_cards WHERE set_code = ? AND collector_number = ?')
+
+    let inserted = 0
+    const errors: { index: number; message: string }[] = []
+
+    const batchInsert = db.transaction(() => {
+      items.forEach((item, index) => {
+        const { set_code, collector_number, quantity_nonfoil, quantity_foil } = item
+        if (quantity_nonfoil < 0 || quantity_foil < 0) {
+          errors.push({ index, message: 'Quantities must be non-negative' })
+          return
+        }
+        if (quantity_nonfoil + quantity_foil === 0) {
+          errors.push({ index, message: 'At least one copy must be owned' })
+          return
+        }
+        if (!checkStmt.get(set_code, collector_number)) {
+          errors.push({ index, message: `Card not found: ${set_code} #${collector_number}` })
+          return
+        }
+        insertStmt.run(set_code, collector_number, quantity_nonfoil, quantity_foil)
+        inserted++
+      })
+    })
+    batchInsert()
+    return { inserted, errors }
+  })
+
+  // BM-02-T4: Update quantities for an existing collection card
+  ipcMain.handle('db:collection:update', (_, params: {
+    id: number
+    quantity_nonfoil: number
+    quantity_foil: number
+  }) => {
+    const { id, quantity_nonfoil, quantity_foil } = params
+    if (quantity_nonfoil < 0 || quantity_foil < 0) return { error: 'Quantities must be non-negative' }
+    if (quantity_nonfoil + quantity_foil === 0) return { error: 'At least one copy must be owned' }
+
+    const update = db.transaction(() => {
+      db.prepare(`
+        UPDATE cards SET quantity_nonfoil = ?, quantity_foil = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(quantity_nonfoil, quantity_foil, id)
+      return { success: true }
+    })
+    return update()
+  })
+
+  // BM-02-T5: Delete a card from the collection
+  ipcMain.handle('db:collection:delete', (_, params: { id: number }) => {
+    const del = db.transaction(() => {
+      db.prepare('DELETE FROM cards WHERE id = ?').run(params.id)
+      return { success: true }
+    })
+    return del()
   })
 }

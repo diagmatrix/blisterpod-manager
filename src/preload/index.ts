@@ -1,15 +1,35 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { AppSettings, CollectionListParams, CollectionListResponse } from '../shared/types'
+import type {
+  AppSettings,
+  CardSearchParams,
+  CardSearchResponse,
+  CollectionAddParams,
+  CollectionListParams,
+  CollectionListResponse,
+  CollectionUpdateParams,
+} from '../shared/types'
 
-// Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('api', {
   // Settings API (BM-07-T4, BM-08)
   settingsGet: (key: keyof AppSettings) => ipcRenderer.invoke('settings:get', key),
   settingsSet: (key: keyof AppSettings, value: AppSettings[keyof AppSettings]) =>
     ipcRenderer.invoke('settings:set', key, value),
 
-  // Database API (BM-01)
+  // Collection read (BM-01)
   collectionList: (params: CollectionListParams): Promise<CollectionListResponse> =>
     ipcRenderer.invoke('db:collection:list', params),
+
+  // Card search (BM-02)
+  cardSearch: (params: CardSearchParams): Promise<CardSearchResponse> =>
+    ipcRenderer.invoke('db:cards:search', params),
+
+  // Collection mutations (BM-02)
+  collectionAdd: (params: CollectionAddParams): Promise<{ id: number } | { error: string }> =>
+    ipcRenderer.invoke('db:collection:add', params),
+  collectionAddBatch: (items: CollectionAddParams[]): Promise<{ inserted: number; errors: { index: number; message: string }[] }> =>
+    ipcRenderer.invoke('db:collection:add-batch', items),
+  collectionUpdate: (params: CollectionUpdateParams): Promise<{ success: true } | { error: string }> =>
+    ipcRenderer.invoke('db:collection:update', params),
+  collectionDelete: (params: { id: number }): Promise<{ success: true } | { error: string }> =>
+    ipcRenderer.invoke('db:collection:delete', params),
 })

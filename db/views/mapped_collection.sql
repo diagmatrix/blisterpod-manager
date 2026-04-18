@@ -1,8 +1,10 @@
 DROP VIEW IF EXISTS mapped_collection;
 CREATE VIEW mapped_collection AS
 SELECT
+    c.id                                 AS collection_id,
     sc.id                                AS scryfall_id,
     coalesce(sc.name, 'Not found')       AS card_name,
+    coalesce(sc.set_name, '')            AS set_name,
     c.set_code,
     c.collector_number,
     c.quantity_nonfoil,
