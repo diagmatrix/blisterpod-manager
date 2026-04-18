@@ -9,7 +9,7 @@ interface CollectionImageGridProps {
 
 export function CollectionImageGrid({ cards, onCardClick }: CollectionImageGridProps) {
   return (
-    <div className="flex-1 overflow-auto rounded-md border border-border">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden rounded-md border border-border">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-4">
         {cards.map((card, i) => (
           <ImageCell
@@ -58,9 +58,9 @@ function ImageCell({ card, onClick }: ImageCellProps) {
       </div>
 
       <div className="flex flex-col space-y-0.5 items-center justify-center w-full">
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center justify-center gap-1.5 w-full overflow-hidden">
           <SetSymbol setCode={card.set_code} rarity={card.rarity} size="1rem" />
-          <span className="text-sm font-medium truncate">{card.card_name}</span>
+          <span className="text-sm font-medium truncate min-w-0">{card.card_name}</span>
         </div>
         <div className="text-xs text-muted-foreground tabular-nums">
           Nonfoil {card.quantity_nonfoil} &middot; Foil {card.quantity_foil} &middot; Total{' '}
