@@ -16,11 +16,15 @@ export function CollectionImageGrid({ cards, onCardClick }: CollectionImageGridP
             scryfall_id={card.scryfall_id}
             image_url={card.image_url}
             name={card.card_name}
-            set_code={card.set_code}
+            collector_number={card.collector_number}
+            set_code={card.base_set_code}
+            set_name={card.set_name}
             rarity={card.rarity}
-            onClick={() => onCardClick(card)}
+            onBottomClick={() => onCardClick(card)}
             quantity_nonfoil={card.quantity_nonfoil}
             quantity_foil={card.quantity_foil}
+            value={card.value}
+            isCollection={true}
           />
         ))}
       </div>

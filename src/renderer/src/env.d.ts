@@ -3,9 +3,14 @@ import type {
   CardSearchParams,
   CardSearchResponse,
   CollectionAddParams,
+  CollectionCard,
   CollectionListParams,
   CollectionListResponse,
   CollectionUpdateParams,
+  StatsSummary,
+  StatsColors,
+  StatsRarityEntry,
+  StatsSetEntry,
 } from '../../shared/types'
 
 export interface ElectronAPI {
@@ -17,6 +22,11 @@ export interface ElectronAPI {
   collectionAddBatch: (items: CollectionAddParams[]) => Promise<{ inserted: number; errors: { index: number; message: string }[] }>
   collectionUpdate: (params: CollectionUpdateParams) => Promise<{ success: true } | { error: string }>
   collectionDelete: (params: { id: number }) => Promise<{ success: true } | { error: string }>
+  statsSummary: () => Promise<StatsSummary>
+  statsColors: () => Promise<StatsColors>
+  statsRarity: () => Promise<StatsRarityEntry[]>
+  statsTopValue: (params?: { limit?: number }) => Promise<CollectionCard[]>
+  statsBySet: (params?: { limit?: number }) => Promise<StatsSetEntry[]>
 }
 
 declare global {

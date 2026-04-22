@@ -38,6 +38,7 @@ export interface ScryfallCard {
 export interface CollectionCard extends Omit<ScryfallCard, 'name'> {
   collection_id: number         // cards.id (primary key for mutations)
   card_name: string             // ScryfallCard.name aliased in the view
+  base_set_code: string         // parent set code for promos, otherwise same as set_code
   quantity_nonfoil: number
   quantity_foil: number
   total: number
@@ -55,7 +56,7 @@ export interface CollectionListParams {
   tokenFilter?: 'all' | 'cards' | 'tokens'
   rarities?: string[]
   colors?: string[]
-  colorMode?: 'including' | 'atLeast' | 'exactly' | 'atMost'
+  colorMode?: 'atLeast' | 'exactly' | 'atMost'
 }
 
 export interface CollectionListResponse {
@@ -87,7 +88,7 @@ export interface CardSearchParams {
   set_code?: string
   rarities?: string[]
   colors?: string[]
-  colorMode?: 'including' | 'atLeast' | 'exactly' | 'atMost'
+  colorMode?: 'atLeast' | 'exactly' | 'atMost'
   page?: number
   pageSize?: number
 }
@@ -95,6 +96,39 @@ export interface CardSearchParams {
 export interface CardSearchResponse {
   rows: ScryfallCard[]
   total: number
+}
+
+// BM-04 stats types
+export interface StatsSummary {
+  uniquePrintings: number
+  uniqueNames: number
+  totalCards: number
+  estimatedValue: number
+}
+
+export interface StatsColors {
+  white: number
+  blue: number
+  black: number
+  red: number
+  green: number
+  colorless: number
+  multicolored: number
+}
+
+export interface StatsRarityEntry {
+  rarity: string
+  totalCards: number
+}
+
+
+export interface StatsSetEntry {
+  set_code: string
+  set_name: string
+  base_set_code: string
+  total_cards: number
+  unique_printings: number
+  set_cards: number
 }
 
 export const COLOR_SYMBOL_MAP: Record<string, string> = {

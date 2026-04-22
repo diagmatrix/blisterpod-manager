@@ -26,9 +26,9 @@ export function BatchPanel({ items, onAddCard, onUpdate, onRemove, onDiscard, on
     if (!directSet || !directNum) return
     setDirectError('')
     setDirectLoading(true)
-    const results = await window.api.cardSearch({ set_code: directSet.toUpperCase(), query: '', limit: 100 })
+    const results = await window.api.cardSearch({ set_code: directSet.toUpperCase(), pageSize: 500 })
     setDirectLoading(false)
-    const match = results.find((c: ScryfallCard) => c.collector_number === directNum.trim())
+    const match = results.rows.find((c: ScryfallCard) => c.collector_number === directNum.trim())
     if (!match) {
       setDirectError(`Not found: ${directSet.toUpperCase()} #${directNum}`)
       return
@@ -128,6 +128,27 @@ export function BatchPanel({ items, onAddCard, onUpdate, onRemove, onDiscard, on
             </Button>
           </div>
 
+          {/* Header actions */}
+          <div className="border-t border-border px-3 py-2 flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={onDiscard}
+              disabled={items.length === 0 || isAdding}
+            >
+              Discard
+            </Button>
+            <Button
+              size="sm"
+              className="flex-1"
+              onClick={onAddAll}
+              disabled={items.length === 0 || isAdding}
+            >
+              {isAdding ? 'Adding…' : 'Add all'}
+            </Button>
+          </div>
+
           {/* Batch items list */}
           <div className="flex-1 overflow-y-auto min-h-0 divide-y divide-border/50">
             {items.length === 0 ? (
@@ -172,27 +193,6 @@ export function BatchPanel({ items, onAddCard, onUpdate, onRemove, onDiscard, on
                 </div>
               ))
             )}
-          </div>
-
-          {/* Footer actions */}
-          <div className="border-t border-border px-3 py-2 flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={onDiscard}
-              disabled={items.length === 0 || isAdding}
-            >
-              Discard
-            </Button>
-            <Button
-              size="sm"
-              className="flex-1"
-              onClick={onAddAll}
-              disabled={items.length === 0 || isAdding}
-            >
-              {isAdding ? 'Adding…' : 'Add all'}
-            </Button>
           </div>
         </>
       )}

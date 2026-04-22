@@ -5,35 +5,10 @@ import Database from 'better-sqlite3'
 
 let db: Database.Database
 const DB_NAME = 'collection.db'
+// const DB_PATH = join(app.getPath('userData'), DB_NAME)
+// For development, get the DB from the project root to persist across reloads
+const DB_PATH = join(join(process.cwd(), 'db'), DB_NAME)
 
-function resolveDbPath(): string {
-  const fromEnv = process.env.BLISTERPOD_DB_PATH ?? process.env.DB_PATH
-  const fromArg = readArgValue('--db-path')
-  const candidate = fromEnv ?? fromArg
-  
-  if (!candidate || candidate.trim().length === 0) {
-    return join(app.getPath('userData'), DB_NAME)
-  }
-  
-  return isAbsolute(candidate) ? candidate : join(process.cwd(), candidate)
-}
-
-function readArgValue(flag: string): string | undefined {
-  const exactPrefix = `${flag}=`
-  const directMatch = process.argv.find((arg) => arg.startsWith(exactPrefix))
-  if (directMatch) {
-    return directMatch.slice(exactPrefix.length)
-  }
-  
-  const index = process.argv.indexOf(flag)
-  if (index >= 0 && index + 1 < process.argv.length) {
-    return process.argv[index + 1]
-  }
-  
-  return undefined
-}
-
-const DB_PATH = resolveDbPath()
 export function initDatabase(): void {
   console.log(`Initializing database at: ${DB_PATH}`)
   
@@ -43,7 +18,15 @@ export function initDatabase(): void {
   // NBM-03: Read and execute all .sql files from db/tables/ and db/views/
   const sqlDir = join(process.cwd(), 'db')
   const tables = ['cards.sql', 'scryfall_cards.sql', 'scryfall_sets.sql']
-  const views = ['duplicates.sql', 'mapped_collection.sql', 'available_cards.sql']
+  const views = [
+    'duplicates.sql',
+    'mapped_collection.sql',
+    'available_cards.sql',
+    'stats_summary.sql',
+    'stats_colors.sql',
+    'stats_rarity.sql',
+    'stats_by_set.sql',
+  ]
 
   tables.forEach((file) => {
     console.log(`Executing SQL from: ${file}`)
@@ -82,7 +65,6 @@ function buildColorConditions(colors: string[] | undefined, colorMode: string): 
 
   switch (colorMode) {
     case 'atLeast':
-    case 'including':
       safe.filter((c) => c !== 'C').forEach((c) => {
         conditions.push('instr(color_identity, ?) > 0')
         values.push(c)
@@ -178,8 +160,9 @@ function setupIpcHandlers(): void {
 
     // Validation to prevent SQL injection on sortColumn/sortOrder
     const validColumns = ['card_name', 'set_code', 'collector_number', 'quantity_nonfoil', 'quantity_foil', 'total', 'value', 'scryfall_id', 'color_identity', 'rarity']
-    const finalSortColumn = validColumns.includes(sortColumn) ? sortColumn : 'card_name'
+    const rawColumn = validColumns.includes(sortColumn) ? sortColumn : 'card_name'
     const finalSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC'
+    const finalSortColumn = rawColumn === 'collector_number' ? 'collector_number_normalised' : rawColumn
 
     query += ` ORDER BY ${finalSortColumn} ${finalSortOrder} LIMIT ? OFFSET ?`
     
@@ -319,5 +302,50 @@ function setupIpcHandlers(): void {
       return { success: true }
     })
     return del()
+  })
+
+  // BM-04-T1: Summary stats
+  ipcMain.handle('db:stats:summary', () => {
+    const row = db.prepare('SELECT * FROM stats_summary').get() as { unique_printings: number; unique_names: number; total_cards: number; estimated_value: number }
+    return {
+      uniquePrintings: row.unique_printings ?? 0,
+      uniqueNames: row.unique_names ?? 0,
+      totalCards: row.total_cards ?? 0,
+      estimatedValue: row.estimated_value ?? 0,
+    }
+  })
+
+  // BM-04-T2: Color distribution
+  ipcMain.handle('db:stats:colors', () =>
+    db.prepare('SELECT * FROM stats_colors').get()
+  )
+
+  // BM-04-T3: Rarity breakdown
+  ipcMain.handle('db:stats:rarity', () => {
+    const rows = db.prepare(`
+      SELECT * FROM stats_rarity
+      ORDER BY CASE rarity
+        WHEN 'common'   THEN 1
+        WHEN 'uncommon' THEN 2
+        WHEN 'rare'     THEN 3
+        WHEN 'mythic'   THEN 4
+        WHEN 'special'  THEN 5
+        ELSE 6
+      END
+    `).all() as { rarity: string; total_cards: number }[]
+    return rows.map((r) => ({ rarity: r.rarity, totalCards: r.total_cards }))
+  })
+
+  // BM-04-T4: Top N cards by EUR price
+  ipcMain.handle('db:stats:top-value', (_, params: { limit?: number } = {}) => {
+    const limit = Math.min(params?.limit ?? 10, 50)
+    return db.prepare('SELECT * FROM mapped_collection ORDER BY value DESC LIMIT ?').all(limit)
+  })
+
+  // BM-04-T5: Cards per set
+  ipcMain.handle('db:stats:by-set', (_, params: { limit?: number } = {}) => {
+    global.console.log('Fetching stats by set with limit:', params?.limit)
+    const limit = Math.min(params?.limit ?? 20, 100)
+    return db.prepare('SELECT * FROM stats_by_set ORDER BY unique_printings DESC LIMIT ?').all(limit)
   })
 }

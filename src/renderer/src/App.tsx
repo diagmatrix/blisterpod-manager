@@ -17,7 +17,7 @@ function App() {
         <ScrollToTop />
         <Routes>
           <Route element={<Layout />}>
-            <Route path="/" element={<Navigate to="/collection" replace />} />
+            <Route path="/" element={<Navigate to="/statistics" replace />} />
             <Route path="/collection" element={<CollectionPage />} />
             <Route path="/add-card" element={<AddCardPage />} />
             <Route
