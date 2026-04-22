@@ -5,83 +5,105 @@ interface CardImageCellProps {
   scryfall_id: string | null
   image_url: string | null
   name: string
+  collector_number: string
   set_code: string
+  set_name?: string | null
   rarity: string | null
-  onClick: () => void
+  onBottomClick: () => void
+  onTopClick?: () => void
   hoverLabel?: string
   quantity_nonfoil?: number
   quantity_foil?: number
   value_nonfoil?: number | null
   value_foil?: number | null
+  value?: number | null
+  isCollection: boolean
 }
 
-export function CardImageCell({
-  scryfall_id,
-  image_url,
-  name,
-  set_code,
-  rarity,
-  onClick,
-  hoverLabel,
-  quantity_nonfoil,
-  quantity_foil,
-  value_nonfoil,
-  value_foil,
-}: CardImageCellProps) {
-  const [errored, setErrored] = useState(false)
-  const src = !errored && scryfall_id && image_url
-    ? `card-image://${scryfall_id}?u=${encodeURIComponent(image_url)}`
-    : null
+interface QuantitiesAndValuesProps {
+  nonfoil: string | number
+  foil: string | number
+  total?: number | null
+}
 
-  const hasValue = value_nonfoil != null || value_foil != null
-  const hasQty = quantity_nonfoil != null || quantity_foil != null
+function QuantitiesAndValues({ nonfoil, foil, total }: QuantitiesAndValuesProps) {
+  return (
+    <div className="text-xs text-muted-foreground tabular-nums">
+      Nonfoil {nonfoil} &middot; Foil {foil}
+      {total != null && (
+        <> &middot; Total <span className="font-medium text-foreground">{total}</span></>
+      )}
+    </div>
+  )
+}
+
+export function CardImageCell(props: CardImageCellProps) {
+  const [errored, setErrored] = useState(false)
+  const [topHovered, setTopHovered] = useState(false)
+
+  const imageSrc = !errored && props.scryfall_id && props.image_url ? `card-image://${props.scryfall_id}?u=${encodeURIComponent(props.image_url)}` : null
+  const nonfoil = props.value_nonfoil != null ? `€${Number(props.value_nonfoil).toFixed(2)}` : props.quantity_nonfoil ?? 0
+  const foil = props.value_foil != null ? `€${Number(props.value_foil).toFixed(2)}` : props.quantity_foil ?? 0
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={props.onBottomClick}
       className="group flex flex-col gap-2 text-left rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
     >
-      <div className="aspect-[488/680] w-full overflow-hidden rounded-md border border-border bg-muted relative">
-        {src ? (
+      <div className={`aspect-[488/680] w-full overflow-hidden rounded-md border bg-muted relative transition-shadow ${topHovered ? 'border-primary ring-2 ring-inset ring-primary' : 'border-border'}`}>
+        {imageSrc ? (
           <img
-            src={src}
-            alt={name}
+            src={imageSrc}
+            alt={props.name}
             loading="lazy"
             onError={() => setErrored(true)}
             className="w-full h-full object-cover transition-transform group-hover:scale-[1.02]"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center p-2 text-center text-xs text-muted-foreground">
-            {name}
+            {props.name}
           </div>
         )}
-        {hoverLabel && (
-          <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2">
-            <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded">
-              {hoverLabel}
-            </span>
+        {props.onTopClick && (
+          <div
+            className="absolute top-0 left-0 right-0 h-1/2 group/top cursor-pointer"
+            onMouseEnter={() => setTopHovered(true)}
+            onMouseLeave={() => setTopHovered(false)}
+            onClick={(e) => { e.stopPropagation(); props.onTopClick!() }}
+          >
+            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover/top:opacity-100 transition-opacity flex items-start justify-center pt-2">
+              <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded">
+                Add foil to batch
+              </span>
+            </div>
+          </div>
+        )}
+        {props.hoverLabel && (
+          <div className="absolute bottom-0 left-0 right-0 h-1/2 group/bottom">
+            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover/bottom:opacity-100 transition-opacity flex items-end justify-center pb-2">
+              <span className="text-xs font-medium bg-primary text-primary-foreground px-2 py-0.5 rounded">
+                {props.hoverLabel}
+              </span>
+            </div>
           </div>
         )}
       </div>
 
       <div className="flex flex-col space-y-0.5 items-center justify-center w-full">
         <div className="flex items-center justify-center gap-1.5 w-full overflow-hidden">
-          <SetSymbol setCode={set_code} rarity={rarity} size="1rem" />
-          <span className="text-sm font-medium truncate min-w-0">{name}</span>
+          <SetSymbol setCode={props.set_code} setName={props.set_name} rarity={props.rarity} size="1rem" />
+          <span className="text-xs text-muted-foreground shrink-0">#{props.collector_number}</span>
+          <span className="text-sm font-medium truncate min-w-0">{props.name}</span>
         </div>
-        {hasValue ? (
-          <div className="text-xs text-muted-foreground tabular-nums">
-            Nonfoil {value_nonfoil != null ? `€${value_nonfoil.toFixed(2)}` : '-'}
-            &nbsp;&nbsp;
-            Foil {value_foil != null ? `€${value_foil.toFixed(2)}` : '-'}
-          </div>
-        ) : hasQty ? (
-          <div className="text-xs text-muted-foreground tabular-nums">
-            Nonfoil {quantity_nonfoil ?? 0} &middot; Foil {quantity_foil ?? 0} &middot; Total{' '}
-            <span className="font-medium text-foreground">{(quantity_nonfoil ?? 0) + (quantity_foil ?? 0)}</span>
-          </div>
-        ) : null}
+        <QuantitiesAndValues
+          nonfoil={nonfoil}
+          foil={foil}
+          total={props.isCollection ? (props.quantity_nonfoil ?? 0) + (props.quantity_foil ?? 0) : null}
+        />
+        {props.value != null && (
+          <span className="text-sm font-medium truncate min-w-0">€{Number(props.value).toFixed(2)}</span>
+        )}
       </div>
     </button>
   )

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Pencil, Trash2, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react'
 import { type CollectionCard, type CollectionListParams } from '../../../shared/types'
 import { ColorIdentity } from '@/components/ColorIdentity'
@@ -33,6 +33,8 @@ const SORT_OPTIONS: { value: string; label: string }[] = [
 
 export default function CollectionPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const initialSet: string = location.state?.filterSet ?? ''
 
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0])
@@ -42,15 +44,15 @@ export default function CollectionPage() {
 
   // Filter input state (uncommitted)
   const [searchInput, setSearchInput] = useState('')
-  const [searchSetInput, setSearchSetInput] = useState('')
+  const [searchSetInput, setSearchSetInput] = useState(initialSet)
   const [tokenFilter, setTokenFilter] = useState<TokenFilter>('cards')
   const [raritiesInput, setRaritiesInput] = useState<string[]>([])
   const [colorsInput, setColorsInput] = useState<string[]>([])
-  const [colorMode, setColorMode] = useState<ColorMode>('including')
+  const [colorMode, setColorMode] = useState<ColorMode>('atLeast')
 
   // Committed filter state (sent to IPC)
   const [search, setSearch] = useState('')
-  const [searchSet, setSearchSet] = useState('')
+  const [searchSet, setSearchSet] = useState(initialSet)
   const [rarities, setRarities] = useState<string[]>([])
   const [colors, setColors] = useState<string[]>([])
 
@@ -106,7 +108,7 @@ export default function CollectionPage() {
     setTokenFilter('cards')
     setRaritiesInput([]); setRarities([])
     setColorsInput([]); setColors([])
-    setColorMode('including')
+    setColorMode('atLeast')
   }, [])
 
   const handleRowClick = useCallback((card: CollectionCard) => {
@@ -230,7 +232,7 @@ export default function CollectionPage() {
                 >
                   <td className="px-3 py-1.5 truncate font-medium">{card.card_name}</td>
                   <td className="px-3 py-1.5 w-14 text-center">
-                    <SetSymbol setCode={card.set_code} rarity={card.rarity} />
+                    <SetSymbol setCode={card.base_set_code} setName={card.set_name} rarity={card.rarity} />
                   </td>
                   <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.collector_number}</td>
                   <td className="px-3 py-1.5 w-24 text-center">

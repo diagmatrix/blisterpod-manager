@@ -86,7 +86,8 @@ CREATE TABLE IF NOT EXISTS scryfall_cards (
     watermark TEXT,
     preview TEXT,
     foil BOOLEAN,
-    nonfoil BOOLEAN
+    nonfoil BOOLEAN,
+    collector_number_normalised INTEGER -- Normalised collector number
 );
 
 CREATE INDEX IF NOT EXISTS scryfall_cards_set_number ON scryfall_cards (set_code, collector_number);

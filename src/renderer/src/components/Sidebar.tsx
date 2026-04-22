@@ -21,9 +21,9 @@ interface NavItemProps {
 }
 
 const navItems: NavItemProps[] = [
+  { label: 'Statistics', icon: BarChart2, route: '/statistics' },
   { label: 'Collection', icon: Layers, route: '/collection' },
   { label: 'Add Cards', icon: LayersPlus, route: '/add-card' },
-  { label: 'Statistics', icon: BarChart2, route: '/statistics' },
   { label: 'Duplicates', icon: AlertTriangle, route: '/duplicates' },
 ] as const
 

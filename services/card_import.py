@@ -57,6 +57,8 @@ def parse_card_data(card_json: Dict, columns: set, logger: logging.Logger) -> Op
         card["set_code"] = card["set"].upper()
         card.pop("set", None)  # Remove 'set' from the JSON to avoid redundancy
 
+    card["collector_number_normalised"] = ''.join(filter(str.isdigit, card.get("collector_number", "")))
+
     missing_columns = columns - card.keys()
     if missing_columns and logger.isEnabledFor(logging.DEBUG):
         logger.debug(f"Columns {', '.join(missing_columns)} not found in card data, setting to None")

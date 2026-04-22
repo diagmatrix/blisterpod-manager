@@ -7,6 +7,11 @@ import type {
   CollectionListParams,
   CollectionListResponse,
   CollectionUpdateParams,
+  StatsSummary,
+  CollectionCard,
+  StatsColors,
+  StatsRarityEntry,
+  StatsSetEntry,
 } from '../shared/types'
 
 contextBridge.exposeInMainWorld('api', {
@@ -32,4 +37,16 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('db:collection:update', params),
   collectionDelete: (params: { id: number }): Promise<{ success: true } | { error: string }> =>
     ipcRenderer.invoke('db:collection:delete', params),
+
+  // Stats (BM-04)
+  statsSummary: (): Promise<StatsSummary> =>
+    ipcRenderer.invoke('db:stats:summary'),
+  statsColors: (): Promise<StatsColors> =>
+    ipcRenderer.invoke('db:stats:colors'),
+  statsRarity: (): Promise<StatsRarityEntry[]> =>
+    ipcRenderer.invoke('db:stats:rarity'),
+  statsTopValue: (params?: { limit?: number }): Promise<CollectionCard[]> =>
+    ipcRenderer.invoke('db:stats:top-value', params),
+  statsBySet: (params?: { limit?: number }): Promise<StatsSetEntry[]> =>
+    ipcRenderer.invoke('db:stats:by-set', params),
 })

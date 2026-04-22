@@ -2,7 +2,7 @@ import { Search } from 'lucide-react'
 import { COLOR_SYMBOL_MAP } from '../../../shared/types'
 
 export type TokenFilter = 'all' | 'cards' | 'tokens'
-export type ColorMode = 'including' | 'atLeast' | 'exactly' | 'atMost'
+export type ColorMode = 'atLeast' | 'exactly' | 'atMost'
 
 export const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G', 'C']
 export const RARITY_OPTIONS = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
@@ -40,7 +40,6 @@ interface CardFiltersProps {
 }
 
 const COLOR_MODE_OPTIONS: { value: ColorMode; label: string }[] = [
-  { value: 'including', label: 'Including' },
   { value: 'atLeast', label: 'At least' },
   { value: 'exactly', label: 'Exactly' },
   { value: 'atMost', label: 'At most' },

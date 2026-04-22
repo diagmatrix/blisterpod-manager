@@ -23,7 +23,7 @@ export default function AddCardPage() {
   const [tokenFilter, setTokenFilter] = useState<TokenFilter>('all')
   const [raritiesInput, setRaritiesInput] = useState<string[]>([])
   const [colorsInput, setColorsInput] = useState<string[]>([])
-  const [colorMode, setColorMode] = useState<ColorMode>('including')
+  const [colorMode, setColorMode] = useState<ColorMode>('atLeast')
   const [view, setView] = useState<ViewMode>('image')
   const [filterExpanded, setFilterExpanded] = useState(true)
 
@@ -60,6 +60,20 @@ export default function AddCardPage() {
         return next
       }
       return [...prev, { card, quantity_nonfoil: 1, quantity_foil: 0 }]
+    })
+  }, [])
+
+  const addFoilToBatch = useCallback((card: ScryfallCard) => {
+    setBatch((prev) => {
+      const idx = prev.findIndex(
+        (b) => b.card.set_code === card.set_code && b.card.collector_number === card.collector_number
+      )
+      if (idx >= 0) {
+        const next = [...prev]
+        next[idx] = { ...next[idx], quantity_foil: next[idx].quantity_foil + 1 }
+        return next
+      }
+      return [...prev, { card, quantity_nonfoil: 0, quantity_foil: 1 }]
     })
   }, [])
 
@@ -141,12 +155,15 @@ export default function AddCardPage() {
                   scryfall_id={card.scryfall_id}
                   image_url={card.image_url}
                   name={card.name}
+                  collector_number={card.collector_number}
                   set_code={card.set_code}
                   rarity={card.rarity}
                   value_nonfoil={card.value_nonfoil}
                   value_foil={card.value_foil}
-                  onClick={() => addToBatch(card)}
+                  onBottomClick={() => addToBatch(card)}
+                  onTopClick={() => addFoilToBatch(card)}
                   hoverLabel="Add to batch"
+                  isCollection={false}
                 />
               ))}
             </div>
@@ -180,7 +197,7 @@ export default function AddCardPage() {
                       </td>
                       <td className="px-3 py-1.5 font-medium truncate max-w-0">{card.name}</td>
                       <td className="px-3 py-1.5 w-16 text-center">
-                        <SetSymbol setCode={card.set_code} rarity={card.rarity} />
+                        <SetSymbol setCode={card.set_code} setName={card.set_name} rarity={card.rarity} />
                       </td>
                       <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.collector_number}</td>
                       <td className="px-3 py-1.5 w-24 text-center">
