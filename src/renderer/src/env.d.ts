@@ -7,6 +7,7 @@ import type {
   CollectionListParams,
   CollectionListResponse,
   CollectionUpdateParams,
+  LogEntry,
   StatsSummary,
   StatsColors,
   StatsRarityEntry,
@@ -27,6 +28,8 @@ export interface ElectronAPI {
   statsRarity: () => Promise<StatsRarityEntry[]>
   statsTopValue: (params?: { limit?: number }) => Promise<CollectionCard[]>
   statsBySet: (params?: { limit?: number }) => Promise<StatsSetEntry[]>
+  logMessage: (entry: LogEntry) => void
+  logPath: () => Promise<string>
 }
 
 declare global {

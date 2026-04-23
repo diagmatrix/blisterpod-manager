@@ -1,9 +1,12 @@
+import { createLogger, handleRendererLog, LOG_FILE_PATH } from './logger'
 import { app, BrowserWindow, nativeTheme, ipcMain, protocol } from 'electron'
 import { join } from 'path'
 import Store from 'electron-store'
 import { initDatabase } from './db'
 import { initCardImageProtocol } from './cardImages'
-import type { WindowBounds, AppSettings } from '../shared/types'
+import type { WindowBounds, AppSettings, LogEntry } from '../shared/types'
+
+const log = createLogger('app')
 
 // Must run before app.whenReady() so <img src="card-image://..."> is fetched by our handler
 protocol.registerSchemesAsPrivileged([
@@ -40,6 +43,13 @@ ipcMain.handle('settings:set', (_, key: keyof AppSettings, value: unknown) => {
   if (key === 'theme') {
     nativeTheme.themeSource = value as AppSettings['theme']
   }
+})
+
+ipcMain.handle('settings:logPath', () => LOG_FILE_PATH)
+
+// IPC handler for renderer-side logging
+ipcMain.on('log:message', (_, entry: LogEntry) => {
+  handleRendererLog(entry)
 })
 
 // Initialize database before creating window (NBM-03, NBM-06)
@@ -98,15 +108,18 @@ async function createWindow() {
       isMaximized
     })
 
-    console.log(`Saved window bounds: ${JSON.stringify({ ...bounds, isMaximized })}`)
+    log.debug('Window bounds saved', { bounds, isMaximized })
   }
 
   mainWindow.on('close', saveWindowBounds)
   mainWindow.on('blur', saveWindowBounds)
+
+  log.info('Main window created')
 }
 
 // App lifecycle
 app.whenReady().then(() => {
+  log.info('App ready')
   initCardImageProtocol()
   return createWindow()
 })

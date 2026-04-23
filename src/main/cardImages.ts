@@ -1,4 +1,7 @@
 import { app, protocol, net } from 'electron'
+import { createLogger } from './logger'
+
+const log = createLogger('card-images')
 import { join } from 'path'
 import { mkdirSync, existsSync, renameSync, writeFileSync } from 'fs'
 import { pathToFileURL } from 'url'
@@ -66,10 +69,10 @@ export function initCardImageProtocol(): void {
     if (!sourceUrl || !isAllowedSource(sourceUrl)) return notFound()
 
     try {
-      console.log(`card-image: fetching ${scryfallId} from ${sourceUrl}`)
+      log.debug('Fetching card image', { scryfallId })
       return await downloadAndCache(sourceUrl, cachePath)
     } catch (err) {
-      console.error(`card-image: failed to fetch ${scryfallId}:`, err)
+      log.error('Card image fetch failed', { scryfallId, err })
       return notFound()
     }
   })

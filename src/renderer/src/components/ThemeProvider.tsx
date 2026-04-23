@@ -1,5 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { Theme } from '../../../shared/types'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('theme')
 
 const isTheme = (v: unknown): v is Theme => v === 'dark' || v === 'light'
 
@@ -47,7 +50,7 @@ export function ThemeProvider({
     
     setThemeState(newTheme)
     updateDocument(newTheme)
-    window.api.settingsSet('theme', newTheme).catch(console.error)
+    window.api.settingsSet('theme', newTheme).catch((err) => log.error('Failed to persist theme', { err }))
 
     // Remove transition class after animation finishes
     setTimeout(() => {

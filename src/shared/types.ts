@@ -131,6 +131,13 @@ export interface StatsSetEntry {
   set_cards: number
 }
 
+export interface LogEntry {
+  level: 'debug' | 'info' | 'warn' | 'error'
+  context: string
+  message: string
+  data?: unknown
+}
+
 export const COLOR_SYMBOL_MAP: Record<string, string> = {
   W: wSvg,
   U: uSvg,

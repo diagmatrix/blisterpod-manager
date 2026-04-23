@@ -1,7 +1,10 @@
-import { app, ipcMain } from 'electron'
-import { isAbsolute, join } from 'path'
+import { ipcMain } from 'electron'
+import { join } from 'path'
 import { readFileSync } from 'fs'
 import Database from 'better-sqlite3'
+import { createLogger } from './logger'
+
+const log = createLogger('db')
 
 let db: Database.Database
 const DB_NAME = 'collection.db'
@@ -10,8 +13,8 @@ const DB_NAME = 'collection.db'
 const DB_PATH = join(join(process.cwd(), 'db'), DB_NAME)
 
 export function initDatabase(): void {
-  console.log(`Initializing database at: ${DB_PATH}`)
-  
+  log.info('Database initializing', { path: DB_PATH })
+
   db = new Database(DB_PATH)
   db.pragma('journal_mode = WAL')
 
@@ -29,18 +32,18 @@ export function initDatabase(): void {
   ]
 
   tables.forEach((file) => {
-    console.log(`Executing SQL from: ${file}`)
+    log.debug('Executing schema file', { file })
     const sql = readFileSync(join(sqlDir, 'tables', file), 'utf8')
     db.exec(sql)
   })
 
   views.forEach((file) => {
-    console.log(`Executing SQL from: ${file}`)
+    log.debug('Executing schema file', { file })
     const sql = readFileSync(join(sqlDir, 'views', file), 'utf8')
     db.exec(sql)
   })
 
-  console.log('Database schema initialized.')
+  log.info('Database schema initialized')
   setupIpcHandlers()
 }
 
@@ -98,10 +101,10 @@ function buildColorConditions(colors: string[] | undefined, colorMode: string): 
 
 function setupIpcHandlers(): void {
   // BM-01-T1: Collection listing with pagination, sorting, and filtering
-  ipcMain.handle('db:collection:list', (_, params: { 
-    page: number, 
-    pageSize: number, 
-    sortColumn?: string, 
+  ipcMain.handle('db:collection:list', (_, params: {
+    page: number,
+    pageSize: number,
+    sortColumn?: string,
     sortOrder?: 'ASC' | 'DESC',
     search?: string,
     searchSet?: string,
@@ -165,9 +168,11 @@ function setupIpcHandlers(): void {
     const finalSortColumn = rawColumn === 'collector_number' ? 'collector_number_normalised' : rawColumn
 
     query += ` ORDER BY ${finalSortColumn} ${finalSortOrder} LIMIT ? OFFSET ?`
-    
+
+    log.info('db:collection:list', query)
+
     const rows = db.prepare(query).all(...values, pageSize, offset)
-    
+
     // Get total count for pagination
     let countQuery = 'SELECT COUNT(*) as total FROM mapped_collection WHERE scryfall_id IS NOT NULL'
     if (conditions.length > 0) {
@@ -204,7 +209,7 @@ function setupIpcHandlers(): void {
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
     const sql = `SELECT * FROM available_cards ${where} ORDER BY collector_number_normalised ASC, name ASC LIMIT ? OFFSET ?`
-    global.console.log('Executing query:', sql)
+    log.info('db:cards:search', sql)
 
     const rows = db.prepare(sql).all(...values, safePageSize, offset)
     const { total } = db.prepare(`SELECT COUNT(*) as total FROM available_cards ${where}`).get(...values) as { total: number }
@@ -220,20 +225,31 @@ function setupIpcHandlers(): void {
     quantity_foil: number
   }) => {
     const { set_code, collector_number, quantity_nonfoil, quantity_foil } = params
-    if (quantity_nonfoil < 0 || quantity_foil < 0) return { error: 'Quantities must be non-negative' }
-    if (quantity_nonfoil + quantity_foil === 0) return { error: 'At least one copy must be owned' }
+    if (quantity_nonfoil < 0 || quantity_foil < 0) {
+      log.warn('Card add validation failed', { error: 'Quantities must be non-negative' })
+      return { error: 'Quantities must be non-negative' }
+    }
+    if (quantity_nonfoil + quantity_foil === 0) {
+      log.warn('Card add validation failed', { error: 'At least one copy must be owned' })
+      return { error: 'At least one copy must be owned' }
+    }
 
     const exists = db.prepare('SELECT 1 FROM available_cards WHERE set_code = ? AND collector_number = ?').get(set_code, collector_number)
-    if (!exists) return { error: `Card not found: ${set_code} #${collector_number}` }
+    if (!exists) {
+      log.warn('Card add validation failed', { error: `Card not found: ${set_code} #${collector_number}` })
+      return { error: `Card not found: ${set_code} #${collector_number}` }
+    }
+
+    const insertSql = 'INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
+    log.info('db:collection:add', insertSql)
 
     const insert = db.transaction(() => {
-      const result = db.prepare(`
-        INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at)
-        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      `).run(set_code, collector_number, quantity_nonfoil, quantity_foil)
+      const result = db.prepare(insertSql).run(set_code, collector_number, quantity_nonfoil, quantity_foil)
       return { id: result.lastInsertRowid }
     })
-    return insert()
+    const result = insert()
+    log.info('Card added to collection', { set_code, collector_number })
+    return result
   })
 
   // BM-02-T2b: Batch insert cards into the collection
@@ -243,10 +259,10 @@ function setupIpcHandlers(): void {
     quantity_nonfoil: number
     quantity_foil: number
   }[]) => {
-    const insertStmt = db.prepare(`
-      INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at)
-      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `)
+    const insertSql = 'INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
+    log.info('db:collection:add-batch', insertSql)
+
+    const insertStmt = db.prepare(insertSql)
     const checkStmt = db.prepare('SELECT 1 FROM available_cards WHERE set_code = ? AND collector_number = ?')
 
     let inserted = 0
@@ -272,6 +288,7 @@ function setupIpcHandlers(): void {
       })
     })
     batchInsert()
+    log.info('Batch insert complete', { inserted, errorCount: errors.length })
     return { inserted, errors }
   })
 
@@ -285,27 +302,35 @@ function setupIpcHandlers(): void {
     if (quantity_nonfoil < 0 || quantity_foil < 0) return { error: 'Quantities must be non-negative' }
     if (quantity_nonfoil + quantity_foil === 0) return { error: 'At least one copy must be owned' }
 
+    const updateSql = 'UPDATE cards SET quantity_nonfoil = ?, quantity_foil = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    log.info('db:collection:update', updateSql)
+
     const update = db.transaction(() => {
-      db.prepare(`
-        UPDATE cards SET quantity_nonfoil = ?, quantity_foil = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(quantity_nonfoil, quantity_foil, id)
+      db.prepare(updateSql).run(quantity_nonfoil, quantity_foil, id)
       return { success: true }
     })
-    return update()
+    const result = update()
+    log.debug('Collection card updated', { id })
+    return result
   })
 
   // BM-02-T5: Delete a card from the collection
   ipcMain.handle('db:collection:delete', (_, params: { id: number }) => {
+    const deleteSql = 'DELETE FROM cards WHERE id = ?'
+    log.info('db:collection:delete', deleteSql)
+
     const del = db.transaction(() => {
-      db.prepare('DELETE FROM cards WHERE id = ?').run(params.id)
+      db.prepare(deleteSql).run(params.id)
       return { success: true }
     })
-    return del()
+    const result = del()
+    log.info('Collection card deleted', { id: params.id })
+    return result
   })
 
   // BM-04-T1: Summary stats
   ipcMain.handle('db:stats:summary', () => {
+    log.info('db:stats:summary', 'SELECT * FROM stats_summary')
     const row = db.prepare('SELECT * FROM stats_summary').get() as { unique_printings: number; unique_names: number; total_cards: number; estimated_value: number }
     return {
       uniquePrintings: row.unique_printings ?? 0,
@@ -316,12 +341,15 @@ function setupIpcHandlers(): void {
   })
 
   // BM-04-T2: Color distribution
-  ipcMain.handle('db:stats:colors', () =>
-    db.prepare('SELECT * FROM stats_colors').get()
-  )
+  ipcMain.handle('db:stats:colors', () => {
+    log.info('db:stats:colors', 'SELECT * FROM stats_colors')
+    return db.prepare('SELECT * FROM stats_colors').get()
+  })
 
   // BM-04-T3: Rarity breakdown
   ipcMain.handle('db:stats:rarity', () => {
+    const sql = `SELECT * FROM stats_rarity ORDER BY CASE rarity WHEN 'common' THEN 1 WHEN 'uncommon' THEN 2 WHEN 'rare' THEN 3 WHEN 'mythic' THEN 4 WHEN 'special' THEN 5 ELSE 6 END`
+    log.info('db:stats:rarity', sql)
     const rows = db.prepare(`
       SELECT * FROM stats_rarity
       ORDER BY CASE rarity
@@ -339,13 +367,14 @@ function setupIpcHandlers(): void {
   // BM-04-T4: Top N cards by EUR price
   ipcMain.handle('db:stats:top-value', (_, params: { limit?: number } = {}) => {
     const limit = Math.min(params?.limit ?? 10, 50)
+    log.info('db:stats:top-value', 'SELECT * FROM mapped_collection ORDER BY value DESC LIMIT ?')
     return db.prepare('SELECT * FROM mapped_collection ORDER BY value DESC LIMIT ?').all(limit)
   })
 
   // BM-04-T5: Cards per set
   ipcMain.handle('db:stats:by-set', (_, params: { limit?: number } = {}) => {
-    global.console.log('Fetching stats by set with limit:', params?.limit)
     const limit = Math.min(params?.limit ?? 20, 100)
+    log.info('db:stats:by-set', 'SELECT * FROM stats_by_set ORDER BY unique_printings DESC LIMIT ?')
     return db.prepare('SELECT * FROM stats_by_set ORDER BY unique_printings DESC LIMIT ?').all(limit)
   })
 }

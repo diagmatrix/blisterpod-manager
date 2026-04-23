@@ -12,6 +12,7 @@ import type {
   StatsColors,
   StatsRarityEntry,
   StatsSetEntry,
+  LogEntry,
 } from '../shared/types'
 
 contextBridge.exposeInMainWorld('api', {
@@ -49,4 +50,10 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('db:stats:top-value', params),
   statsBySet: (params?: { limit?: number }): Promise<StatsSetEntry[]> =>
     ipcRenderer.invoke('db:stats:by-set', params),
+
+  // Logging bridge (renderer → main file logger)
+  logMessage: (entry: LogEntry): void =>
+    ipcRenderer.send('log:message', entry),
+  logPath: (): Promise<string> =>
+    ipcRenderer.invoke('settings:logPath'),
 })
