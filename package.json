@@ -24,7 +24,6 @@
     "clsx": "2.1.1",
     "electron-log": "^5.4.3",
     "electron-store": "8.1.0",
-    "keyrune": "^3.18.0",
     "lucide-react": "^1.8.0",
     "postcss": "8.4.41",
     "react": "18.3.1",

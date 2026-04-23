@@ -20,6 +20,8 @@ export interface AppSettings {
 
 export type Theme = 'dark' | 'light'
 
+export type KeyruneVersion = { downloaded: string | null }
+
 export interface ScryfallCard {
   scryfall_id: string | null
   name: string

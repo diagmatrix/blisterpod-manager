@@ -13,6 +13,7 @@ import type {
   StatsRarityEntry,
   StatsSetEntry,
   LogEntry,
+  KeyruneVersion,
 } from '../shared/types'
 
 contextBridge.exposeInMainWorld('api', {
@@ -56,4 +57,10 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.send('log:message', entry),
   logPath: (): Promise<string> =>
     ipcRenderer.invoke('settings:logPath'),
+
+  // Keyrune set symbols
+  refreshSetSymbols: (): Promise<string> =>
+    ipcRenderer.invoke('data:refreshSetSymbols'),
+  keyruneVersion: (): Promise<KeyruneVersion> =>
+    ipcRenderer.invoke('data:keyruneVersion'),
 })

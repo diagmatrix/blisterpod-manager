@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, Database, Layers } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useTheme } from '@/components/ThemeProvider'
+import { RefreshLoadingDialog } from '@/components/RefreshLoadingDialog'
+import { injectKeyruneCSS } from '@/lib/keyruneCSS'
+import type { KeyruneVersion } from '../../../shared/types'
 
 function SettingsSection({ title, description, children }: {
   title: string
@@ -22,7 +25,7 @@ function SettingsSection({ title, description, children }: {
 
 function SettingsRow({ label, description, children }: {
   label: string
-  description?: string
+  description?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
@@ -38,50 +41,99 @@ function SettingsRow({ label, description, children }: {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
+
   const [logPath, setLogPath] = useState<string>('')
+  const [keyruneVersion, setKeyruneVersion] = useState<KeyruneVersion | null>(null)
+
   const [refreshAllPending, setRefreshAllPending] = useState(false)
   const [refreshCardsPending, setRefreshCardsPending] = useState(false)
   const [refreshSetsPending, setRefreshSetsPending] = useState(false)
-  const [refreshManaSymbols, setRefreshManaSymbols] = useState(false)
-  const [refreshSetSymbols, setRefreshSetSymbols] = useState(false)
+  const [refreshManaSymbolsPending, setRefreshManaSymbolsPending] = useState(false)
+  const [refreshSetSymbolsPending, setRefreshSetSymbolsPending] = useState(false)
 
+  const isAnyRefreshPending =
+    refreshAllPending ||
+    refreshCardsPending ||
+    refreshSetsPending ||
+    refreshManaSymbolsPending ||
+    refreshSetSymbolsPending
 
   useEffect(() => {
     window.api.logPath().then(setLogPath)
+    window.api.keyruneVersion().then(setKeyruneVersion)
   }, [])
 
   // Placeholder handlers — will be wired to Scryfall API in a future ticket
   const handleRefreshAll = async () => {
     setRefreshAllPending(true)
-    await new Promise((r) => setTimeout(r, 1000))
-    setRefreshAllPending(false)
+    try {
+      await Promise.all([
+        new Promise((r) => setTimeout(r, 1000)),
+        window.api.refreshSetSymbols().then((version) => {
+          injectKeyruneCSS()
+          setKeyruneVersion({ downloaded: version })
+        }),
+      ])
+    } finally {
+      setRefreshAllPending(false)
+    }
   }
 
   const handleRefreshCards = async () => {
     setRefreshCardsPending(true)
-    await new Promise((r) => setTimeout(r, 1000))
-    setRefreshCardsPending(false)
+    try {
+      await new Promise((r) => setTimeout(r, 1000))
+    } finally {
+      setRefreshCardsPending(false)
+    }
   }
 
   const handleRefreshSets = async () => {
     setRefreshSetsPending(true)
-    await new Promise((r) => setTimeout(r, 1000))
-    setRefreshSetsPending(false)
+    try {
+      await new Promise((r) => setTimeout(r, 1000))
+    } finally {
+      setRefreshSetsPending(false)
+    }
   }
 
   const handleRefreshManaSymbols = async () => {
-    setRefreshManaSymbols(true)
-    await new Promise((r) => setTimeout(r, 1000))
-    setRefreshManaSymbols(false)
+    setRefreshManaSymbolsPending(true)
+    try {
+      await new Promise((r) => setTimeout(r, 1000))
+    } finally {
+      setRefreshManaSymbolsPending(false)
+    }
   }
 
   const handleRefreshSetSymbols = async () => {
-    setRefreshSetSymbols(true)
-    await new Promise((r) => setTimeout(r, 1000))
-    setRefreshSetSymbols(false)
+    setRefreshSetSymbolsPending(true)
+    try {
+      const version = await window.api.refreshSetSymbols()
+      injectKeyruneCSS()
+      setKeyruneVersion({ downloaded: version })
+    } finally {
+      setRefreshSetSymbolsPending(false)
+    }
   }
 
+  const keyruneDescription = (
+    <>
+      {keyruneVersion?.downloaded ? `Installed version v${keyruneVersion.downloaded}` : 'Not installed'}
+      {' · '}
+      <a
+        href="https://keyrune.andrewgioia.com/"
+        target="_blank"
+        rel="noreferrer"
+        className="underline underline-offset-2 hover:text-foreground"
+      >
+        keyrune.andrewgioia.com
+      </a>
+    </>
+  )
+
   return (
+    <>
     <div className="p-6 max-w-2xl space-y-8">
       <div>
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
@@ -147,7 +199,7 @@ export default function SettingsPage() {
             variant="outline"
             size="sm"
             onClick={handleRefreshAll}
-            disabled={refreshAllPending}
+            disabled={isAnyRefreshPending}
             className="gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${refreshAllPending ? 'animate-spin' : ''}`} />
@@ -157,13 +209,13 @@ export default function SettingsPage() {
 
         <SettingsRow
           label="Refresh Cards"
-          description="Uptade card catalog from Scryfall."
+          description="Update card catalog from Scryfall."
         >
           <Button
             variant="outline"
             size="sm"
             onClick={handleRefreshCards}
-            disabled={refreshCardsPending}
+            disabled={isAnyRefreshPending}
             className="gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${refreshCardsPending ? 'animate-spin' : ''}`} />
@@ -179,7 +231,7 @@ export default function SettingsPage() {
             variant="outline"
             size="sm"
             onClick={handleRefreshSets}
-            disabled={refreshSetsPending}
+            disabled={isAnyRefreshPending}
             className="gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${refreshSetsPending ? 'animate-spin' : ''}`} />
@@ -195,30 +247,33 @@ export default function SettingsPage() {
             variant="outline"
             size="sm"
             onClick={handleRefreshManaSymbols}
-            disabled={refreshManaSymbols}
+            disabled={isAnyRefreshPending}
             className="gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshManaSymbols ? 'animate-spin' : ''}`} />
-            {refreshManaSymbols ? 'Refreshing…' : 'Refresh Symbols'}
+            <RefreshCw className={`h-4 w-4 ${refreshManaSymbolsPending ? 'animate-spin' : ''}`} />
+            {refreshManaSymbolsPending ? 'Refreshing…' : 'Refresh Mana Symbols'}
           </Button>
         </SettingsRow>
 
         <SettingsRow
           label="Refresh Set Symbols"
-          description="Update the Keyrune set symbols."
+          description={keyruneDescription}
         >
           <Button
             variant="outline"
             size="sm"
             onClick={handleRefreshSetSymbols}
-            disabled={refreshSetSymbols}
+            disabled={isAnyRefreshPending}
             className="gap-2"
           >
-            <RefreshCw className={`h-4 w-4 ${refreshSetSymbols ? 'animate-spin' : ''}`} />
-            {refreshSetSymbols ? 'Refreshing…' : 'Refresh Symbols'}
+            <RefreshCw className={`h-4 w-4 ${refreshSetSymbolsPending ? 'animate-spin' : ''}`} />
+            {refreshSetSymbolsPending ? 'Refreshing…' : 'Refresh Set Symbols'}
           </Button>
         </SettingsRow>
       </SettingsSection>
     </div>
+
+    <RefreshLoadingDialog open={isAnyRefreshPending} />
+    </>
   )
 }

@@ -4,6 +4,7 @@ import { join } from 'path'
 import Store from 'electron-store'
 import { initDatabase } from './db'
 import { initCardImageProtocol } from './cardImages'
+import { initKeyruneProtocol, downloadKeyruneAssets, getKeyruneVersion } from './keyruneAssets'
 import type { WindowBounds, AppSettings, LogEntry } from '../shared/types'
 
 const log = createLogger('app')
@@ -12,6 +13,10 @@ const log = createLogger('app')
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'card-image',
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+  },
+  {
+    scheme: 'keyrune',
     privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
   },
 ])
@@ -118,9 +123,13 @@ async function createWindow() {
 }
 
 // App lifecycle
+ipcMain.handle('data:refreshSetSymbols', () => downloadKeyruneAssets())
+ipcMain.handle('data:keyruneVersion', () => ({ downloaded: getKeyruneVersion() }))
+
 app.whenReady().then(() => {
   log.info('App ready')
   initCardImageProtocol()
+  initKeyruneProtocol()
   return createWindow()
 })
 

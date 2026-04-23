@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import ScrollToTop from '@/components/ScrollToTop'
 import Layout from '@/components/Layout'
@@ -9,8 +10,15 @@ import DuplicatesPage from '@/pages/DuplicatesPage'
 import SettingsPage from '@/pages/SettingsPage'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Toaster } from '@/components/ui/sonner'
+import { injectKeyruneCSS } from '@/lib/keyruneCSS'
 
 function App() {
+  useEffect(() => {
+    window.api.keyruneVersion().then((v) => {
+      if (v.downloaded) injectKeyruneCSS()
+    })
+  }, [])
+
   return (
     <ThemeProvider defaultTheme="light">
       <HashRouter>

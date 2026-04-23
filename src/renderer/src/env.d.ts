@@ -12,6 +12,7 @@ import type {
   StatsColors,
   StatsRarityEntry,
   StatsSetEntry,
+  KeyruneVersion,
 } from '../../shared/types'
 
 export interface ElectronAPI {
@@ -30,6 +31,8 @@ export interface ElectronAPI {
   statsBySet: (params?: { limit?: number }) => Promise<StatsSetEntry[]>
   logMessage: (entry: LogEntry) => void
   logPath: () => Promise<string>
+  refreshSetSymbols: () => Promise<string>
+  keyruneVersion: () => Promise<KeyruneVersion>
 }
 
 declare global {

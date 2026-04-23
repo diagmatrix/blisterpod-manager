@@ -6,6 +6,7 @@ interface SetSymbolProps {
 }
 
 export function SetSymbol({ setCode, setName, rarity, size = '1.2rem' }: SetSymbolProps) {
+  if (!setCode) return null
   const rarityClass = rarity ? `ss-${rarity}` : ''
 
   return (
