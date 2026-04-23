@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, app } from 'electron'
 import { join } from 'path'
 import { readFileSync } from 'fs'
 import Database from 'better-sqlite3'
@@ -11,6 +11,10 @@ const DB_NAME = 'collection.db'
 // const DB_PATH = join(app.getPath('userData'), DB_NAME)
 // For development, get the DB from the project root to persist across reloads
 const DB_PATH = join(join(process.cwd(), 'db'), DB_NAME)
+
+export function getDb(): Database.Database {
+  return db
+}
 
 export function initDatabase(): void {
   log.info('Database initializing', { path: DB_PATH })

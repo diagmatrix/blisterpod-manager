@@ -63,4 +63,10 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('data:refreshSetSymbols'),
   keyruneVersion: (): Promise<KeyruneVersion> =>
     ipcRenderer.invoke('data:keyruneVersion'),
+
+  // Scryfall data refresh
+  refreshSets: (): Promise<{ inserted: number }> =>
+    ipcRenderer.invoke('data:refreshSets'),
+  refreshCards: (): Promise<{ inserted: number }> =>
+    ipcRenderer.invoke('data:refreshCards'),
 })

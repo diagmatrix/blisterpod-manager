@@ -44,6 +44,8 @@ export default function SettingsPage() {
 
   const [logPath, setLogPath] = useState<string>('')
   const [keyruneVersion, setKeyruneVersion] = useState<KeyruneVersion | null>(null)
+  const [setsLastRefreshed, setSetsLastRefreshed] = useState<string | null>(null)
+  const [cardsLastRefreshed, setCardsLastRefreshed] = useState<string | null>(null)
 
   const [refreshAllPending, setRefreshAllPending] = useState(false)
   const [refreshCardsPending, setRefreshCardsPending] = useState(false)
@@ -61,6 +63,8 @@ export default function SettingsPage() {
   useEffect(() => {
     window.api.logPath().then(setLogPath)
     window.api.keyruneVersion().then(setKeyruneVersion)
+    window.api.settingsGet('setsLastRefreshed').then((v) => setSetsLastRefreshed(v ?? null))
+    window.api.settingsGet('cardsLastRefreshed').then((v) => setCardsLastRefreshed(v ?? null))
   }, [])
 
   // Placeholder handlers — will be wired to Scryfall API in a future ticket
@@ -68,10 +72,19 @@ export default function SettingsPage() {
     setRefreshAllPending(true)
     try {
       await Promise.all([
-        new Promise((r) => setTimeout(r, 1000)),
         window.api.refreshSetSymbols().then((version) => {
           injectKeyruneCSS()
           setKeyruneVersion({ downloaded: version })
+        }),
+        window.api.refreshSets().then(() => {
+          const now = new Date().toISOString()
+          window.api.settingsSet('setsLastRefreshed', now)
+          setSetsLastRefreshed(now)
+        }),
+        window.api.refreshCards().then(() => {
+          const now = new Date().toISOString()
+          window.api.settingsSet('cardsLastRefreshed', now)
+          setCardsLastRefreshed(now)
         }),
       ])
     } finally {
@@ -82,7 +95,10 @@ export default function SettingsPage() {
   const handleRefreshCards = async () => {
     setRefreshCardsPending(true)
     try {
-      await new Promise((r) => setTimeout(r, 1000))
+      await window.api.refreshCards()
+      const now = new Date().toISOString()
+      window.api.settingsSet('cardsLastRefreshed', now)
+      setCardsLastRefreshed(now)
     } finally {
       setRefreshCardsPending(false)
     }
@@ -91,7 +107,10 @@ export default function SettingsPage() {
   const handleRefreshSets = async () => {
     setRefreshSetsPending(true)
     try {
-      await new Promise((r) => setTimeout(r, 1000))
+      await window.api.refreshSets()
+      const now = new Date().toISOString()
+      window.api.settingsSet('setsLastRefreshed', now)
+      setSetsLastRefreshed(now)
     } finally {
       setRefreshSetsPending(false)
     }
@@ -209,7 +228,9 @@ export default function SettingsPage() {
 
         <SettingsRow
           label="Refresh Cards"
-          description="Update card catalog from Scryfall."
+          description={cardsLastRefreshed
+            ? `Last refreshed ${new Date(cardsLastRefreshed).toLocaleString()}`
+            : 'Update card catalog from Scryfall.'}
         >
           <Button
             variant="outline"
@@ -225,7 +246,9 @@ export default function SettingsPage() {
 
         <SettingsRow
           label="Refresh Sets"
-          description="Update the list of Magic sets and their metadata."
+          description={setsLastRefreshed
+            ? `Last refreshed ${new Date(setsLastRefreshed).toLocaleString()}`
+            : 'Update the list of Magic sets and their metadata.'}
         >
           <Button
             variant="outline"

@@ -16,6 +16,8 @@ export interface WindowBounds {
 export interface AppSettings {
   windowBounds: WindowBounds
   theme: 'dark' | 'light'
+  setsLastRefreshed?: string
+  cardsLastRefreshed?: string
 }
 
 export type Theme = 'dark' | 'light'

@@ -33,6 +33,8 @@ export interface ElectronAPI {
   logPath: () => Promise<string>
   refreshSetSymbols: () => Promise<string>
   keyruneVersion: () => Promise<KeyruneVersion>
+  refreshSets: () => Promise<{ inserted: number }>
+  refreshCards: () => Promise<{ inserted: number }>
 }
 
 declare global {

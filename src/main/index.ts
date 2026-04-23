@@ -2,9 +2,10 @@ import { createLogger, handleRendererLog, LOG_FILE_PATH } from './logger'
 import { app, BrowserWindow, nativeTheme, ipcMain, protocol } from 'electron'
 import { join } from 'path'
 import Store from 'electron-store'
-import { initDatabase } from './db'
+import { initDatabase, getDb } from './db'
 import { initCardImageProtocol } from './cardImages'
 import { initKeyruneProtocol, downloadKeyruneAssets, getKeyruneVersion } from './keyruneAssets'
+import { refreshSets, refreshCards } from './scryfallRefresh'
 import type { WindowBounds, AppSettings, LogEntry } from '../shared/types'
 
 const log = createLogger('app')
@@ -125,6 +126,8 @@ async function createWindow() {
 // App lifecycle
 ipcMain.handle('data:refreshSetSymbols', () => downloadKeyruneAssets())
 ipcMain.handle('data:keyruneVersion', () => ({ downloaded: getKeyruneVersion() }))
+ipcMain.handle('data:refreshSets', () => refreshSets(getDb()))
+ipcMain.handle('data:refreshCards', () => refreshCards(getDb()))
 
 app.whenReady().then(() => {
   log.info('App ready')
