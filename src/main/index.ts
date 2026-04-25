@@ -1,11 +1,14 @@
 import { createLogger, handleRendererLog, LOG_FILE_PATH } from './logger'
 import { app, BrowserWindow, nativeTheme, ipcMain, protocol } from 'electron'
 import { join } from 'path'
+import { readFileSync } from 'fs'
 import Store from 'electron-store'
 import { initDatabase, getDb } from './db'
 import { initCardImageProtocol } from './cardImages'
 import { initKeyruneProtocol, downloadKeyruneAssets, getKeyruneVersion } from './keyruneAssets'
+import { initFontProtocol, downloadCCMGFont, getCCMGFontStatus } from './ccmgFont'
 import { refreshSets, refreshCards } from './scryfallRefresh'
+import { getIconPath } from './utils'
 import type { WindowBounds, AppSettings, LogEntry } from '../shared/types'
 
 const log = createLogger('app')
@@ -19,6 +22,10 @@ protocol.registerSchemesAsPrivileged([
   {
     scheme: 'keyrune',
     privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+  },
+  {
+    scheme: 'app-font',
+    privileges: { standard: true, secure: true, supportFetchAPI: true },
   },
 ])
 
@@ -47,7 +54,9 @@ ipcMain.handle('settings:get', (_, key: keyof AppSettings) => {
 ipcMain.handle('settings:set', (_, key: keyof AppSettings, value: unknown) => {
   store.set(key, value as AppSettings[typeof key])
   if (key === 'theme') {
-    nativeTheme.themeSource = value as AppSettings['theme']
+    const theme = value as AppSettings['theme']
+    nativeTheme.themeSource = theme
+    mainWindow?.setIcon(getIconPath(theme))
   }
 })
 
@@ -76,7 +85,7 @@ async function createWindow() {
     minHeight: 768,
     title: 'Blisterpod Manager',
     show: false, // Don't show until ready-to-show
-    icon: join(__dirname, '../../resources/icon.png'),
+    icon: getIconPath(store.get('theme')),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
@@ -128,11 +137,18 @@ ipcMain.handle('data:refreshSetSymbols', () => downloadKeyruneAssets())
 ipcMain.handle('data:keyruneVersion', () => ({ downloaded: getKeyruneVersion() }))
 ipcMain.handle('data:refreshSets', () => refreshSets(getDb()))
 ipcMain.handle('data:refreshCards', () => refreshCards(getDb()))
+ipcMain.handle('data:downloadCCMGFont', () => downloadCCMGFont())
+ipcMain.handle('data:ccmgFontStatus', () => getCCMGFontStatus())
+ipcMain.handle('app:icon', () => {
+  const data = readFileSync(getIconPath(store.get('theme')))
+  return `data:image/png;base64,${data.toString('base64')}`
+})
 
 app.whenReady().then(() => {
   log.info('App ready')
   initCardImageProtocol()
   initKeyruneProtocol()
+  initFontProtocol()
   return createWindow()
 })
 

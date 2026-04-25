@@ -69,4 +69,14 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('data:refreshSets'),
   refreshCards: (): Promise<{ inserted: number }> =>
     ipcRenderer.invoke('data:refreshCards'),
+
+  // CCMG font
+  downloadCCMGFont: (): Promise<void> =>
+    ipcRenderer.invoke('data:downloadCCMGFont'),
+  ccmgFontStatus: (): Promise<{ downloaded: boolean }> =>
+    ipcRenderer.invoke('data:ccmgFontStatus'),
+
+  // App icon (base64 data URL, theme-aware)
+  getAppIcon: (): Promise<string> =>
+    ipcRenderer.invoke('app:icon'),
 })

@@ -16,6 +16,7 @@ export interface WindowBounds {
 export interface AppSettings {
   windowBounds: WindowBounds
   theme: 'dark' | 'light'
+  font?: 'default' | 'ccmg'
   setsLastRefreshed?: string
   cardsLastRefreshed?: string
 }

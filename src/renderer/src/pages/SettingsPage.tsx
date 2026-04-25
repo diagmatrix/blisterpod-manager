@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator'
 import { useTheme } from '@/components/ThemeProvider'
 import { RefreshLoadingDialog } from '@/components/RefreshLoadingDialog'
 import { injectKeyruneCSS } from '@/lib/keyruneCSS'
+import { applyCCMGFont } from '@/lib/ccmgFont'
 import type { KeyruneVersion } from '../../../shared/types'
 
 function SettingsSection({ title, description, children }: {
@@ -46,6 +47,9 @@ export default function SettingsPage() {
   const [keyruneVersion, setKeyruneVersion] = useState<KeyruneVersion | null>(null)
   const [setsLastRefreshed, setSetsLastRefreshed] = useState<string | null>(null)
   const [cardsLastRefreshed, setCardsLastRefreshed] = useState<string | null>(null)
+  const [font, setFont] = useState<'default' | 'ccmg'>('default')
+  const [ccmgDownloaded, setCcmgDownloaded] = useState(false)
+  const [downloadingFont, setDownloadingFont] = useState(false)
 
   const [refreshAllPending, setRefreshAllPending] = useState(false)
   const [refreshCardsPending, setRefreshCardsPending] = useState(false)
@@ -65,7 +69,24 @@ export default function SettingsPage() {
     window.api.keyruneVersion().then(setKeyruneVersion)
     window.api.settingsGet('setsLastRefreshed').then((v) => setSetsLastRefreshed(v ?? null))
     window.api.settingsGet('cardsLastRefreshed').then((v) => setCardsLastRefreshed(v ?? null))
+    window.api.settingsGet('font').then((v) => setFont(v ?? 'default'))
+    window.api.ccmgFontStatus().then((s) => setCcmgDownloaded(s.downloaded))
   }, [])
+
+  const handleSetFont = async (value: 'default' | 'ccmg') => {
+    if (value === 'ccmg' && !ccmgDownloaded) {
+      setDownloadingFont(true)
+      try {
+        await window.api.downloadCCMGFont()
+        setCcmgDownloaded(true)
+      } finally {
+        setDownloadingFont(false)
+      }
+    }
+    setFont(value)
+    window.api.settingsSet('font', value)
+    applyCCMGFont(value === 'ccmg')
+  }
 
   // Placeholder handlers — will be wired to Scryfall API in a future ticket
   const handleRefreshAll = async () => {
@@ -151,6 +172,21 @@ export default function SettingsPage() {
     </>
   )
 
+  const fontDescription = (
+    <>
+      Switch between the default and CCMG font
+      {' · '}
+      <a
+        href="https://github.com/diagmatrix/CCMG"
+        target="_blank"
+        rel="noreferrer"
+        className="underline underline-offset-2 hover:text-foreground"
+      >
+        github.com/diagmatrix/CCMG
+      </a>
+    </>
+  )
+
   return (
     <>
     <div className="p-6 max-w-2xl space-y-8">
@@ -186,6 +222,33 @@ export default function SettingsPage() {
               }`}
             >
               Dark
+            </button>
+          </div>
+        </SettingsRow>
+
+        <SettingsRow label="Font" description={fontDescription}>
+          <div className="flex rounded-md border overflow-hidden">
+            <button
+              onClick={() => handleSetFont('default')}
+              disabled={downloadingFont}
+              className={`px-3 py-1.5 text-sm transition-colors ${
+                font === 'default'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Default
+            </button>
+            <button
+              onClick={() => handleSetFont('ccmg')}
+              disabled={downloadingFont}
+              className={`px-3 py-1.5 text-sm transition-colors ${
+                font === 'ccmg'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {downloadingFont ? 'Downloading…' : 'CCMG'}
             </button>
           </div>
         </SettingsRow>

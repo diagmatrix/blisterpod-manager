@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
 import { Dialog, DialogOverlay, DialogPortal } from '@/components/ui/dialog'
-import { SetSymbol } from './SetSymbol'
 import { cn } from '@/lib/utils'
 
 const FACTS = [
@@ -14,8 +13,6 @@ const FACTS = [
   "The barest taste of Eldrazi power shatters both realms and identities.",
   "Eldrazi grow wherever something else dies.",
 ]
-
-const SET_CODES = ['roe', 'mh3', 'bfz', 'ddp', 'ogw', 'm3c']
 
 export function RefreshLoadingDialog({ open }: { open: boolean }) {
   const [tick, setTick] = useState(0)
@@ -30,7 +27,11 @@ export function RefreshLoadingDialog({ open }: { open: boolean }) {
   }, [open])
 
   const fact = FACTS[tick % FACTS.length]
-  const setCode = SET_CODES[tick % SET_CODES.length]
+  const [icon, setIcon] = useState<string | null>(null)
+
+  useEffect(() => {
+    window.api.getAppIcon().then(setIcon)
+  }, [])
 
   return (
     <Dialog open={open} onOpenChange={() => {}}>
@@ -48,11 +49,11 @@ export function RefreshLoadingDialog({ open }: { open: boolean }) {
         >
           <div className="flex flex-col items-center gap-6 text-center">
             <div className="flex items-center gap-3">
-              <SetSymbol setCode={setCode} size="1.5rem" />
+              {icon && <img src={icon} alt="App icon" className="h-12 w-12" />}
               <p className="text-sm font-medium leading-snug">
                 Scions are working! While you wait, you may love to hear these facts:
               </p>
-              <SetSymbol setCode={setCode} size="1.5rem" />
+              {icon && <img src={icon} alt="App icon" className="h-12 w-12" />}
             </div>
             <p key={tick} className="text-muted-foreground italic min-h-[3rem] flex items-center justify-center">
               {fact}

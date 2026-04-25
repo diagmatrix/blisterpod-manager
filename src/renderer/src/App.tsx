@@ -11,11 +11,15 @@ import SettingsPage from '@/pages/SettingsPage'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Toaster } from '@/components/ui/sonner'
 import { injectKeyruneCSS } from '@/lib/keyruneCSS'
+import { applyCCMGFont } from '@/lib/ccmgFont'
 
 function App() {
   useEffect(() => {
     window.api.keyruneVersion().then((v) => {
       if (v.downloaded) injectKeyruneCSS()
+    })
+    window.api.settingsGet('font').then((f) => {
+      applyCCMGFont(f === 'ccmg')
     })
   }, [])
 

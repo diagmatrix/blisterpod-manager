@@ -35,6 +35,9 @@ export interface ElectronAPI {
   keyruneVersion: () => Promise<KeyruneVersion>
   refreshSets: () => Promise<{ inserted: number }>
   refreshCards: () => Promise<{ inserted: number }>
+  downloadCCMGFont: () => Promise<void>
+  ccmgFontStatus: () => Promise<{ downloaded: boolean }>
+  getAppIcon: () => Promise<string>
 }
 
 declare global {
