@@ -2,6 +2,7 @@ DROP VIEW IF EXISTS available_cards;
 CREATE VIEW available_cards AS
 SELECT
     id AS scryfall_id,
+    oracle_id,
     name,
     set_name,
     set_code,

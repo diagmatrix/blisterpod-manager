@@ -1,14 +1,17 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { AppSettings, LogEntry, KeyruneVersion } from '../shared/app'
-import type { CollectionCard, MissingCard, DuplicateCard } from '../shared/cards'
+import type { CollectionCard, MissingCard, DuplicateCard, CardDetail } from '../shared/cards'
 import type { StatsSummary, StatsColors, StatsRarityEntry, StatsSetEntry } from '../shared/stats'
 import type {
   CardSearchParams,
   CardSearchResponse,
+  CardDetailParams,
+  OtherPrintingsResponse,
   CollectionAddParams,
   CollectionListParams,
   CollectionListResponse,
   CollectionUpdateParams,
+  OtherPrintingParams,
 } from '../shared/search'
 
 contextBridge.exposeInMainWorld('api', {
@@ -24,6 +27,12 @@ contextBridge.exposeInMainWorld('api', {
   // Card search (BM-02)
   cardSearch: (params: CardSearchParams): Promise<CardSearchResponse> =>
     ipcRenderer.invoke('db:cards:search', params),
+
+  // Card detail (BM-03)
+  cardDetail: (params: CardDetailParams): Promise<CardDetail | { error: string }> =>
+    ipcRenderer.invoke('db:cards:detail', params),
+  cardOtherPrintings: (params: OtherPrintingParams): Promise<OtherPrintingsResponse> =>
+    ipcRenderer.invoke('db:cards:other-printings', params),
 
   // Collection mutations (BM-02)
   collectionAdd: (params: CollectionAddParams): Promise<{ id: number } | { error: string }> =>

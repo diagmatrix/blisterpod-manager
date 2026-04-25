@@ -1,13 +1,17 @@
 import type { AppSettings, LogEntry, KeyruneVersion } from '../../shared/app'
-import type { CollectionCard, MissingCard, DuplicateCard } from '../../shared/cards'
+import type { CollectionCard, MissingCard, DuplicateCard, CardDetail } from '../../shared/cards'
 import type { StatsSummary, StatsColors, StatsRarityEntry, StatsSetEntry } from '../../shared/stats'
 import type {
   CardSearchParams,
   CardSearchResponse,
+  CardDetailParams,
+  CardDetailResponse,
+  OtherPrintingsResponse,
   CollectionAddParams,
   CollectionListParams,
   CollectionListResponse,
   CollectionUpdateParams,
+  OtherPrintingParams,
 } from '../../shared/search'
 
 export interface ElectronAPI {
@@ -15,6 +19,8 @@ export interface ElectronAPI {
   settingsSet: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => Promise<void>
   collectionList: (params: CollectionListParams) => Promise<CollectionListResponse>
   cardSearch: (params: CardSearchParams) => Promise<CardSearchResponse>
+  cardDetail: (params: CardDetailParams) => Promise<CardDetail | { error: string }>
+  cardOtherPrintings: (params: OtherPrintingParams) => Promise<OtherPrintingsResponse>
   collectionAdd: (params: CollectionAddParams) => Promise<{ id: number } | { error: string }>
   collectionAddBatch: (items: CollectionAddParams[]) => Promise<{ inserted: number; errors: { index: number; message: string }[] }>
   collectionUpdate: (params: CollectionUpdateParams) => Promise<{ success: true } | { error: string }>

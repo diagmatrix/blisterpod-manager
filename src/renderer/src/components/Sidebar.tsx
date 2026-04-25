@@ -1,4 +1,4 @@
-import { BarChart2, AlertTriangle, Layers, LayersPlus, Settings, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react'
+import { BarChart2, AlertTriangle, Archive, ArchiveRestore, Settings, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useTheme } from '@/components/ThemeProvider'
 import {
@@ -22,8 +22,8 @@ interface NavItemProps {
 
 const navItems: NavItemProps[] = [
   { label: 'Statistics', icon: BarChart2, route: '/statistics' },
-  { label: 'Collection', icon: Layers, route: '/collection' },
-  { label: 'Add Cards', icon: LayersPlus, route: '/add-card' },
+  { label: 'Collection', icon: Archive, route: '/collection' },
+  { label: 'Add Cards', icon: ArchiveRestore, route: '/add-card' },
   { label: 'Collection errors', icon: AlertTriangle, route: '/collection-errors' },
 ] as const
 

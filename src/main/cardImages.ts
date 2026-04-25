@@ -23,6 +23,14 @@ function isValidScryfallId(id: string): boolean {
   return /^[a-f0-9-]{36}$/i.test(id)
 }
 
+// Cache as <id>_back.jpg if 'back' appears in the URL path, otherwise <id>_front.jpg.
+function faceFromUrl(sourceUrl: string): string {
+  try {
+    if (new URL(sourceUrl).pathname.split('/').includes('back')) return '_back'
+  } catch { /* ignore */ }
+  return '_front'
+}
+
 function isAllowedSource(url: string): boolean {
   try {
     const u = new URL(url)
@@ -60,18 +68,18 @@ export function initCardImageProtocol(): void {
     const scryfallId = (url.hostname || url.pathname.replace(/^\/+/, '')).toLowerCase()
     if (!isValidScryfallId(scryfallId)) return notFound(url)
 
-    const cachePath = join(CACHE_DIR, `${scryfallId}.jpg`)
-
-    if (existsSync(cachePath)) {
-      log.debug('Serving card image from cache', { scryfallId })
-      return net.fetch(pathToFileURL(cachePath).toString())
-    }
-
     const sourceUrl = url.searchParams.get('u')
     if (!sourceUrl || !isAllowedSource(sourceUrl)) return notFound(url)
 
+    const cachePath = join(CACHE_DIR, `${scryfallId}${faceFromUrl(sourceUrl)}.jpg`)
+
+    if (existsSync(cachePath)) {
+      log.debug('Serving card image from cache', { scryfallId, face: faceFromUrl(sourceUrl) })
+      return net.fetch(pathToFileURL(cachePath).toString())
+    }
+
     try {
-      log.debug('Fetching card image', { scryfallId })
+      log.debug('Fetching card image', { scryfallId, face: faceFromUrl(sourceUrl) })
       return await downloadAndCache(sourceUrl, cachePath)
     } catch (err) {
       log.error('Card image fetch failed', { scryfallId, err })

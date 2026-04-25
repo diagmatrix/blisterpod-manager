@@ -1,38 +1,39 @@
 DROP VIEW IF EXISTS mapped_collection;
 CREATE VIEW mapped_collection AS
 SELECT
-    c.id                                 AS collection_id,
-    sc.id                                AS scryfall_id,
-    coalesce(sc.name, 'Not found')       AS name,
+    c.id                                                       AS collection_id,
+    sc.id                                                      AS scryfall_id,
+    coalesce(sc.oracle_id, sc.card_faces -> 0 ->> 'oracle_id') AS oracle_id,
+    coalesce(sc.name, 'Not found')                             AS name,
     c.set_code,
     CASE
         WHEN coalesce(ss.set_type, '') IN ('promo', 'token')
             OR coalesce(ss.name, '') = 'Universes Within'
             THEN coalesce(ss.parent_set_code, c.set_code)
         ELSE c.set_code
-    END                                  AS base_set_code,
-    coalesce(ss.name, c.set_code)        AS set_name,
+    END                                                        AS base_set_code,
+    coalesce(ss.name, c.set_code)                              AS set_name,
     c.collector_number,
     sc.collector_number_normalised,
     c.quantity_nonfoil,
     c.quantity_foil,
-    c.quantity_nonfoil + c.quantity_foil AS total,
+    c.quantity_nonfoil + c.quantity_foil                       AS total,
     sc.color_identity,
     sc.rarity,
     CASE
         WHEN sc.set_type = 'token'
             THEN true
         ELSE false
-    END                                  AS is_token,
+    END                                                        AS is_token,
     CASE
         WHEN sc.image_uris IS NULL AND instr(coalesce(sc.name, 'Not found'), '//') > 0
             THEN sc.card_faces -> 0 ->> 'image_uris' ->> 'normal'
         ELSE sc.image_uris ->> 'normal'
-    END                                  AS image_url,
+    END                                                        AS image_url,
     round(
         coalesce(sc.prices ->> 'eur', 0) * c.quantity_nonfoil + coalesce(sc.prices ->> 'eur_foil', 0) * c.quantity_foil,
         2
-    ) AS value
+    )                                                          AS value
 FROM cards c
 LEFT JOIN scryfall_cards sc
     ON c.set_code = sc.set_code

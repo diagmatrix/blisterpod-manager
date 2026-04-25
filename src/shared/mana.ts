@@ -43,11 +43,17 @@ const COLOR_QUARTETS: Record<string, string> = {
   'WUBG': 'GWUB'  // Witch-Maw
 }
 
+export function getManaSymbolUrl(symbol: string): string {
+  const cost = symbol.toUpperCase().replace(/[\{\}]/g, '') // Remove curly braces if present
+  const parsedCost = cost.replace(/\//g, '') // Remove slashes if present
+  return `mana-symbol://app/${parsedCost}.svg`
+}
+
 /**
  * 
  * @param colors Color array to order
  * @param isOrdered Whether the color array is already ordered (WUBRG order)
- * @returns Ordered color array
+ * @returns Ordered color array symbols
  */
 export function setStandardColorOrder(colors: string[], isOrdered: boolean = true): string[] {
   if (colors.length < 2) {
@@ -73,4 +79,20 @@ export function setStandardColorOrder(colors: string[], isOrdered: boolean = tru
   }
 
   return colorsToOrder
+}
+
+/**
+ * 
+ * @param manaCost Mana cost of a card
+ * @returns The mana cost symbols array
+ */
+export function setManaCostSymbols(manaCost: string[]): (string)[] {
+  const symbols: string[] = []
+  manaCost.forEach(cost => {
+    const url = getManaSymbolUrl(cost)
+    if (url) {
+      symbols.push(cost)
+    }
+  })
+  return symbols
 }

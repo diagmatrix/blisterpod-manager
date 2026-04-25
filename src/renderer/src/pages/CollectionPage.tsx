@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom'
 import { Pencil, RotateCcw, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
 import type { CollectionCard } from '../../../shared/cards'
 import type { CollectionListParams } from '../../../shared/search'
-import { ColorIdentity } from '@/components/ColorIdentity'
+import { ManaSymbols } from '@/components/ManaSymbols'
 import { SetSymbol } from '@/components/SetSymbol'
 import { CollectionImageGrid } from '@/components/CollectionImageGrid'
 import { TableSkeleton, ImageGridSkeleton } from '@/components/skeletons'
@@ -75,7 +75,7 @@ function CollectionTable(props: CollectionTableProps) {
               </td>
               <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.collector_number}</td>
               <td className="px-3 py-1.5 w-24 text-center">
-                <ColorIdentity value={card.color_identity} />
+                <ManaSymbols value={card.color_identity} />
               </td>
               <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.quantity_nonfoil}</td>
               <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.quantity_foil}</td>

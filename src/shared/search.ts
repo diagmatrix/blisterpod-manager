@@ -1,4 +1,4 @@
-import type { CollectionCard, ScryfallCard } from './cards'
+import type { CollectionCard, ScryfallCard, CardDetail } from './cards'
 
 export interface CollectionListParams {
   page: number
@@ -52,4 +52,22 @@ export interface CardSearchParams {
 export interface CardSearchResponse {
   rows: ScryfallCard[]
   total: number
+}
+
+export interface CardDetailParams {
+  set_code: string
+  collector_number: string
+}
+
+export interface CardDetailResponse {
+  card: CardDetail
+}
+
+export interface OtherPrintingParams {
+  oracle_id: string
+  scryfall_id: string
+}
+
+export interface OtherPrintingsResponse {
+  other_printings: CollectionCard[]
 }

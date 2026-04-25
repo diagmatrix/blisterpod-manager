@@ -6,6 +6,7 @@ export interface Card {
 
 export interface ScryfallCard extends Card {
     scryfall_id: string | null
+    oracle_id: string | null
     set_name: string
     image_url: string | null
     rarity: string | null
@@ -40,6 +41,24 @@ export interface DuplicateCard extends Card {
   row_ids: string
 }
 
+export interface CardDetail {
+  scryfall_id: string | null
+  oracle_id: string | null
+  name: string | null
+  set_code: string
+  set_name: string
+  type_line: string | null
+  mana_costs: string | null    // JSON array string, one entry per face
+  oracle_texts: string | null  // JSON array string, one entry per face
+  image_urls: string | null    // JSON array string, one entry per face
+  color_identity: string | null
+  rarity: string | null
+  is_token: number
+  quantity_nonfoil: number
+  quantity_foil: number
+  value: number | null
+}
+
 export function missingCardToCollectionCard(missing: MissingCard): CollectionCard {
     return {
         set_name: missing.set_code,
@@ -48,27 +67,10 @@ export function missingCardToCollectionCard(missing: MissingCard): CollectionCar
         is_token: 0,
         value: 0,
         scryfall_id: null,
+        oracle_id: null,
         image_url: null,
         rarity: null,
         color_identity: null,
         ...missing,
-    }
-}
-
-export function duplicateCardToCollectionCard(duplicate: DuplicateCard): CollectionCard {
-    return {
-        set_name: duplicate.set_code,
-        base_set_code: duplicate.set_code,
-        total: duplicate.total_nonfoil + duplicate.total_foil,
-        collection_id: parseInt(duplicate.row_ids.split(',')[0], 10),
-        quantity_nonfoil: duplicate.total_nonfoil,
-        quantity_foil: duplicate.total_foil,
-        is_token: 0,
-        value: 0,
-        scryfall_id: null,
-        image_url: null,
-        rarity: null,
-        color_identity: null,
-        ...duplicate
     }
 }

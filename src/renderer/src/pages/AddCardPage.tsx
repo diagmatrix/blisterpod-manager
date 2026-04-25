@@ -10,7 +10,7 @@ import { SectionHeader } from '@/components/SectionHeader'
 import { BatchPanel } from '@/components/BatchPanel'
 import { CardImageCell } from '@/components/CardImageCell'
 import { SetSymbol } from '@/components/SetSymbol'
-import { ColorIdentity } from '@/components/ColorIdentity'
+import { ManaSymbols } from '@/components/ManaSymbols'
 import { Pagination } from '@/components/Pagination'
 import { useCardSearch } from '@/hooks/useCardSearch'
 import { ImageGridSkeleton, TableSkeleton } from '@/components/skeletons'
@@ -186,7 +186,7 @@ export default function AddCardPage() {
                       </td>
                       <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.collector_number}</td>
                       <td className="px-3 py-1.5 w-24 text-center">
-                        <ColorIdentity value={card.color_identity} />
+                        <ManaSymbols value={card.color_identity} />
                       </td>
                       <td className="px-3 py-1.5 w-20 text-xs text-muted-foreground capitalize">{card.rarity}</td>
                     </tr>

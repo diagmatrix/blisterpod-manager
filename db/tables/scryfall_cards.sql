@@ -91,3 +91,4 @@ CREATE TABLE IF NOT EXISTS scryfall_cards (
 );
 
 CREATE INDEX IF NOT EXISTS scryfall_cards_set_number ON scryfall_cards (set_code, collector_number);
+CREATE INDEX IF NOT EXISTS scryfall_cards_oracle_id ON scryfall_cards (oracle_id);
