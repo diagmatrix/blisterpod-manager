@@ -33,6 +33,7 @@ export interface ElectronAPI {
   logPath: () => Promise<string>
   refreshSetSymbols: () => Promise<string>
   keyruneVersion: () => Promise<KeyruneVersion>
+  refreshManaSymbols: () => Promise<void>
   refreshSets: () => Promise<{ inserted: number }>
   refreshCards: () => Promise<{ inserted: number }>
   downloadCCMGFont: () => Promise<void>

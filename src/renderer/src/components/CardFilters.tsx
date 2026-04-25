@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react'
-import { COLOR_SYMBOL_MAP } from '../../../shared/types'
+import { COLOR_SYMBOL_MAP } from '../../../shared/mana'
 
 export type TokenFilter = 'all' | 'cards' | 'tokens'
 export type ColorMode = 'atLeast' | 'exactly' | 'atMost'
@@ -56,7 +56,8 @@ export function CardFilters({ state, handlers, showTokenFilter = true }: CardFil
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Name (min 2)…"
+          title="At least 3 characters to search by name"
+          placeholder="Card name ..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           className="h-9 w-48 rounded-md border border-input bg-background px-8 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
@@ -68,7 +69,8 @@ export function CardFilters({ state, handlers, showTokenFilter = true }: CardFil
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Set (min 2)…"
+          title="At least 2 characters to search by set"
+          placeholder="Set code ..."
           value={searchSetInput}
           onChange={(e) => setSearchSetInput(e.target.value.toUpperCase())}
           className="h-9 w-32 rounded-md border border-input bg-background px-8 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring uppercase"

@@ -14,7 +14,8 @@ function ensureCacheDir(): void {
   }
 }
 
-function notFound(): Response {
+function notFound(url?: URL): Response {
+  log.warn('Card image not found', { url: url?.toString() })
   return new Response(null, { status: 404 })
 }
 
@@ -57,23 +58,24 @@ export function initCardImageProtocol(): void {
 
     // card-image://<scryfall_id>?u=<encoded scryfall image url>
     const scryfallId = (url.hostname || url.pathname.replace(/^\/+/, '')).toLowerCase()
-    if (!isValidScryfallId(scryfallId)) return notFound()
+    if (!isValidScryfallId(scryfallId)) return notFound(url)
 
     const cachePath = join(CACHE_DIR, `${scryfallId}.jpg`)
 
     if (existsSync(cachePath)) {
+      log.debug('Serving card image from cache', { scryfallId })
       return net.fetch(pathToFileURL(cachePath).toString())
     }
 
     const sourceUrl = url.searchParams.get('u')
-    if (!sourceUrl || !isAllowedSource(sourceUrl)) return notFound()
+    if (!sourceUrl || !isAllowedSource(sourceUrl)) return notFound(url)
 
     try {
       log.debug('Fetching card image', { scryfallId })
       return await downloadAndCache(sourceUrl, cachePath)
     } catch (err) {
       log.error('Card image fetch failed', { scryfallId, err })
-      return notFound()
+      return notFound(url)
     }
   })
 }

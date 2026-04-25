@@ -1,20 +1,4 @@
-import wSvg from '../../../../resources/mana-symbols/W.svg'
-import uSvg from '../../../../resources/mana-symbols/U.svg'
-import bSvg from '../../../../resources/mana-symbols/B.svg'
-import rSvg from '../../../../resources/mana-symbols/R.svg'
-import gSvg from '../../../../resources/mana-symbols/G.svg'
-import cSvg from '../../../../resources/mana-symbols/C.svg'
-
-const WUBRG_ORDER: string[] = ['W', 'U', 'B', 'R', 'G']
-
-const SYMBOL_MAP: Record<string, string> = {
-  W: wSvg,
-  U: uSvg,
-  B: bSvg,
-  R: rSvg,
-  G: gSvg,
-  C: cSvg,
-}
+import { COLOR_SYMBOL_MAP, setStandardColorOrder } from '../../../shared/mana'
 
 interface ColorIdentityProps {
   /** JSON array string from DB, e.g. '["W","U"]' */
@@ -28,19 +12,19 @@ export function ColorIdentity({ value, size = 16 }: ColorIdentityProps) {
   let colors: string[]
   try {
     const raw: string[] = JSON.parse(value)
-    colors = raw.sort((a, b) => WUBRG_ORDER.indexOf(a) - WUBRG_ORDER.indexOf(b))
+    colors = setStandardColorOrder(raw, false)
   } catch {
     return null
   }
 
   if (colors.length === 0) {
-    return <img src={SYMBOL_MAP['C']} alt="C" width={size} height={size} className="inline-block" />
+    return <img src={COLOR_SYMBOL_MAP['C']} alt="C" width={size} height={size} className="inline-block" />
   }
 
   return (
     <span className="inline-flex items-center gap-0.5">
       {colors.map((c) => {
-        const src = SYMBOL_MAP[c]
+        const src = COLOR_SYMBOL_MAP[c]
         if (!src) return null
         return (
           <img

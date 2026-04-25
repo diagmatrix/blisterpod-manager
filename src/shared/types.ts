@@ -1,10 +1,3 @@
-import wSvg from '../../resources/mana-symbols/w.svg'
-import uSvg from '../../resources/mana-symbols/u.svg'
-import bSvg from '../../resources/mana-symbols/b.svg'
-import rSvg from '../../resources/mana-symbols/r.svg'
-import gSvg from '../../resources/mana-symbols/g.svg'
-import cSvg from '../../resources/mana-symbols/c.svg'
-
 export interface WindowBounds {
   x?: number
   y?: number
@@ -19,6 +12,7 @@ export interface AppSettings {
   font?: 'default' | 'ccmg'
   setsLastRefreshed?: string
   cardsLastRefreshed?: string
+  manaSymbolsLastRefreshed?: string
 }
 
 export type Theme = 'dark' | 'light'
@@ -143,11 +137,3 @@ export interface LogEntry {
   data?: unknown
 }
 
-export const COLOR_SYMBOL_MAP: Record<string, string> = {
-  W: wSvg,
-  U: uSvg,
-  B: bSvg,
-  R: rSvg,
-  G: gSvg,
-  C: cSvg,
-}

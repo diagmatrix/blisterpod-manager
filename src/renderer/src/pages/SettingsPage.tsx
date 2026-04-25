@@ -8,6 +8,9 @@ import { injectKeyruneCSS } from '@/lib/keyruneCSS'
 import { applyCCMGFont } from '@/lib/ccmgFont'
 import type { KeyruneVersion } from '../../../shared/types'
 
+/**
+ * Settings Section component for grouping related settings together with a title and optional description.
+ */
 function SettingsSection({ title, description, children }: {
   title: string
   description?: string
@@ -24,6 +27,9 @@ function SettingsSection({ title, description, children }: {
   )
 }
 
+/**
+ * Settings Row component for individual settings within a section.
+ */
 function SettingsRow({ label, description, children }: {
   label: string
   description?: React.ReactNode
@@ -47,6 +53,7 @@ export default function SettingsPage() {
   const [keyruneVersion, setKeyruneVersion] = useState<KeyruneVersion | null>(null)
   const [setsLastRefreshed, setSetsLastRefreshed] = useState<string | null>(null)
   const [cardsLastRefreshed, setCardsLastRefreshed] = useState<string | null>(null)
+  const [manaSymbolsLastRefreshed, setManaSymbolsLastRefreshed] = useState<string | null>(null)
   const [font, setFont] = useState<'default' | 'ccmg'>('default')
   const [ccmgDownloaded, setCcmgDownloaded] = useState(false)
   const [downloadingFont, setDownloadingFont] = useState(false)
@@ -69,6 +76,7 @@ export default function SettingsPage() {
     window.api.keyruneVersion().then(setKeyruneVersion)
     window.api.settingsGet('setsLastRefreshed').then((v) => setSetsLastRefreshed(v ?? null))
     window.api.settingsGet('cardsLastRefreshed').then((v) => setCardsLastRefreshed(v ?? null))
+    window.api.settingsGet('manaSymbolsLastRefreshed').then((v) => setManaSymbolsLastRefreshed(v ?? null))
     window.api.settingsGet('font').then((v) => setFont(v ?? 'default'))
     window.api.ccmgFontStatus().then((s) => setCcmgDownloaded(s.downloaded))
   }, [])
@@ -88,25 +96,14 @@ export default function SettingsPage() {
     applyCCMGFont(value === 'ccmg')
   }
 
-  // Placeholder handlers — will be wired to Scryfall API in a future ticket
   const handleRefreshAll = async () => {
     setRefreshAllPending(true)
     try {
       await Promise.all([
-        window.api.refreshSetSymbols().then((version) => {
-          injectKeyruneCSS()
-          setKeyruneVersion({ downloaded: version })
-        }),
-        window.api.refreshSets().then(() => {
-          const now = new Date().toISOString()
-          window.api.settingsSet('setsLastRefreshed', now)
-          setSetsLastRefreshed(now)
-        }),
-        window.api.refreshCards().then(() => {
-          const now = new Date().toISOString()
-          window.api.settingsSet('cardsLastRefreshed', now)
-          setCardsLastRefreshed(now)
-        }),
+        handleRefreshCards(),
+        handleRefreshSets(),
+        handleRefreshManaSymbols(),
+        handleRefreshSetSymbols(),
       ])
     } finally {
       setRefreshAllPending(false)
@@ -140,7 +137,10 @@ export default function SettingsPage() {
   const handleRefreshManaSymbols = async () => {
     setRefreshManaSymbolsPending(true)
     try {
-      await new Promise((r) => setTimeout(r, 1000))
+      await window.api.refreshManaSymbols()
+      const now = new Date().toISOString()
+      window.api.settingsSet('manaSymbolsLastRefreshed', now)
+      setManaSymbolsLastRefreshed(now)
     } finally {
       setRefreshManaSymbolsPending(false)
     }
@@ -194,9 +194,9 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
         <p className="text-muted-foreground">Application settings and preferences.</p>
       </div>
-
       <Separator />
 
+      {/* Appearance settings */}
       <SettingsSection
         title="Appearance"
         description="Customize the look and feel of the application."
@@ -253,9 +253,9 @@ export default function SettingsPage() {
           </div>
         </SettingsRow>
       </SettingsSection>
-
       <Separator />
 
+      {/* Diagnostics and troubleshooting */}
       <SettingsSection
         title="Diagnostics"
         description="Paths and system information for troubleshooting."
@@ -266,9 +266,9 @@ export default function SettingsPage() {
           </code>
         </SettingsRow>
       </SettingsSection>
-
       <Separator />
-
+      
+      {/* Data refresh actions */}
       <SettingsSection
         title="Update data"
         description="Refresh the application data. These actions may take a while"
@@ -327,7 +327,9 @@ export default function SettingsPage() {
 
         <SettingsRow
           label="Refresh Mana Symbols"
-          description="Update the mana symbol images from Scryfall."
+          description={manaSymbolsLastRefreshed
+            ? `Last refreshed ${new Date(manaSymbolsLastRefreshed).toLocaleString()}`
+            : 'Update the mana symbol images from Scryfall.'}
         >
           <Button
             variant="outline"

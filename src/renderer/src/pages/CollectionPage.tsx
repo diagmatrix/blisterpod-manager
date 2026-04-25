@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { Pencil, Trash2, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react'
 import { type CollectionCard, type CollectionListParams } from '../../../shared/types'
 import { ColorIdentity } from '@/components/ColorIdentity'
@@ -13,9 +13,11 @@ import { CardFilters, type CardFiltersState, type CardFiltersHandlers, type Toke
 import { Pagination } from '@/components/Pagination'
 import { EditCardDialog } from '@/components/EditCardDialog'
 import { DeleteCardDialog } from '@/components/DeleteCardDialog'
+import { CardQuickDialog } from '@/components/CardQuickDialog'
 
 const PAGE_SIZES = [30, 60, 120] as const
-const MIN_SEARCH = 2
+const MIN_SEARCH_SET_CODE = 2
+const MIN_SEARCH_CARD_NAME = 3
 const SEARCH_DEBOUNCE_MS = 500
 
 type SortColumn = CollectionListParams['sortColumn']
@@ -32,7 +34,6 @@ const SORT_OPTIONS: { value: string; label: string }[] = [
 ]
 
 export default function CollectionPage() {
-  const navigate = useNavigate()
   const location = useLocation()
   const initialSet: string = location.state?.filterSet ?? ''
 
@@ -59,7 +60,8 @@ export default function CollectionPage() {
   const [filterExpanded, setFilterExpanded] = useState(true)
   const [sortExpanded, setSortExpanded] = useState(true)
 
-  // Edit/delete dialog state
+  // Dialog state
+  const [quickCard, setQuickCard] = useState<CollectionCard | null>(null)
   const [editCard, setEditCard] = useState<CollectionCard | null>(null)
   const [deleteCard, setDeleteCard] = useState<CollectionCard | null>(null)
 
@@ -74,7 +76,7 @@ export default function CollectionPage() {
   // Debounce name search
   useEffect(() => {
     const t = setTimeout(() => {
-      const next = searchInput.length >= MIN_SEARCH ? searchInput : ''
+      const next = searchInput.length >= MIN_SEARCH_CARD_NAME ? searchInput : ''
       if (next !== search) { setSearch(next); setPage(1) }
     }, SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(t)
@@ -83,7 +85,7 @@ export default function CollectionPage() {
   // Debounce set search
   useEffect(() => {
     const t = setTimeout(() => {
-      const next = searchSetInput.length >= MIN_SEARCH ? searchSetInput : ''
+      const next = searchSetInput.length >= MIN_SEARCH_SET_CODE ? searchSetInput : ''
       if (next !== searchSet) { setSearchSet(next); setPage(1) }
     }, SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(t)
@@ -112,8 +114,8 @@ export default function CollectionPage() {
   }, [])
 
   const handleRowClick = useCallback((card: CollectionCard) => {
-    navigate(`/card-detail/${card.set_code}/${card.collector_number}`)
-  }, [navigate])
+    setQuickCard(card)
+  }, [])
 
   const handlePageSizeChange = useCallback((newSize: number) => {
     setPageSize(newSize); setPage(1)
@@ -283,7 +285,14 @@ export default function CollectionPage() {
         />
       )}
 
-      {/* Edit/Delete dialogs */}
+      {/* Dialogs */}
+      {quickCard && (
+        <CardQuickDialog
+          card={quickCard}
+          open={!!quickCard}
+          onOpenChange={(open) => { if (!open) setQuickCard(null) }}
+        />
+      )}
       {editCard && (
         <EditCardDialog
           card={editCard}

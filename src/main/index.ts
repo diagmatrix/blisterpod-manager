@@ -7,13 +7,13 @@ import { initDatabase, getDb } from './db'
 import { initCardImageProtocol } from './cardImages'
 import { initKeyruneProtocol, downloadKeyruneAssets, getKeyruneVersion } from './keyruneAssets'
 import { initFontProtocol, downloadCCMGFont, getCCMGFontStatus } from './ccmgFont'
+import { initManaSymbolProtocol, downloadManaSymbols } from './manaSymbols'
 import { refreshSets, refreshCards } from './scryfallRefresh'
 import { getIconPath } from './utils'
 import type { WindowBounds, AppSettings, LogEntry } from '../shared/types'
 
 const log = createLogger('app')
 
-// Must run before app.whenReady() so <img src="card-image://..."> is fetched by our handler
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'card-image',
@@ -25,6 +25,10 @@ protocol.registerSchemesAsPrivileged([
   },
   {
     scheme: 'app-font',
+    privileges: { standard: true, secure: true, supportFetchAPI: true },
+  },
+  {
+    scheme: 'mana-symbol',
     privileges: { standard: true, secure: true, supportFetchAPI: true },
   },
 ])
@@ -134,6 +138,7 @@ async function createWindow() {
 
 // App lifecycle
 ipcMain.handle('data:refreshSetSymbols', () => downloadKeyruneAssets())
+ipcMain.handle('data:refreshManaSymbols', () => downloadManaSymbols())
 ipcMain.handle('data:keyruneVersion', () => ({ downloaded: getKeyruneVersion() }))
 ipcMain.handle('data:refreshSets', () => refreshSets(getDb()))
 ipcMain.handle('data:refreshCards', () => refreshCards(getDb()))
@@ -149,6 +154,7 @@ app.whenReady().then(() => {
   initCardImageProtocol()
   initKeyruneProtocol()
   initFontProtocol()
+  initManaSymbolProtocol()
   return createWindow()
 })
 
