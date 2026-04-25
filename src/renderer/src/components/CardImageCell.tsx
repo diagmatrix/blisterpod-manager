@@ -102,7 +102,7 @@ export function CardImageCell(props: CardImageCellProps) {
           total={props.isCollection ? (props.quantity_nonfoil ?? 0) + (props.quantity_foil ?? 0) : null}
         />
         {props.value != null && (
-          <span className="text-sm font-medium truncate min-w-0">€{Number(props.value).toFixed(2)}</span>
+          <span className="text-sm font-medium truncate min-w-0">{Number(props.value).toFixed(2)}€</span>
         )}
       </div>
     </button>

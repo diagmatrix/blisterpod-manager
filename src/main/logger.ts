@@ -1,7 +1,7 @@
 import log from 'electron-log/main.js'
 import { app } from 'electron'
 import { join } from 'path'
-import type { LogEntry } from '../shared/types'
+import type { LogEntry } from '../shared/app'
 
 log.initialize()
 

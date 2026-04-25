@@ -6,7 +6,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import type { CollectionCard } from '../../../shared/types'
+import type { CollectionCard } from '../../../shared/cards'
 
 interface CardQuickDialogProps {
   card: CollectionCard
@@ -72,7 +72,7 @@ export function CardQuickDialog({ card, open, onOpenChange }: CardQuickDialogPro
       <DialogContent className="max-w-md [&>button:last-of-type]:hidden">
         {/* Header with card name and set info */}
         <DialogHeader>
-          <DialogTitle>{card.card_name}</DialogTitle>
+          <DialogTitle>{card.name}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground -mt-2">
           {card.set_code.toUpperCase()} #{card.collector_number}
@@ -106,13 +106,13 @@ export function CardQuickDialog({ card, open, onOpenChange }: CardQuickDialogPro
                 {imageSrc ? (
                   <img
                     src={imageSrc}
-                    alt={card.card_name}
+                    alt={card.name ?? 'Card image'}
                     onError={() => setImgErrored(true)}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center p-2 text-center text-xs text-muted-foreground">
-                    {card.card_name}
+                    {card.name}
                   </div>
                 )}
               </div>

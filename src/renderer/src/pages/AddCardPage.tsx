@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
-import type { BatchItem, ScryfallCard, CardSearchParams } from '../../../shared/types'
+import type { ScryfallCard } from '../../../shared/cards'
+import type { BatchItem, CardSearchParams } from '../../../shared/search'
 import { CardFilters } from '@/components/CardFilters'
 import { useCardFilters } from '@/hooks/useCardFilters'
 import { ViewToggle, type ViewMode } from '@/components/ViewToggle'
@@ -138,7 +139,7 @@ export default function AddCardPage() {
                   key={`${card.set_code}-${card.collector_number}-${i}`}
                   scryfall_id={card.scryfall_id}
                   image_url={card.image_url}
-                  name={card.name}
+                  name={card.name ?? `${card.set_code.toUpperCase()} #${card.collector_number}`}
                   collector_number={card.collector_number}
                   set_code={card.set_code}
                   rarity={card.rarity}

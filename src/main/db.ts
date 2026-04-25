@@ -3,6 +3,7 @@ import { join } from 'path'
 import { readFileSync } from 'fs'
 import Database from 'better-sqlite3'
 import { createLogger } from './logger'
+import { WUBRG_ORDER } from '../shared/mana'
 
 const log = createLogger('db')
 
@@ -27,6 +28,7 @@ export function initDatabase(): void {
   const tables = ['cards.sql', 'scryfall_cards.sql', 'scryfall_sets.sql']
   const views = [
     'duplicates.sql',
+    'missing.sql',
     'mapped_collection.sql',
     'available_cards.sql',
     'stats_summary.sql',
@@ -52,7 +54,6 @@ export function initDatabase(): void {
 }
 
 const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
-const VALID_COLORS = ['W', 'U', 'B', 'R', 'G', 'C']
 
 function buildRarityConditions(rarities: string[] | undefined): { conditions: string[]; values: any[] } {
   const safe = (rarities ?? []).filter((r) => VALID_RARITIES.includes(r))
@@ -64,7 +65,7 @@ function buildRarityConditions(rarities: string[] | undefined): { conditions: st
 }
 
 function buildColorConditions(colors: string[] | undefined, colorMode: string): { conditions: string[]; values: any[] } {
-  const safe = (colors ?? []).filter((c) => VALID_COLORS.includes(c))
+  const safe = (colors ?? []).filter((c) => WUBRG_ORDER.includes(c))
   if (safe.length === 0) return { conditions: [], values: [] }
 
   const conditions: string[] = []
@@ -91,7 +92,7 @@ function buildColorConditions(colors: string[] | undefined, colorMode: string): 
       if (safe.includes('C') && safe.length === 1) {
         conditions.push('json_array_length(color_identity) = 0')
       } else {
-        VALID_COLORS.filter((c) => !safe.includes(c)).forEach((c) => {
+        WUBRG_ORDER.filter((c) => !safe.includes(c)).forEach((c) => {
           conditions.push('instr(color_identity, ?) = 0')
           values.push(c)
         })
@@ -104,7 +105,7 @@ function buildColorConditions(colors: string[] | undefined, colorMode: string): 
 
 
 function setupIpcHandlers(): void {
-  // BM-01-T1: Collection listing with pagination, sorting, and filtering
+  // List collection cards
   ipcMain.handle('db:collection:list', (_, params: {
     page: number,
     pageSize: number,
@@ -120,7 +121,7 @@ function setupIpcHandlers(): void {
     const {
       page,
       pageSize,
-      sortColumn = 'card_name',
+      sortColumn = 'name',
       sortOrder = 'ASC',
       search = '',
       searchSet = '',
@@ -140,7 +141,7 @@ function setupIpcHandlers(): void {
     const values: any[] = []
 
     if (search) {
-      conditions.push('card_name LIKE ?')
+      conditions.push('name LIKE ?')
       values.push(`%${search}%`)
     }
 
@@ -187,41 +188,7 @@ function setupIpcHandlers(): void {
     return { rows, total }
   })
 
-  // BM-02-T1: Search available_cards by name, set, rarity, color with pagination
-  ipcMain.handle('db:cards:search', (_, params: import('../shared/types').CardSearchParams) => {
-    const { query, set_code, rarities, colors, colorMode = 'including', page = 1, pageSize = 60 } = params
-    const safePageSize = Math.min(pageSize, 120)
-    const offset = (page - 1) * safePageSize
-
-    const conditions: string[] = []
-    const values: any[] = []
-
-    if (query && query.length >= 2) {
-      conditions.push('name LIKE ?')
-      values.push(`%${query}%`)
-    }
-
-    if (set_code) {
-      conditions.push('set_code = ?')
-      values.push(set_code.toUpperCase())
-    }
-
-    const { conditions: rarityConds, values: rarityVals } = buildRarityConditions(rarities)
-    const { conditions: colorConds, values: colorVals } = buildColorConditions(colors, colorMode)
-    conditions.push(...rarityConds, ...colorConds)
-    values.push(...rarityVals, ...colorVals)
-
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
-    const sql = `SELECT * FROM available_cards ${where} ORDER BY collector_number_normalised ASC, name ASC LIMIT ? OFFSET ?`
-    log.info('db:cards:search', sql)
-
-    const rows = db.prepare(sql).all(...values, safePageSize, offset)
-    const { total } = db.prepare(`SELECT COUNT(*) as total FROM available_cards ${where}`).get(...values) as { total: number }
-
-    return { rows, total }
-  })
-
-  // BM-02-T3: Add a single card to the collection
+  // Add a card to the collection
   ipcMain.handle('db:collection:add', (_, params: {
     set_code: string
     collector_number: string
@@ -256,7 +223,7 @@ function setupIpcHandlers(): void {
     return result
   })
 
-  // BM-02-T2b: Batch insert cards into the collection
+  // Add multiple cards to the collection in a batch
   ipcMain.handle('db:collection:add-batch', (_, items: {
     set_code: string
     collector_number: string
@@ -296,7 +263,7 @@ function setupIpcHandlers(): void {
     return { inserted, errors }
   })
 
-  // BM-02-T4: Update quantities for an existing collection card
+  // Update quantities for an existing collection card
   ipcMain.handle('db:collection:update', (_, params: {
     id: number
     quantity_nonfoil: number
@@ -318,7 +285,7 @@ function setupIpcHandlers(): void {
     return result
   })
 
-  // BM-02-T5: Delete a card from the collection
+  // Delete a card from the collection
   ipcMain.handle('db:collection:delete', (_, params: { id: number }) => {
     const deleteSql = 'DELETE FROM cards WHERE id = ?'
     log.info('db:collection:delete', deleteSql)
@@ -332,7 +299,92 @@ function setupIpcHandlers(): void {
     return result
   })
 
-  // BM-04-T1: Summary stats
+  // List duplicate card entries
+  ipcMain.handle('db:duplicates:list', () => {
+    const sql = `SELECT * FROM duplicates ORDER BY name, set_code, collector_number`
+    log.info('db:duplicates:list', sql)
+    return db.prepare(sql).all()
+  })
+
+  // Merge duplicate entries
+  ipcMain.handle('db:duplicates:merge', (_, params: { set_code: string; collector_number: string }) => {
+    const { set_code, collector_number } = params
+    log.info('db:duplicates:merge', { set_code, collector_number })
+
+    const merge = db.transaction(() => {
+      const rows = db.prepare(
+        'SELECT id, quantity_nonfoil, quantity_foil FROM cards WHERE set_code = ? AND collector_number = ? ORDER BY id ASC'
+      ).all(set_code, collector_number) as { id: number; quantity_nonfoil: number; quantity_foil: number }[]
+
+      if (rows.length < 2) return { error: 'No duplicates found for this card' }
+
+      const sumNonfoil = rows.reduce((acc, r) => acc + r.quantity_nonfoil, 0)
+      const sumFoil = rows.reduce((acc, r) => acc + r.quantity_foil, 0)
+      const keepId = rows[0].id
+      const deleteIds = rows.slice(1).map((r) => r.id)
+
+      db.prepare(
+        'UPDATE cards SET quantity_nonfoil = ?, quantity_foil = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+      ).run(sumNonfoil, sumFoil, keepId)
+
+      db.prepare(
+        `DELETE FROM cards WHERE id IN (${deleteIds.map(() => '?').join(', ')})`
+      ).run(...deleteIds)
+
+      log.info('Duplicates merged', { set_code, collector_number, kept: keepId, deleted: deleteIds })
+      return { success: true as const }
+    })
+
+    try {
+      return merge()
+    } catch (e) {
+      log.error('db:duplicates:merge failed', { error: (e as Error).message })
+      return { error: (e as Error).message }
+    }
+  })
+
+  // List missing cards in collection
+  ipcMain.handle('db:missing:list', () => {
+    const sql = `SELECT * FROM missing ORDER BY set_code, collector_number`
+    log.info('db:missing:list', sql)
+    return db.prepare(sql).all()
+  })
+
+  // Search available cards
+  ipcMain.handle('db:cards:search', (_, params: import('../shared/search').CardSearchParams) => {
+    const { query, set_code, rarities, colors, colorMode = 'including', page = 1, pageSize = 60 } = params
+    const safePageSize = Math.min(pageSize, 120)
+    const offset = (page - 1) * safePageSize
+
+    const conditions: string[] = []
+    const values: any[] = []
+
+    if (query && query.length >= 2) {
+      conditions.push('name LIKE ?')
+      values.push(`%${query}%`)
+    }
+
+    if (set_code) {
+      conditions.push('set_code = ?')
+      values.push(set_code.toUpperCase())
+    }
+
+    const { conditions: rarityConds, values: rarityVals } = buildRarityConditions(rarities)
+    const { conditions: colorConds, values: colorVals } = buildColorConditions(colors, colorMode)
+    conditions.push(...rarityConds, ...colorConds)
+    values.push(...rarityVals, ...colorVals)
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    const sql = `SELECT * FROM available_cards ${where} ORDER BY collector_number_normalised ASC, name ASC LIMIT ? OFFSET ?`
+    log.info('db:cards:search', sql)
+
+    const rows = db.prepare(sql).all(...values, safePageSize, offset)
+    const { total } = db.prepare(`SELECT COUNT(*) as total FROM available_cards ${where}`).get(...values) as { total: number }
+
+    return { rows, total }
+  })
+
+  // Summary stats
   ipcMain.handle('db:stats:summary', () => {
     log.info('db:stats:summary', 'SELECT * FROM stats_summary')
     const row = db.prepare('SELECT * FROM stats_summary').get() as { unique_printings: number; unique_names: number; total_cards: number; estimated_value: number }
@@ -344,13 +396,13 @@ function setupIpcHandlers(): void {
     }
   })
 
-  // BM-04-T2: Color distribution
+  // Color distribution stats
   ipcMain.handle('db:stats:colors', () => {
     log.info('db:stats:colors', 'SELECT * FROM stats_colors')
     return db.prepare('SELECT * FROM stats_colors').get()
   })
 
-  // BM-04-T3: Rarity breakdown
+  // Rarity breakdown stats
   ipcMain.handle('db:stats:rarity', () => {
     const sql = `SELECT * FROM stats_rarity ORDER BY CASE rarity WHEN 'common' THEN 1 WHEN 'uncommon' THEN 2 WHEN 'rare' THEN 3 WHEN 'mythic' THEN 4 WHEN 'special' THEN 5 ELSE 6 END`
     log.info('db:stats:rarity', sql)
@@ -368,14 +420,14 @@ function setupIpcHandlers(): void {
     return rows.map((r) => ({ rarity: r.rarity, totalCards: r.total_cards }))
   })
 
-  // BM-04-T4: Top N cards by EUR price
+  // Top cards by EUR price
   ipcMain.handle('db:stats:top-value', (_, params: { limit?: number } = {}) => {
     const limit = Math.min(params?.limit ?? 10, 50)
     log.info('db:stats:top-value', 'SELECT * FROM mapped_collection ORDER BY value DESC LIMIT ?')
     return db.prepare('SELECT * FROM mapped_collection ORDER BY value DESC LIMIT ?').all(limit)
   })
 
-  // BM-04-T5: Cards per set
+  // Cards per set
   ipcMain.handle('db:stats:by-set', (_, params: { limit?: number } = {}) => {
     const limit = Math.min(params?.limit ?? 20, 100)
     log.info('db:stats:by-set', 'SELECT * FROM stats_by_set ORDER BY unique_printings DESC LIMIT ?')

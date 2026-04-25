@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom'
 import { SetSymbol } from './SetSymbol'
-import type { StatsSetEntry } from '../../../shared/types'
+import type { StatsSetEntry } from '../../../shared/stats'
 
 function ringColor(pct: number): string {
-  if (pct >= 1)    return '#F59E0B' // gold — complete
-  if (pct >= 0.67) return '#22C55E' // green
-  if (pct >= 0.34) return '#3B82F6' // blue
-  if (pct > 0)     return '#F97316' // orange
+  if (pct >= 1)    return '#22C55E'
+  if (pct >= 0.67) return '#3B82F6'
+  if (pct >= 0.34) return '#F59E0B'
+  if (pct > 0)     return '#F97316'
   return 'transparent'
 }
 

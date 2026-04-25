@@ -1,20 +1,15 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { AppSettings, LogEntry, KeyruneVersion } from '../shared/app'
+import type { CollectionCard, MissingCard, DuplicateCard } from '../shared/cards'
+import type { StatsSummary, StatsColors, StatsRarityEntry, StatsSetEntry } from '../shared/stats'
 import type {
-  AppSettings,
   CardSearchParams,
   CardSearchResponse,
   CollectionAddParams,
   CollectionListParams,
   CollectionListResponse,
   CollectionUpdateParams,
-  StatsSummary,
-  CollectionCard,
-  StatsColors,
-  StatsRarityEntry,
-  StatsSetEntry,
-  LogEntry,
-  KeyruneVersion,
-} from '../shared/types'
+} from '../shared/search'
 
 contextBridge.exposeInMainWorld('api', {
   // Settings API (BM-07-T4, BM-08)
@@ -51,6 +46,14 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('db:stats:top-value', params),
   statsBySet: (params?: { limit?: number }): Promise<StatsSetEntry[]> =>
     ipcRenderer.invoke('db:stats:by-set', params),
+
+  // Collection errors (BM-05)
+  duplicatesList: (): Promise<DuplicateCard[]> =>
+    ipcRenderer.invoke('db:duplicates:list'),
+  duplicatesMerge: (params: { set_code: string; collector_number: string }): Promise<{ success: true } | { error: string }> =>
+    ipcRenderer.invoke('db:duplicates:merge', params),
+  missingList: (): Promise<MissingCard[]> =>
+    ipcRenderer.invoke('db:missing:list'),
 
   // Logging bridge (renderer → main file logger)
   logMessage: (entry: LogEntry): void =>

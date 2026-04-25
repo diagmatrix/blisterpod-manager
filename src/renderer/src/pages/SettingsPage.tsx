@@ -6,7 +6,7 @@ import { useTheme } from '@/components/ThemeProvider'
 import { RefreshLoadingDialog } from '@/components/RefreshLoadingDialog'
 import { injectKeyruneCSS } from '@/lib/keyruneCSS'
 import { applyCCMGFont } from '@/lib/ccmgFont'
-import type { KeyruneVersion } from '../../../shared/types'
+import type { KeyruneVersion } from '../../../shared/app'
 
 /**
  * Settings Section component for grouping related settings together with a title and optional description.

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import type { Theme } from '../../../shared/types'
+import type { Theme } from '../../../shared/app'
 import { createLogger } from '@/lib/logger'
 
 const log = createLogger('theme')

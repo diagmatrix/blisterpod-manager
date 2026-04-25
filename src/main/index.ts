@@ -10,7 +10,7 @@ import { initFontProtocol, downloadCCMGFont, getCCMGFontStatus } from './ccmgFon
 import { initManaSymbolProtocol, downloadManaSymbols } from './manaSymbols'
 import { refreshSets, refreshCards } from './scryfallRefresh'
 import { getIconPath } from './utils'
-import type { WindowBounds, AppSettings, LogEntry } from '../shared/types'
+import type { WindowBounds, AppSettings, LogEntry } from '../shared/app'
 
 const log = createLogger('app')
 

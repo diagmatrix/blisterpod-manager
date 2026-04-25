@@ -5,7 +5,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import type { CollectionCard } from '../../../shared/types'
+import type { CollectionCard } from '../../../shared/cards'
 
 interface DeleteCardDialogProps {
   card: CollectionCard
@@ -37,7 +37,7 @@ export function DeleteCardDialog({ card, collectionId, open, onOpenChange }: Del
         <DialogHeader>
           <DialogTitle>Remove card?</DialogTitle>
           <DialogDescription>
-            {card.card_name} · {card.set_code} #{card.collector_number}
+            {card.name} · {card.set_code} #{card.collector_number}
           </DialogDescription>
         </DialogHeader>
 

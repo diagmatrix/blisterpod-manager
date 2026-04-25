@@ -2,13 +2,13 @@ DROP VIEW IF EXISTS stats_colors;
 CREATE VIEW stats_colors AS
 WITH card_colors AS (
     SELECT
-        card_name,
+        name,
         total,
         count(colors.value)          AS total_colors,
         string_agg(colors.value, '') AS color_category
     FROM mapped_collection
     INNER JOIN json_each(CASE WHEN color_identity = '[]' THEN '["C"]' ELSE color_identity END) colors
-    GROUP BY card_name, total
+    GROUP BY name, total
 )
 SELECT
     SUM(CASE WHEN color_category = 'W' THEN total ELSE 0 END) AS white,

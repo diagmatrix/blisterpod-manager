@@ -5,7 +5,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts'
 import { Hash, Layers, EuroIcon } from 'lucide-react'
-import { type CollectionCard, type StatsSummary, type StatsColors, type StatsRarityEntry, type StatsSetEntry } from '../../../shared/types'
+import type { CollectionCard } from '../../../shared/cards'
+import type { StatsSummary, StatsColors, StatsRarityEntry, StatsSetEntry } from '../../../shared/stats'
 import { SummarySkeleton, ChartSkeleton } from '@/components/skeletons'
 import { CollectionImageGrid } from '@/components/CollectionImageGrid'
 import { SetBreakdownGrid } from '@/components/SetBreakdownGrid'
@@ -13,24 +14,23 @@ import { SetBreakdownGrid } from '@/components/SetBreakdownGrid'
 const COLOR_ENTRIES: { key: keyof StatsColors; label: string; fill: string }[] = [
   { key: 'white',       label: 'White',     fill: '#E8DCC8' },
   { key: 'blue',        label: 'Blue',      fill: '#3B82F6' },
-  { key: 'black',       label: 'Black',     fill: '#6B7280' },
+  { key: 'black',       label: 'Black',     fill: '#4b1d3f' },
   { key: 'red',         label: 'Red',       fill: '#EF4444' },
-  { key: 'green',       label: 'Green',     fill: '#22C55E' },
-  { key: 'colorless',   label: 'Colorless', fill: '#9CA3AF' },
-  { key: 'multicolored',label: 'Multicolor',fill: '#D97706' },
+  { key: 'green',       label: 'Green',     fill: '#198d44' },
+  { key: 'colorless',   label: 'Colorless', fill: '#795c5c' },
+  { key: 'multicolored',label: 'Multicolor',fill: '#dbce5b' },
 ]
 
 const RARITY_COLORS: Record<string, string> = {
-  common:   '#6B7280',
+  common:   '#434549',
   uncommon: '#94A3B8',
-  rare:     '#D97706',
+  rare:     '#d6c147',
   mythic:   '#F97316',
   special:  '#A855F7',
   bonus:    '#EC4899',
-  unknown:  '#374151',
+  unknown:  '#206134',
 }
 
-// ── Summary cards ──────────────────────────────────────────────
 function SummaryCards({ data }: { data: StatsSummary }) {
   const cards = [
     {
@@ -75,7 +75,6 @@ function SummaryCards({ data }: { data: StatsSummary }) {
   )
 }
 
-// ── Color pie chart ────────────────────────────────────────────
 function ColorChart({ data }: { data: StatsColors }) {
   const chartData = COLOR_ENTRIES
     .map(e => ({ name: e.label, value: data[e.key] ?? 0, fill: e.fill }))
@@ -94,7 +93,7 @@ function ColorChart({ data }: { data: StatsColors }) {
             cy="50%"
             outerRadius={80}
             label={({ name, percent }) =>
-              percent > 0.04 ? `${name} ${(percent * 100).toFixed(0)}%` : ''
+              (percent ?? 0) > 0.04 ? `${name} ${((percent ?? 0) * 100).toFixed(0)}%` : ''
             }
             labelLine={false}
           >
@@ -102,7 +101,7 @@ function ColorChart({ data }: { data: StatsColors }) {
               <Cell key={i} fill={entry.fill} stroke="transparent" />
             ))}
           </Pie>
-          <Tooltip formatter={(v: number) => [v.toLocaleString(), 'Copies']} />
+          <Tooltip formatter={(v) => [Number(v).toLocaleString(), 'Copies']} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>
@@ -126,7 +125,7 @@ function RarityChart({ data }: { data: StatsRarityEntry[] }) {
           <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
           <XAxis dataKey="rarity" tick={{ fontSize: 11 }} />
           <YAxis tick={{ fontSize: 11 }} width={40} />
-          <Tooltip formatter={(v: number) => [v.toLocaleString(), 'Copies']} />
+          <Tooltip formatter={(v) => [Number(v).toLocaleString(), 'Copies']} />
           <Bar dataKey="count" radius={[4, 4, 0, 0]}>
             {chartData.map((entry, i) => (
               <Cell key={i} fill={entry.fill} />
@@ -138,7 +137,6 @@ function RarityChart({ data }: { data: StatsRarityEntry[] }) {
   )
 }
 
-// ── Page ───────────────────────────────────────────────────────
 export default function DashboardPage() {
   const navigate = useNavigate()
 

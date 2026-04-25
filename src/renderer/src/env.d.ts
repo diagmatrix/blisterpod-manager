@@ -1,19 +1,14 @@
+import type { AppSettings, LogEntry, KeyruneVersion } from '../../shared/app'
+import type { CollectionCard, MissingCard, DuplicateCard } from '../../shared/cards'
+import type { StatsSummary, StatsColors, StatsRarityEntry, StatsSetEntry } from '../../shared/stats'
 import type {
-  AppSettings,
   CardSearchParams,
   CardSearchResponse,
   CollectionAddParams,
-  CollectionCard,
   CollectionListParams,
   CollectionListResponse,
   CollectionUpdateParams,
-  LogEntry,
-  StatsSummary,
-  StatsColors,
-  StatsRarityEntry,
-  StatsSetEntry,
-  KeyruneVersion,
-} from '../../shared/types'
+} from '../../shared/search'
 
 export interface ElectronAPI {
   settingsGet: <K extends keyof AppSettings>(key: K) => Promise<AppSettings[K]>
@@ -29,6 +24,9 @@ export interface ElectronAPI {
   statsRarity: () => Promise<StatsRarityEntry[]>
   statsTopValue: (params?: { limit?: number }) => Promise<CollectionCard[]>
   statsBySet: (params?: { limit?: number }) => Promise<StatsSetEntry[]>
+  duplicatesList: () => Promise<DuplicateCard[]>
+  duplicatesMerge: (params: { set_code: string; collector_number: string }) => Promise<{ success: true } | { error: string }>
+  missingList: () => Promise<MissingCard[]>
   logMessage: (entry: LogEntry) => void
   logPath: () => Promise<string>
   refreshSetSymbols: () => Promise<string>

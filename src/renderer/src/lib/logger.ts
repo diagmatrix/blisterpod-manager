@@ -1,4 +1,4 @@
-import type { LogEntry } from '../../../../shared/types'
+import type { LogEntry } from '../../../shared/app'
 
 export function createLogger(context: string) {
   const send = (level: LogEntry['level'], message: string, data?: unknown) => {
