@@ -134,7 +134,6 @@ export async function refreshCards(db: Database.Database): Promise<{ inserted: n
   if (!response.ok) throw new Error(`Failed to download bulk data: ${response.status}`)
   if (!response.body) throw new Error('Response body is null')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nodeStream = Readable.fromWeb(response.body as any)
   const jsonStream = nodeStream.pipe(withParserAsStream()) as AsyncIterable<{ key: number; value: unknown }>
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
 import { Pencil, Trash2, RotateCcw, ChevronUp, ChevronDown } from 'lucide-react'
@@ -9,16 +9,14 @@ import { CollectionImageGrid } from '@/components/CollectionImageGrid'
 import { TableSkeleton, ImageGridSkeleton } from '@/components/skeletons'
 import { SectionHeader } from '@/components/SectionHeader'
 import { ViewToggle, type ViewMode } from '@/components/ViewToggle'
-import { CardFilters, type CardFiltersState, type CardFiltersHandlers, type TokenFilter, type ColorMode } from '@/components/CardFilters'
+import { CardFilters } from '@/components/CardFilters'
 import { Pagination } from '@/components/Pagination'
 import { EditCardDialog } from '@/components/EditCardDialog'
 import { DeleteCardDialog } from '@/components/DeleteCardDialog'
 import { CardQuickDialog } from '@/components/CardQuickDialog'
+import { useCardFilters } from '@/hooks/useCardFilters'
 
 const PAGE_SIZES = [30, 60, 120] as const
-const MIN_SEARCH_SET_CODE = 2
-const MIN_SEARCH_CARD_NAME = 3
-const SEARCH_DEBOUNCE_MS = 500
 
 type SortColumn = CollectionListParams['sortColumn']
 type SortOrder = 'ASC' | 'DESC'
@@ -43,20 +41,6 @@ export default function CollectionPage() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('DESC')
   const [view, setView] = useState<ViewMode>('image')
 
-  // Filter input state (uncommitted)
-  const [searchInput, setSearchInput] = useState('')
-  const [searchSetInput, setSearchSetInput] = useState(initialSet)
-  const [tokenFilter, setTokenFilter] = useState<TokenFilter>('cards')
-  const [raritiesInput, setRaritiesInput] = useState<string[]>([])
-  const [colorsInput, setColorsInput] = useState<string[]>([])
-  const [colorMode, setColorMode] = useState<ColorMode>('atLeast')
-
-  // Committed filter state (sent to IPC)
-  const [search, setSearch] = useState('')
-  const [searchSet, setSearchSet] = useState(initialSet)
-  const [rarities, setRarities] = useState<string[]>([])
-  const [colors, setColors] = useState<string[]>([])
-
   const [filterExpanded, setFilterExpanded] = useState(true)
   const [sortExpanded, setSortExpanded] = useState(true)
 
@@ -64,6 +48,12 @@ export default function CollectionPage() {
   const [quickCard, setQuickCard] = useState<CollectionCard | null>(null)
   const [editCard, setEditCard] = useState<CollectionCard | null>(null)
   const [deleteCard, setDeleteCard] = useState<CollectionCard | null>(null)
+
+  const {
+    filtersState, filtersHandlers,
+    search, searchSet, tokenFilter, rarities, colors, colorMode,
+    reset: resetFilters,
+  } = useCardFilters({ initialSet, onCommit: () => setPage(1) })
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['collection', page, pageSize, sortColumn, sortOrder, search, searchSet, tokenFilter, rarities, colors, colorMode],
@@ -73,45 +63,11 @@ export default function CollectionPage() {
       }),
   })
 
-  // Debounce name search
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const next = searchInput.length >= MIN_SEARCH_CARD_NAME ? searchInput : ''
-      if (next !== search) { setSearch(next); setPage(1) }
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
-  }, [searchInput, search])
-
-  // Debounce set search
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const next = searchSetInput.length >= MIN_SEARCH_SET_CODE ? searchSetInput : ''
-      if (next !== searchSet) { setSearchSet(next); setPage(1) }
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
-  }, [searchSetInput, searchSet])
-
-  // Debounce rarities
-  useEffect(() => {
-    const t = setTimeout(() => { setRarities(raritiesInput); setPage(1) }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
-  }, [raritiesInput])
-
-  // Debounce colors
-  useEffect(() => {
-    const t = setTimeout(() => { setColors(colorsInput); setPage(1) }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
-  }, [colorsInput])
-
   const handleReset = useCallback(() => {
-    setSearchInput(''); setSearchSetInput(''); setSearch(''); setSearchSet('')
+    resetFilters()
     setSortColumn('value'); setSortOrder('DESC')
     setPage(1); setPageSize(PAGE_SIZES[0])
-    setTokenFilter('cards')
-    setRaritiesInput([]); setRarities([])
-    setColorsInput([]); setColors([])
-    setColorMode('atLeast')
-  }, [])
+  }, [resetFilters])
 
   const handleRowClick = useCallback((card: CollectionCard) => {
     setQuickCard(card)
@@ -120,18 +76,6 @@ export default function CollectionPage() {
   const handlePageSizeChange = useCallback((newSize: number) => {
     setPageSize(newSize); setPage(1)
   }, [])
-
-  const filtersState: CardFiltersState = {
-    searchInput, searchSetInput, tokenFilter, raritiesInput, colorsInput, colorMode,
-  }
-  const filtersHandlers: CardFiltersHandlers = {
-    setSearchInput,
-    setSearchSetInput,
-    setTokenFilter: (v) => { setTokenFilter(v); setPage(1) },
-    toggleRarity: (r) => setRaritiesInput((prev) => prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]),
-    toggleColor: (c) => setColorsInput((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]),
-    setColorMode: (m) => { setColorMode(m); setPage(1) },
-  }
 
   const columns: { key: string; label: string; className?: string }[] = [
     { key: 'card_name', label: 'Name', className: 'text-left' },
@@ -152,7 +96,7 @@ export default function CollectionPage() {
         <div>
           <h1 className="text-3xl font-bold">Collection</h1>
           <p className="text-sm text-muted-foreground">
-            {data ? `${data.total.toLocaleString()} cards` : 'Loading...'}
+            {data ? `${data.total.toLocaleString()} printings` : 'Loading...'}
           </p>
         </div>
         <div className="flex items-center gap-2">

@@ -24,7 +24,7 @@ const navItems: NavItemProps[] = [
   { label: 'Statistics', icon: BarChart2, route: '/statistics' },
   { label: 'Collection', icon: Layers, route: '/collection' },
   { label: 'Add Cards', icon: LayersPlus, route: '/add-card' },
-  { label: 'Duplicates', icon: AlertTriangle, route: '/duplicates' },
+  { label: 'Collection errors', icon: AlertTriangle, route: '/collection-errors' },
 ] as const
 
 const bottomNavItems: NavItemProps[] = [

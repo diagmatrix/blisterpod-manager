@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import type { BatchItem, ScryfallCard, CardSearchParams } from '../../../shared/types'
-import { CardFilters, type CardFiltersState, type CardFiltersHandlers, type TokenFilter, type ColorMode } from '@/components/CardFilters'
+import { CardFilters } from '@/components/CardFilters'
+import { useCardFilters } from '@/hooks/useCardFilters'
 import { ViewToggle, type ViewMode } from '@/components/ViewToggle'
 import { SectionHeader } from '@/components/SectionHeader'
 import { BatchPanel } from '@/components/BatchPanel'
@@ -18,20 +19,15 @@ const PAGE_SIZES = [30, 60, 120] as const
 export default function AddCardPage() {
   const queryClient = useQueryClient()
 
-  const [searchInput, setSearchInput] = useState('')
-  const [searchSetInput, setSearchSetInput] = useState('')
-  const [tokenFilter, setTokenFilter] = useState<TokenFilter>('all')
-  const [raritiesInput, setRaritiesInput] = useState<string[]>([])
-  const [colorsInput, setColorsInput] = useState<string[]>([])
-  const [colorMode, setColorMode] = useState<ColorMode>('atLeast')
   const [view, setView] = useState<ViewMode>('image')
   const [filterExpanded, setFilterExpanded] = useState(true)
-
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0])
-
   const [batch, setBatch] = useState<BatchItem[]>([])
   const [isAdding, setIsAdding] = useState(false)
+
+  const { filtersState, filtersHandlers } = useCardFilters({ onCommit: () => setPage(1) })
+  const { searchInput, searchSetInput, raritiesInput, colorsInput, colorMode } = filtersState
 
   const searchParams: CardSearchParams = {
     query: searchInput.length >= 2 ? searchInput : undefined,
@@ -46,8 +42,6 @@ export default function AddCardPage() {
   const { rows, total, isLoading } = useCardSearch(searchParams)
 
   const hasFilter = !!(searchParams.query || searchParams.set_code || searchParams.rarities?.length || searchParams.colors?.length)
-
-  const resetPage = () => setPage(1)
 
   const addToBatch = useCallback((card: ScryfallCard) => {
     setBatch((prev) => {
@@ -104,16 +98,6 @@ export default function AddCardPage() {
     }
     result.errors.forEach(({ message }) => toast.error(message))
   }, [batch, queryClient])
-
-  const filtersState: CardFiltersState = { searchInput, searchSetInput, tokenFilter, raritiesInput, colorsInput, colorMode }
-  const filtersHandlers: CardFiltersHandlers = {
-    setSearchInput: (v) => { setSearchInput(v); resetPage() },
-    setSearchSetInput: (v) => { setSearchSetInput(v); resetPage() },
-    setTokenFilter,
-    toggleRarity: (r) => { setRaritiesInput((prev) => prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]); resetPage() },
-    toggleColor: (c) => { setColorsInput((prev) => prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]); resetPage() },
-    setColorMode: (m) => { setColorMode(m); resetPage() },
-  }
 
   return (
     <div className="flex h-full p-3 gap-3 overflow-hidden">
@@ -219,7 +203,7 @@ export default function AddCardPage() {
             total={total}
             pageSizes={PAGE_SIZES}
             onPageChange={setPage}
-            onPageSizeChange={(s) => { setPageSize(s); resetPage() }}
+            onPageSizeChange={(s) => { setPageSize(s); setPage(1) }}
           />
         )}
       </div>

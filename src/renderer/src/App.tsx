@@ -6,7 +6,7 @@ import CollectionPage from '@/pages/CollectionPage'
 import AddCardPage from '@/pages/AddCardPage'
 import CardDetailPage from '@/pages/CardDetailPage'
 import DashboardPage from '@/pages/DashboardPage'
-import DuplicatesPage from '@/pages/DuplicatesPage'
+import CollectionErrorsPage from '@/pages/CollectionErrorsPage'
 import SettingsPage from '@/pages/SettingsPage'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { Toaster } from '@/components/ui/sonner'
@@ -37,7 +37,7 @@ function App() {
               element={<CardDetailPage />}
             />
             <Route path="/statistics" element={<DashboardPage />} />
-            <Route path="/duplicates" element={<DuplicatesPage />} />
+            <Route path="/collection-errors" element={<CollectionErrorsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>
