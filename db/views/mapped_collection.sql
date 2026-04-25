@@ -4,7 +4,6 @@ SELECT
     c.id                                 AS collection_id,
     sc.id                                AS scryfall_id,
     coalesce(sc.name, 'Not found')       AS card_name,
-    coalesce(sc.set_name, '')            AS set_name,
     c.set_code,
     CASE
         WHEN coalesce(ss.set_type, '') IN ('promo', 'token')
