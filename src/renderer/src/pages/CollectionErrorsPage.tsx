@@ -1,13 +1,23 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { TableSkeleton } from '@/components/skeletons'
 import { Button } from '@/components/ui/button'
 import { MergeDuplicateCardDialog } from '@/components/MergeDuplicateDialog'
-import type { DuplicateCard, MissingCard } from '../../../shared/cards'
+import { CardQuickDialog } from '@/components/CardQuickDialog'
+import { DeleteCardDialog } from '@/components/DeleteCardDialog'
+import type { DuplicateCard, MissingCard, CollectionCard } from '../../../shared/cards'
+import { missingCardToCollectionCard } from '../../../shared/cards'
 import { Pencil, RefreshCw, Trash2, X } from 'lucide-react'
 
 interface MissingTableProps {
   cards: MissingCard[]
+  loadingKeys: Set<string>
+  onFetchSet: (row: MissingCard) => void
+  onFetchCards: (row: MissingCard) => void
+  onFetchCard: (row: MissingCard) => void
+  onEdit: (row: MissingCard) => void
+  onDelete: (row: MissingCard) => void
 }
 
 function DuplicateCardTable({ duplicates, setMergeTarget }: { duplicates: DuplicateCard[]; setMergeTarget: (dup: DuplicateCard) => void }) {
@@ -21,7 +31,7 @@ function DuplicateCardTable({ duplicates, setMergeTarget }: { duplicates: Duplic
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Collector number</th>
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Total nonfoil</th>
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Total foil</th>
-            <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">DuplicateCard count</th>
+            <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Duplicate count</th>
             <th className="px-3 py-2 w-20" />
           </tr>
         </thead>
@@ -50,7 +60,7 @@ function DuplicateCardTable({ duplicates, setMergeTarget }: { duplicates: Duplic
   )
 }
 
-function MissingTable(missing: MissingTableProps) {
+function MissingTable({ cards, loadingKeys, onFetchSet, onFetchCards, onFetchCard, onEdit, onDelete }: MissingTableProps) {
   return (
     <div className="rounded-md border border-border overflow-auto">
       <table className="w-full text-sm">
@@ -60,73 +70,66 @@ function MissingTable(missing: MissingTableProps) {
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Collector number</th>
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-24">Nonfoil</th>
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-24">Foil</th>
-            <th className="px-3 py-2 text-center font-medium text-muted-foreground w-36">Set cards missing</th>
-            <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Set metadata missing</th>
-            <th className="px-3 py-2 w-40" />
+            <th className="px-3 py-2 text-center font-medium text-muted-foreground w-36">Set cards</th>
+            <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Set metadata</th>
+            <th className="px-3 py-2 w-52" />
           </tr>
         </thead>
         <tbody>
-          {missing.cards?.map((row) => (
-            <tr
-              key={`${row.set_code}-${row.collector_number}`}
-              className="border-b border-border/50 divide-x-2 divide-border/30 hover:bg-muted/30 transition-colors"
-            >
-              <td className="px-3 py-1.5 font-medium uppercase">{row.set_code}</td>
-              <td className="px-3 py-1.5 text-center tabular-nums">{row.collector_number}</td>
-              <td className="px-3 py-1.5 text-center tabular-nums">{row.quantity_nonfoil}</td>
-              <td className="px-3 py-1.5 text-center tabular-nums">{row.quantity_foil}</td>
-              <td className="px-3 py-1.5 text-center">
-                {!!row.set_cards_missing ? (
-                  <Button size="sm" variant="outline" disabled>
-                    <RefreshCw className="h-4 w-4" />
-                    Fetch cards
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="outline" disabled>
-                    <X className="h-4 w-4" />
-                    No cards missing
-                  </Button>
-                )}
-              </td>
-              <td className="px-3 py-1.5 text-center">
-                {!!row.set_metadata_missing ? (
-                  <Button size="sm" variant="outline" disabled>
-                    <RefreshCw className="h-4 w-4" />
-                    Fetch set
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="outline" disabled>
-                    <X className="h-4 w-4" />
-                    No set metadata missing
-                  </Button>
-                )}
-              </td>
-              <td className="px-3 py-1.5 w-16 text-right">
-                <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                  <Button size="sm" variant="outline" disabled>
-                    <RefreshCw className="h-4 w-4" />
-                    Fetch card
-                  </Button>
-                  <Button
-                    title="Edit card details"
-                    disabled
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Pencil className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    title="Remove from collection"
-                    disabled
-                    size="sm"
-                    variant="destructive"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
+          {cards?.map((row) => {
+            const fetchSetKey = `fetch-set:${row.set_code}`
+            const fetchCardsKey = `fetch-cards:${row.set_code}`
+            const fetchCardKey = `fetch-card:${row.set_code}:${row.collector_number}`
+            return (
+              <tr
+                key={`${row.set_code}-${row.collector_number}`}
+                className="border-b border-border/50 divide-x-2 divide-border/30 hover:bg-muted/30 transition-colors"
+              >
+                <td className="px-3 py-1.5 font-medium uppercase">{row.set_code}</td>
+                <td className="px-3 py-1.5 text-center tabular-nums">{row.collector_number}</td>
+                <td className="px-3 py-1.5 text-center tabular-nums">{row.quantity_nonfoil}</td>
+                <td className="px-3 py-1.5 text-center tabular-nums">{row.quantity_foil}</td>
+                <td className="px-3 py-1.5 text-center">
+                  {!!row.set_cards_missing ? (
+                    <Button size="sm" variant="outline" disabled={loadingKeys.has(fetchCardsKey)} onClick={() => onFetchCards(row)}>
+                      <RefreshCw className={`h-3.5 w-3.5 ${loadingKeys.has(fetchCardsKey) ? 'animate-spin' : ''}`} />
+                      Fetch cards
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                      <X className="h-3 w-3" /> OK
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-1.5 text-center">
+                  {!!row.set_metadata_missing ? (
+                    <Button size="sm" variant="outline" disabled={loadingKeys.has(fetchSetKey)} onClick={() => onFetchSet(row)}>
+                      <RefreshCw className={`h-3.5 w-3.5 ${loadingKeys.has(fetchSetKey) ? 'animate-spin' : ''}`} />
+                      Fetch set
+                    </Button>
+                  ) : (
+                    <span className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                      <X className="h-3 w-3" /> OK
+                    </span>
+                  )}
+                </td>
+                <td className="px-3 py-1.5 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button size="sm" variant="outline" disabled={loadingKeys.has(fetchCardKey)} onClick={() => onFetchCard(row)}>
+                      <RefreshCw className={`h-3.5 w-3.5 ${loadingKeys.has(fetchCardKey) ? 'animate-spin' : ''}`} />
+                      Fetch card
+                    </Button>
+                    <Button size="sm" variant="outline" title="Edit card reference" onClick={() => onEdit(row)}>
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                    <Button size="sm" variant="destructive" title="Remove from collection" onClick={() => onDelete(row)}>
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>
@@ -134,7 +137,14 @@ function MissingTable(missing: MissingTableProps) {
 }
 
 export default function CollectionErrorsPage() {
+  const queryClient = useQueryClient()
   const [mergeTarget, setMergeTarget] = useState<DuplicateCard | null>(null)
+  const [editCard, setEditCard] = useState<CollectionCard | null>(null)
+  const [deleteCard, setDeleteCard] = useState<CollectionCard | null>(null)
+  const [loadingKeys, setLoadingKeys] = useState<Set<string>>(new Set())
+
+  function addKey(key: string) { setLoadingKeys((prev) => new Set([...prev, key])) }
+  function removeKey(key: string) { setLoadingKeys((prev) => { const s = new Set(prev); s.delete(key); return s }) }
 
   const { data: duplicates, isLoading, isError } = useQuery({
     queryKey: ['duplicates'],
@@ -146,6 +156,47 @@ export default function CollectionErrorsPage() {
     queryFn: () => window.api.missingList(),
   })
 
+  async function handleFetchSet(row: MissingCard) {
+    const key = `fetch-set:${row.set_code}`
+    addKey(key)
+    const result = await window.api.missingFetchSet({ set_code: row.set_code })
+    removeKey(key)
+    if ('error' in result) {
+      toast.error(`Failed to fetch set: ${result.error}`)
+    } else {
+      toast.success(`Set ${row.set_code.toUpperCase()} metadata fetched`)
+      queryClient.invalidateQueries({ queryKey: ['missing'] })
+    }
+  }
+
+  async function handleFetchCards(row: MissingCard) {
+    const key = `fetch-cards:${row.set_code}`
+    addKey(key)
+    const result = await window.api.missingFetchCards({ set_code: row.set_code })
+    removeKey(key)
+    if ('error' in result) {
+      toast.error(`Failed to fetch cards: ${result.error}`)
+    } else {
+      toast.success(`${result.inserted} card(s) fetched for ${row.set_code.toUpperCase()}`)
+      queryClient.invalidateQueries({ queryKey: ['missing'] })
+      queryClient.invalidateQueries({ queryKey: ['collection'] })
+    }
+  }
+
+  async function handleFetchCard(row: MissingCard) {
+    const key = `fetch-card:${row.set_code}:${row.collector_number}`
+    addKey(key)
+    const result = await window.api.missingFetchCard({ set_code: row.set_code, collector_number: row.collector_number })
+    removeKey(key)
+    if ('error' in result) {
+      toast.error(`Failed to fetch card: ${result.error}`)
+    } else {
+      toast.success('Card fetched from Scryfall')
+      queryClient.invalidateQueries({ queryKey: ['missing'] })
+      queryClient.invalidateQueries({ queryKey: ['collection'] })
+    }
+  }
+
   return (
     <div className="p-6 space-y-8">
       <div>
@@ -153,7 +204,6 @@ export default function CollectionErrorsPage() {
         <p className="text-muted-foreground">Review and fix data issues in your collection.</p>
       </div>
 
-      {/* DuplicateCards section */}
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold">Duplicate cards</h2>
@@ -169,8 +219,7 @@ export default function CollectionErrorsPage() {
           <DuplicateCardTable duplicates={duplicates ?? []} setMergeTarget={setMergeTarget} />
         )}
       </div>
-      
-      {/* Missing cards section */}
+
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold">Missing / Not Found</h2>
@@ -183,7 +232,15 @@ export default function CollectionErrorsPage() {
         ) : missing?.length === 0 ? (
           <p className="text-sm text-muted-foreground">No unmatched cards found. Your collection is clean!</p>
         ) : (
-          <MissingTable cards={missing ?? []} />
+          <MissingTable
+            cards={missing ?? []}
+            loadingKeys={loadingKeys}
+            onFetchSet={handleFetchSet}
+            onFetchCards={handleFetchCards}
+            onFetchCard={handleFetchCard}
+            onEdit={(row) => setEditCard(missingCardToCollectionCard(row))}
+            onDelete={(row) => setDeleteCard(missingCardToCollectionCard(row))}
+          />
         )}
       </div>
 
@@ -192,6 +249,22 @@ export default function CollectionErrorsPage() {
           duplicate={mergeTarget}
           open={!!mergeTarget}
           onOpenChange={(open) => { if (!open) setMergeTarget(null) }}
+        />
+      )}
+      {editCard && (
+        <CardQuickDialog
+          card={editCard}
+          open={!!editCard}
+          editRef
+          onOpenChange={(open) => { if (!open) setEditCard(null) }}
+        />
+      )}
+      {deleteCard && (
+        <DeleteCardDialog
+          card={deleteCard}
+          collectionId={deleteCard.collection_id}
+          open={!!deleteCard}
+          onOpenChange={(open) => { if (!open) setDeleteCard(null) }}
         />
       )}
     </div>

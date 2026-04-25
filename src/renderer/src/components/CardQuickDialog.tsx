@@ -12,13 +12,16 @@ interface CardQuickDialogProps {
   card: CollectionCard
   open: boolean
   onOpenChange: (open: boolean) => void
+  editRef?: boolean
 }
 
-export function CardQuickDialog({ card, open, onOpenChange }: CardQuickDialogProps) {
+export function CardQuickDialog({ card, open, onOpenChange, editRef = false }: CardQuickDialogProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [nonfoil, setNonfoil] = useState(card.quantity_nonfoil)
   const [foil, setFoil] = useState(card.quantity_foil)
+  const [setCode, setSetCode] = useState(card.set_code)
+  const [collectorNumber, setCollectorNumber] = useState(card.collector_number)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -38,6 +41,7 @@ export function CardQuickDialog({ card, open, onOpenChange }: CardQuickDialogPro
       id: card.collection_id,
       quantity_nonfoil: nonfoil,
       quantity_foil: foil,
+      ...(editRef ? { set_code: setCode, collector_number: collectorNumber } : {}),
     })
     setSaving(false)
     if ('error' in result) {
@@ -45,6 +49,7 @@ export function CardQuickDialog({ card, open, onOpenChange }: CardQuickDialogPro
     } else {
       toast.success('Card updated')
       queryClient.invalidateQueries({ queryKey: ['collection'] })
+      if (editRef) queryClient.invalidateQueries({ queryKey: ['missing'] })
       onOpenChange(false)
     }
   }
@@ -72,15 +77,15 @@ export function CardQuickDialog({ card, open, onOpenChange }: CardQuickDialogPro
       <DialogContent className="max-w-md [&>button:last-of-type]:hidden">
         {/* Header with card name and set info */}
         <DialogHeader>
-          <DialogTitle>{card.name}</DialogTitle>
+          <DialogTitle>{editRef ? 'Fix card reference' : card.name}</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground -mt-2">
-          {card.set_code.toUpperCase()} #{card.collector_number}
-        </p>
+        {!editRef && (
+          <p className="text-sm text-muted-foreground -mt-2">
+            {card.set_code.toUpperCase()} #{card.collector_number}
+          </p>
+        )}
 
-        
         {confirmDelete ? (
-          // Confirm delete dialog
           <>
             <p className="text-sm">
               This will permanently remove{' '}
@@ -98,8 +103,58 @@ export function CardQuickDialog({ card, open, onOpenChange }: CardQuickDialogPro
               </Button>
             </DialogFooter>
           </>
+        ) : editRef ? (
+          <>
+            <div className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Set code</span>
+                <input
+                  value={setCode}
+                  onChange={(e) => setSetCode(e.target.value.toUpperCase())}
+                  className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Collector number</span>
+                <input
+                  value={collectorNumber}
+                  onChange={(e) => setCollectorNumber(e.target.value)}
+                  className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Nonfoil</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={nonfoil}
+                  onChange={(e) => setNonfoil(Math.max(0, Number(e.target.value)))}
+                  className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">Foil</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={foil}
+                  onChange={(e) => setFoil(Math.max(0, Number(e.target.value)))}
+                  className="h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </label>
+              <Button variant="outline" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => setConfirmDelete(true)} disabled={busy}>
+                Remove from collection
+              </Button>
+              {!isValid && <p className="text-xs text-destructive">At least one copy must be owned.</p>}
+            </div>
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancel</Button>
+              <Button onClick={handleSave} disabled={!isValid || busy}>
+                {saving ? 'Saving…' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </>
         ) : (
-          // Edit quantities dialog
           <>
             <div className="flex gap-3">
               <div className="flex-1 aspect-[488/680] rounded-md overflow-hidden border bg-muted">
@@ -116,7 +171,6 @@ export function CardQuickDialog({ card, open, onOpenChange }: CardQuickDialogPro
                   </div>
                 )}
               </div>
-
               <div className="flex flex-col gap-3 flex-1">
                 <label className="flex flex-col gap-1">
                   <span className="text-xs text-muted-foreground">Nonfoil</span>
@@ -144,17 +198,11 @@ export function CardQuickDialog({ card, open, onOpenChange }: CardQuickDialogPro
                 <Button variant="outline" onClick={handleGoToDetails} disabled={busy}>
                   Go to card details
                 </Button>
-                {!isValid && (
-                  <p className="text-xs text-destructive">At least one copy must be owned.</p>
-                )}
+                {!isValid && <p className="text-xs text-destructive">At least one copy must be owned.</p>}
               </div>
             </div>
-            
-            {/* Dialog footer */}
             <DialogFooter className="flex-col gap-2 sm:flex-row">
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
-                Cancel
-              </Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Cancel</Button>
               <Button onClick={handleSave} disabled={!isValid || busy}>
                 {saving ? 'Saving…' : 'Save'}
               </Button>

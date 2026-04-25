@@ -27,6 +27,7 @@ export function DeleteCardDialog({ card, collectionId, open, onOpenChange }: Del
     } else {
       toast.success('Card removed from collection')
       queryClient.invalidateQueries({ queryKey: ['collection'] })
+      queryClient.invalidateQueries({ queryKey: ['missing'] })
       onOpenChange(false)
     }
   }

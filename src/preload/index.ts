@@ -54,6 +54,12 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('db:duplicates:merge', params),
   missingList: (): Promise<MissingCard[]> =>
     ipcRenderer.invoke('db:missing:list'),
+  missingFetchSet: (params: { set_code: string }): Promise<{ success: true } | { error: string }> =>
+    ipcRenderer.invoke('db:missing:fetch-set', params),
+  missingFetchCards: (params: { set_code: string }): Promise<{ inserted: number } | { error: string }> =>
+    ipcRenderer.invoke('db:missing:fetch-cards', params),
+  missingFetchCard: (params: { set_code: string; collector_number: string }): Promise<{ success: true } | { error: string }> =>
+    ipcRenderer.invoke('db:missing:fetch-card', params),
 
   // Logging bridge (renderer → main file logger)
   logMessage: (entry: LogEntry): void =>

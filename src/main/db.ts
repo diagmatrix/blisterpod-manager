@@ -104,6 +104,53 @@ function buildColorConditions(colors: string[] | undefined, colorMode: string): 
 }
 
 
+async function scryfallFetch(pathOrUrl: string): Promise<unknown> {
+  const url = pathOrUrl.startsWith('http') ? pathOrUrl : `https://api.scryfall.com${pathOrUrl}`
+  const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'blisterpod-manager/0.1' } })
+  if (!res.ok) throw new Error(`Scryfall ${res.status}: ${pathOrUrl}`)
+  return res.json()
+}
+
+function dbColumns(table: string): string[] {
+  return (db.pragma(`table_info(${table})`) as { name: string }[]).map((r) => r.name)
+}
+
+function serializeVal(val: unknown): unknown {
+  if (val === null || val === undefined) return null
+  if (typeof val === 'boolean') return val ? 1 : 0
+  if (typeof val === 'object') return JSON.stringify(val)
+  return val
+}
+
+function buildSetValues(setJson: Record<string, unknown>, columns: string[]): Record<string, unknown> | null {
+  if (!setJson.id) return null
+  const row: Record<string, unknown> = {}
+  for (const col of columns) {
+    let val = setJson[col]
+    if (col === 'code' && val != null) val = String(val).toUpperCase()
+    if (col === 'parent_set_code' && val != null) val = String(val).toUpperCase()
+    row[col] = serializeVal(val ?? null)
+  }
+  return row
+}
+
+function buildCardValues(cardJson: Record<string, unknown>, columns: string[]): Record<string, unknown> {
+  const row: Record<string, unknown> = {}
+  for (const col of columns) {
+    let val: unknown
+    if (col === 'set_code') {
+      val = typeof cardJson.set === 'string' ? cardJson.set.toUpperCase() : null
+    } else if (col === 'collector_number_normalised') {
+      const digits = typeof cardJson.collector_number === 'string' ? cardJson.collector_number.replace(/\D/g, '') : ''
+      val = digits ? parseInt(digits, 10) : null
+    } else {
+      val = cardJson[col]
+    }
+    row[col] = serializeVal(val ?? null)
+  }
+  return row
+}
+
 function setupIpcHandlers(): void {
   // List collection cards
   ipcMain.handle('db:collection:list', (_, params: {
@@ -263,26 +310,31 @@ function setupIpcHandlers(): void {
     return { inserted, errors }
   })
 
-  // Update quantities for an existing collection card
+  // Update quantities (and optionally set_code + collector_number) for a collection card
   ipcMain.handle('db:collection:update', (_, params: {
     id: number
     quantity_nonfoil: number
     quantity_foil: number
+    set_code?: string
+    collector_number?: string
   }) => {
-    const { id, quantity_nonfoil, quantity_foil } = params
+    const { id, quantity_nonfoil, quantity_foil, set_code, collector_number } = params
     if (quantity_nonfoil < 0 || quantity_foil < 0) return { error: 'Quantities must be non-negative' }
     if (quantity_nonfoil + quantity_foil === 0) return { error: 'At least one copy must be owned' }
-
-    const updateSql = 'UPDATE cards SET quantity_nonfoil = ?, quantity_foil = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-    log.info('db:collection:update', updateSql)
-
-    const update = db.transaction(() => {
-      db.prepare(updateSql).run(quantity_nonfoil, quantity_foil, id)
-      return { success: true }
-    })
-    const result = update()
-    log.debug('Collection card updated', { id })
-    return result
+    try {
+      if (set_code !== undefined && collector_number !== undefined) {
+        db.prepare('UPDATE cards SET set_code = ?, collector_number = ?, quantity_nonfoil = ?, quantity_foil = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(set_code, collector_number, quantity_nonfoil, quantity_foil, id)
+      } else {
+        db.prepare('UPDATE cards SET quantity_nonfoil = ?, quantity_foil = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
+          .run(quantity_nonfoil, quantity_foil, id)
+      }
+      log.debug('Collection card updated', { id })
+      return { success: true as const }
+    } catch (e) {
+      log.error('db:collection:update failed', { error: (e as Error).message })
+      return { error: (e as Error).message }
+    }
   })
 
   // Delete a card from the collection
@@ -433,4 +485,79 @@ function setupIpcHandlers(): void {
     log.info('db:stats:by-set', 'SELECT * FROM stats_by_set ORDER BY unique_printings DESC LIMIT ?')
     return db.prepare('SELECT * FROM stats_by_set ORDER BY unique_printings DESC LIMIT ?').all(limit)
   })
+
+  // Fetch set metadata from Scryfall and upsert into scryfall_sets
+  ipcMain.handle('db:missing:fetch-set', async (_, params: { set_code: string }) => {
+    const { set_code } = params
+    log.info('db:missing:fetch-set', { set_code })
+    try {
+      const setData = await scryfallFetch(`/sets/${set_code.toLowerCase()}`) as Record<string, unknown>
+      const columns = dbColumns('scryfall_sets')
+      const row = buildSetValues(setData, columns)
+      if (!row) return { error: 'Invalid set data from Scryfall' }
+      db.prepare(`INSERT OR REPLACE INTO scryfall_sets (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`).run(columns.map(c => row[c]))
+      log.info('Set fetched and stored', { set_code })
+      return { success: true as const }
+    } catch (e) {
+      log.error('db:missing:fetch-set failed', { error: (e as Error).message })
+      return { error: (e as Error).message }
+    }
+  })
+
+  // Fetch all cards for a set from Scryfall and upsert into scryfall_cards
+  ipcMain.handle('db:missing:fetch-cards', async (_, params: { set_code: string }) => {
+    const { set_code } = params
+    log.info('db:missing:fetch-cards', { set_code })
+    try {
+      const dbRow = db.prepare('SELECT search_uri FROM scryfall_sets WHERE code = ?').get(set_code) as { search_uri: string } | undefined
+      let searchUri: string
+      if (dbRow?.search_uri) {
+        searchUri = dbRow.search_uri
+      } else {
+        const setData = await scryfallFetch(`/sets/${set_code.toLowerCase()}`) as Record<string, unknown>
+        if (typeof setData.search_uri !== 'string') return { error: 'search_uri not found for set' }
+        searchUri = setData.search_uri
+      }
+
+      const columns = dbColumns('scryfall_cards')
+      const stmt = db.prepare(`INSERT OR REPLACE INTO scryfall_cards (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
+      const insertBatch = db.transaction((rows: Record<string, unknown>[]) => {
+        for (const r of rows) stmt.run(columns.map(c => r[c]))
+      })
+
+      let url: string | null = searchUri
+      let inserted = 0
+      while (url) {
+        const page = await scryfallFetch(url) as { data: Record<string, unknown>[]; has_more: boolean; next_page?: string }
+        const rows = (page.data ?? []).map(card => buildCardValues(card, columns))
+        insertBatch(rows)
+        inserted += rows.length
+        url = page.has_more && page.next_page ? page.next_page : null
+      }
+
+      log.info('Cards fetched and stored', { set_code, inserted })
+      return { inserted }
+    } catch (e) {
+      log.error('db:missing:fetch-cards failed', { error: (e as Error).message })
+      return { error: (e as Error).message }
+    }
+  })
+
+  // Fetch a single card from Scryfall and upsert into scryfall_cards
+  ipcMain.handle('db:missing:fetch-card', async (_, params: { set_code: string; collector_number: string }) => {
+    const { set_code, collector_number } = params
+    log.info('db:missing:fetch-card', { set_code, collector_number })
+    try {
+      const cardData = await scryfallFetch(`/cards/${set_code.toLowerCase()}/${collector_number}`) as Record<string, unknown>
+      const columns = dbColumns('scryfall_cards')
+      const row = buildCardValues(cardData, columns)
+      db.prepare(`INSERT OR REPLACE INTO scryfall_cards (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`).run(columns.map(c => row[c]))
+      log.info('Card fetched and stored', { set_code, collector_number })
+      return { success: true as const }
+    } catch (e) {
+      log.error('db:missing:fetch-card failed', { error: (e as Error).message })
+      return { error: (e as Error).message }
+    }
+  })
+
 }

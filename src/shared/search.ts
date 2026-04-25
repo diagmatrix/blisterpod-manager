@@ -35,6 +35,8 @@ export interface CollectionUpdateParams {
   id: number
   quantity_nonfoil: number
   quantity_foil: number
+  set_code?: string
+  collector_number?: string
 }
 
 export interface CardSearchParams {

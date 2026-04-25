@@ -27,6 +27,9 @@ export interface ElectronAPI {
   duplicatesList: () => Promise<DuplicateCard[]>
   duplicatesMerge: (params: { set_code: string; collector_number: string }) => Promise<{ success: true } | { error: string }>
   missingList: () => Promise<MissingCard[]>
+  missingFetchSet: (params: { set_code: string }) => Promise<{ success: true } | { error: string }>
+  missingFetchCards: (params: { set_code: string }) => Promise<{ inserted: number } | { error: string }>
+  missingFetchCard: (params: { set_code: string; collector_number: string }) => Promise<{ success: true } | { error: string }>
   logMessage: (entry: LogEntry) => void
   logPath: () => Promise<string>
   refreshSetSymbols: () => Promise<string>
