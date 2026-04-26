@@ -41,22 +41,13 @@ export interface DuplicateCard extends Card {
   row_ids: string
 }
 
-export interface CardDetail {
-  scryfall_id: string | null
-  oracle_id: string | null
-  name: string | null
-  set_code: string
-  set_name: string
+export interface CardDetail extends CollectionCard {
   type_line: string | null
   mana_costs: string | null    // JSON array string, one entry per face
   oracle_texts: string | null  // JSON array string, one entry per face
   image_urls: string | null    // JSON array string, one entry per face
   color_identity: string | null
   rarity: string | null
-  is_token: number
-  quantity_nonfoil: number
-  quantity_foil: number
-  value: number | null
 }
 
 export function missingCardToCollectionCard(missing: MissingCard): CollectionCard {

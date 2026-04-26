@@ -33,6 +33,12 @@ SELECT
             json_array(sc.mana_cost)
     END                                   AS mana_costs,
     sc.set_code,
+    CASE
+        WHEN coalesce(ss.set_type, '') IN ('promo', 'token')
+            OR coalesce(ss.name, '') = 'Universes Within'
+            THEN coalesce(ss.parent_set_code, c.set_code)
+        ELSE c.set_code
+    END                                   AS base_set_code,
     sc.collector_number,
     sc.set_name,
     CASE
@@ -62,6 +68,7 @@ SELECT
     END                                   AS is_token,
     c.quantity_foil,
     c.quantity_nonfoil,
+    c.quantity_foil + c.quantity_nonfoil  AS total,
     round(
         coalesce(sc.prices ->> 'eur', 0) * c.quantity_nonfoil + coalesce(sc.prices ->> 'eur_foil', 0) * c.quantity_foil,
         2
@@ -72,3 +79,5 @@ INNER JOIN scryfall_cards sc
     AND c.collector_number = sc.collector_number
 LEFT JOIN card_faces_aggregated cfa
     ON sc.id = cfa.id
+LEFT JOIN scryfall_sets ss
+    ON c.set_code = ss.code

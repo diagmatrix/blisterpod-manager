@@ -22,9 +22,9 @@ function OtherPrintingsTable({ printings, navigate }: OtherPrintingProps) {
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50">
-            <th className="text-left px-4 py-2 font-medium">Set</th>
-            <th className="text-left px-4 py-2 font-medium">Code</th>
-            <th className="text-left px-4 py-2 font-medium">Collector Number</th>
+            <th className="text-left px-4 py-2 font-medium w-2/5">Set</th>
+            <th className="text-center px-4 py-2 font-medium">Code</th>
+            <th className="text-right px-4 py-2 font-medium">Number</th>
             <th className="text-right px-4 py-2 font-medium">Nonfoil</th>
             <th className="text-right px-4 py-2 font-medium">Foil</th>
             <th className="text-right px-4 py-2 font-medium">Total</th>
@@ -39,12 +39,12 @@ function OtherPrintingsTable({ printings, navigate }: OtherPrintingProps) {
               onClick={() => navigate(`/card-detail/${p.set_code}/${p.collector_number}`)}
             >
               <td className="px-4 py-2">{p.set_name}</td>
-              <td className="px-4 py-2 text-muted-foreground">{p.set_code.toUpperCase()}</td>
-              <td className="px-4 py-2 text-muted-foreground">{p.collector_number}</td>
+              <td className="px-4 py-2 text-center text-muted-foreground">{p.set_code.toUpperCase()}</td>
+              <td className="px-4 py-2 text-right text-muted-foreground">{p.collector_number}</td>
               <td className="px-4 py-2 text-right">{p.quantity_nonfoil}</td>
               <td className="px-4 py-2 text-right">{p.quantity_foil}</td>
               <td className="px-4 py-2 text-right font-medium">{p.total}</td>
-              <td className="px-4 py-2 text-right font-medium">{p.value}</td>
+              <td className="px-4 py-2 text-right font-medium">{p.value}€</td>
             </tr>
           ))}
         </tbody>
@@ -184,11 +184,11 @@ function CollectionInfo({ card, otherPrintings }: CollectionInfoProps) {
           </div>
           <div className="rounded-lg border p-3">
             <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-xl font-bold">{card.quantity_nonfoil + card.quantity_foil}</p>
+            <p className="text-xl font-bold">{card.total}</p>
           </div>
           <div className="rounded-lg border p-3">
             <p className="text-xs text-muted-foreground">Value</p>
-            <p className="text-xl font-bold">€{(card.value ?? 0).toFixed(2)}</p>
+            <p className="text-xl font-bold">{(card.value ?? 0).toFixed(2)}€</p>
           </div>
         </div>
       </div>
@@ -212,7 +212,7 @@ function CollectionInfo({ card, otherPrintings }: CollectionInfoProps) {
             </div>
             <div className="rounded-lg border p-3">
               <p className="text-xs text-muted-foreground">Value</p>
-              <p className="text-xl font-bold">€{totals.value.toFixed(2)}</p>
+              <p className="text-xl font-bold">{totals.value.toFixed(2)}€</p>
             </div>
           </div>
         </div>
@@ -306,9 +306,9 @@ export default function CardDetailPage() {
             <div className='flex items-center gap-4 flex-wrap'>
               <div className='flex-1'>
                 <CardHeader
-                  name={card.name}
+                  name={card?.name ?? 'Unknown'}
                   setName={card.set_name}
-                  setCode={card.set_code}
+                  setCode={card.base_set_code}
                   rarity={card.rarity}
                   typeLine={card.type_line}
                 />
