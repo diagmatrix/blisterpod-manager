@@ -13,6 +13,7 @@ export interface AppSettings {
   setsLastRefreshed?: string
   cardsLastRefreshed?: string
   manaSymbolsLastRefreshed?: string
+  firstRun?: boolean
 }
 
 export type Theme = 'dark' | 'light'

@@ -46,6 +46,8 @@ export interface ElectronAPI {
   downloadCCMGFont: () => Promise<void>
   ccmgFontStatus: () => Promise<{ downloaded: boolean }>
   getAppIcon: () => Promise<string>
+  appVersion: () => Promise<string>
+  restartApp: () => Promise<void>
 }
 
 declare global {

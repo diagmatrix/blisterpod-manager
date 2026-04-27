@@ -149,6 +149,13 @@ ipcMain.handle('app:icon', () => {
   return `data:image/png;base64,${data.toString('base64')}`
 })
 
+ipcMain.handle('app:version', () => app.getVersion())
+
+ipcMain.handle('app:restart', () => {
+  app.relaunch()
+  app.exit(0)
+})
+
 app.whenReady().then(() => {
   log.info('App ready')
   initCardImageProtocol()

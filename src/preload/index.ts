@@ -100,6 +100,12 @@ contextBridge.exposeInMainWorld('api', {
   getAppIcon: (): Promise<string> =>
     ipcRenderer.invoke('app:icon'),
 
+  appVersion: (): Promise<string> =>
+    ipcRenderer.invoke('app:version'),
+
+  restartApp: (): Promise<void> =>
+    ipcRenderer.invoke('app:restart'),
+
   // Import/export
   showSaveDialog: (defaultName: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:showSaveDialog', defaultName),
