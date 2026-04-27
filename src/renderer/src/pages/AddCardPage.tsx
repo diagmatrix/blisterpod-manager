@@ -27,7 +27,8 @@ export default function AddCardPage() {
   const [batch, setBatch] = useState<BatchItem[]>([])
   const [isAdding, setIsAdding] = useState(false)
 
-  const { filtersState, filtersHandlers } = useCardFilters({ onCommit: () => setPage(1) })
+  const onFilterCommit = useCallback(() => setPage(1), [])
+  const { filtersState, filtersHandlers } = useCardFilters({ onCommit: onFilterCommit })
   const { searchInput, searchSetInput, raritiesInput, colorsInput, colorMode } = filtersState
 
   const searchParams: CardSearchParams = {

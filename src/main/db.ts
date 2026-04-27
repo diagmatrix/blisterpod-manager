@@ -1,6 +1,6 @@
-import { ipcMain, app } from 'electron'
+import { ipcMain, app, dialog, BrowserWindow } from 'electron'
 import { join } from 'path'
-import { readFileSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import Database from 'better-sqlite3'
 import { createLogger } from './logger'
 import { WUBRG_ORDER } from '../shared/mana'
@@ -9,9 +9,9 @@ const log = createLogger('db')
 
 let db: Database.Database
 const DB_NAME = 'collection.db'
-// const DB_PATH = join(app.getPath('userData'), DB_NAME)
+const DB_PATH = join(app.getPath('userData'), DB_NAME)
 // For development, get the DB from the project root to persist across reloads
-const DB_PATH = join(join(process.cwd(), 'db'), DB_NAME)
+// const DB_PATH = join(join(process.cwd(), 'db'), DB_NAME)
 
 export function getDb(): Database.Database {
   return db
@@ -276,19 +276,21 @@ function setupIpcHandlers(): void {
     collector_number: string
     quantity_nonfoil: number
     quantity_foil: number
+    created_at?: string
+    updated_at?: string
   }[]) => {
-    const insertSql = 'INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
+    const insertSql = 'INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
     log.info('db:collection:add-batch', insertSql)
 
     const insertStmt = db.prepare(insertSql)
-    const checkStmt = db.prepare('SELECT 1 FROM available_cards WHERE set_code = ? AND collector_number = ?')
 
+    const now = new Date().toISOString()
     let inserted = 0
     const errors: { index: number; message: string }[] = []
 
     const batchInsert = db.transaction(() => {
       items.forEach((item, index) => {
-        const { set_code, collector_number, quantity_nonfoil, quantity_foil } = item
+        const { set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at } = item
         if (quantity_nonfoil < 0 || quantity_foil < 0) {
           errors.push({ index, message: 'Quantities must be non-negative' })
           return
@@ -297,11 +299,7 @@ function setupIpcHandlers(): void {
           errors.push({ index, message: 'At least one copy must be owned' })
           return
         }
-        if (!checkStmt.get(set_code, collector_number)) {
-          errors.push({ index, message: `Card not found: ${set_code} #${collector_number}` })
-          return
-        }
-        insertStmt.run(set_code, collector_number, quantity_nonfoil, quantity_foil)
+        insertStmt.run(set_code, collector_number, quantity_nonfoil, quantity_foil, created_at ?? now, updated_at ?? null)
         inserted++
       })
     })
@@ -581,5 +579,63 @@ function setupIpcHandlers(): void {
     const limit = Math.min(params?.limit ?? 20, 100)
     log.info('db:stats:by-set', 'SELECT * FROM stats_by_set ORDER BY unique_printings DESC LIMIT ?')
     return db.prepare('SELECT * FROM stats_by_set ORDER BY unique_printings DESC LIMIT ?').all(limit)
+  })
+
+  // Show native save dialog and return chosen path (or null if cancelled)
+  ipcMain.handle('dialog:showSaveDialog', async (event, defaultName: string) => {
+    const win = BrowserWindow.fromWebContents(event.sender)!
+    const result = await dialog.showSaveDialog(win, {
+      defaultPath: defaultName,
+      filters: [{ name: 'CSV', extensions: ['csv'] }],
+    })
+    return result.canceled ? null : result.filePath
+  })
+
+  // Export the cards table as CSV to the given path
+  ipcMain.handle('collection:export', (_, filePath: string) => {
+    const rows = db.prepare('SELECT set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at FROM cards ORDER BY set_code, collector_number').all() as {
+      set_code: string
+      collector_number: string
+      quantity_nonfoil: number
+      quantity_foil: number
+      created_at: string | null
+      updated_at: string | null
+    }[]
+
+    const header = 'set_code,collector_number,quantity_nonfoil,quantity_foil,created_at,updated_at'
+    const lines = rows.map(r =>
+      [r.set_code, r.collector_number, r.quantity_nonfoil, r.quantity_foil, r.created_at ?? '', r.updated_at ?? ''].join(',')
+    )
+    writeFileSync(filePath, [header, ...lines].join('\n'), 'utf8')
+    log.info('Collection exported', { filePath, rows: rows.length })
+    return { exported: rows.length }
+  })
+
+  // Export the collection in Moxfield CSV format
+  ipcMain.handle('collection:export-moxfield', (_, filePath: string) => {
+    const rows = db.prepare(`
+      SELECT name, set_code, collector_number, quantity_nonfoil, quantity_foil
+      FROM mapped_collection
+      WHERE scryfall_id IS NOT NULL
+      ORDER BY set_code, collector_number
+    `).all() as {
+      name: string
+      set_code: string
+      collector_number: string
+      quantity_nonfoil: number
+      quantity_foil: number
+    }[]
+
+    const header = 'Name,Count,Edition,Collector Number,Foil'
+    const lines: string[] = []
+    for (const r of rows) {
+      if (r.quantity_nonfoil > 0)
+        lines.push(`"${r.name}",${r.quantity_nonfoil},${r.set_code},${r.collector_number},false`)
+      if (r.quantity_foil > 0)
+        lines.push(`"${r.name}",${r.quantity_foil},${r.set_code},${r.collector_number},true`)
+    }
+    writeFileSync(filePath, [header, ...lines].join('\n'), 'utf8')
+    log.info('Collection exported (Moxfield)', { filePath, rows: lines.length })
+    return { exported: lines.length }
   })
 }

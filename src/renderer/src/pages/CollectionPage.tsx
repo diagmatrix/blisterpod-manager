@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
 import { Pencil, RotateCcw, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
 import type { CollectionCard } from '../../../shared/cards'
@@ -125,11 +125,13 @@ export default function CollectionPage() {
   const [quickCard, setQuickCard] = useState<CollectionCard | null>(null)
   const [deleteCard, setDeleteCard] = useState<CollectionCard | null>(null)
 
+  const onFilterCommit = useCallback(() => setPage(1), [])
+
   const {
     filtersState, filtersHandlers,
     search, searchSet, tokenFilter, rarities, colors, colorMode,
     reset: resetFilters,
-  } = useCardFilters({ initialSet, onCommit: () => setPage(1) })
+  } = useCardFilters({ initialSet, onCommit: onFilterCommit })
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['collection', page, pageSize, sortColumn, sortOrder, search, searchSet, tokenFilter, rarities, colors, colorMode],
@@ -137,6 +139,7 @@ export default function CollectionPage() {
       window.api.collectionList({
         page, pageSize, sortColumn, sortOrder, search, searchSet, tokenFilter, rarities, colors, colorMode,
       }),
+    placeholderData: keepPreviousData,
   })
 
   const handleReset = useCallback(() => {

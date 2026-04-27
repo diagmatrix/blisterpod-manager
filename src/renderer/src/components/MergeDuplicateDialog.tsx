@@ -27,7 +27,7 @@ export function MergeDuplicateCardDialog({ duplicate, open, onOpenChange }: Merg
     if ('error' in result) {
       toast.error(`Failed to merge: ${result.error}`)
     } else {
-      toast.success('DuplicateCards merged successfully')
+      toast.success('Duplicate cards merged successfully')
       queryClient.invalidateQueries({ queryKey: ['duplicates'] })
       onOpenChange(false)
     }

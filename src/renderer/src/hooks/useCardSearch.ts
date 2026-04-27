@@ -1,19 +1,22 @@
 import { useState, useEffect, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import type { CardSearchParams } from '../../../shared/search'
 
 const DEBOUNCE_MS = 500
 
-export function useCardSearch(params: CardSearchParams) {
-  const latestParams = useRef(params)
-  latestParams.current = params
+type FilterParams = Omit<CardSearchParams, 'page' | 'pageSize'>
 
-  const [committed, setCommitted] = useState(params)
+export function useCardSearch(params: CardSearchParams) {
+  const { page, pageSize, ...filterParams } = params
+  const latestFilters = useRef<FilterParams>(filterParams)
+  latestFilters.current = filterParams
+
+  const [committedFilters, setCommittedFilters] = useState<FilterParams>(filterParams)
   const raritiesKey = params.rarities?.join(',') ?? ''
   const colorsKey = params.colors?.join(',') ?? ''
 
   useEffect(() => {
-    const t = setTimeout(() => setCommitted(latestParams.current), DEBOUNCE_MS)
+    const t = setTimeout(() => setCommittedFilters(latestFilters.current), DEBOUNCE_MS)
     return () => clearTimeout(t)
   }, [
     params.query,
@@ -21,16 +24,16 @@ export function useCardSearch(params: CardSearchParams) {
     raritiesKey,
     colorsKey,
     params.colorMode,
-    params.page,
-    params.pageSize,
   ])
 
-  const hasFilter = !!(committed.query || committed.set_code || committed.rarities?.length || committed.colors?.length)
+  const committedParams: CardSearchParams = { ...committedFilters, page, pageSize }
+  const hasFilter = !!(committedFilters.query || committedFilters.set_code || committedFilters.rarities?.length || committedFilters.colors?.length)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['card-search', committed],
-    queryFn: () => window.api.cardSearch(committed),
+    queryKey: ['card-search', committedParams],
+    queryFn: () => window.api.cardSearch(committedParams),
     enabled: hasFilter,
+    placeholderData: keepPreviousData,
   })
 
   return { rows: data?.rows ?? [], total: data?.total ?? 0, isLoading: hasFilter && isLoading }

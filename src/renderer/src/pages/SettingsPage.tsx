@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { CollectionImport } from '@/components/CollectionImport'
+import { CollectionExport } from '@/components/CollectionExport'
 import { useTheme } from '@/components/ThemeProvider'
 import { RefreshLoadingDialog } from '@/components/RefreshLoadingDialog'
 import { injectKeyruneCSS } from '@/lib/keyruneCSS'
@@ -189,176 +191,205 @@ export default function SettingsPage() {
 
   return (
     <>
-    <div className="p-6 max-w-2xl space-y-8">
+    <div className="p-6 space-y-8">
       <div>
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
         <p className="text-muted-foreground">Application settings and preferences.</p>
       </div>
       <Separator />
 
-      {/* Appearance settings */}
-      <SettingsSection
-        title="Appearance"
-        description="Customize the look and feel of the application."
-      >
-        <SettingsRow label="Theme" description="Switch between light and dark mode.">
-          <div className="flex rounded-md border overflow-hidden">
-            <button
-              onClick={() => setTheme('light')}
-              className={`px-3 py-1.5 text-sm transition-colors ${
-                theme === 'light'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-background text-muted-foreground hover:text-foreground'
-              }`}
+      <div className="flex gap-12 items-start">
+        {/* Left column */}
+        <div className="flex-1 space-y-8">
+          {/* Appearance settings */}
+          <SettingsSection
+            title="Appearance"
+            description="Customize the look and feel of the application."
+          >
+            <SettingsRow label="Theme" description="Switch between light and dark mode.">
+              <div className="flex rounded-md border overflow-hidden">
+                <button
+                  onClick={() => setTheme('light')}
+                  className={`px-3 py-1.5 text-sm transition-colors ${
+                    theme === 'light'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Light
+                </button>
+                <button
+                  onClick={() => setTheme('dark')}
+                  className={`px-3 py-1.5 text-sm transition-colors ${
+                    theme === 'dark'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Dark
+                </button>
+              </div>
+            </SettingsRow>
+
+            <SettingsRow label="Font" description={fontDescription}>
+              <div className="flex rounded-md border overflow-hidden">
+                <button
+                  onClick={() => handleSetFont('default')}
+                  disabled={downloadingFont}
+                  className={`px-3 py-1.5 text-sm transition-colors ${
+                    font === 'default'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Default
+                </button>
+                <button
+                  onClick={() => handleSetFont('ccmg')}
+                  disabled={downloadingFont}
+                  className={`px-3 py-1.5 text-sm transition-colors ${
+                    font === 'ccmg'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {downloadingFont ? 'Downloading…' : 'CCMG'}
+                </button>
+              </div>
+            </SettingsRow>
+          </SettingsSection>
+          <Separator />
+
+          {/* Diagnostics and troubleshooting */}
+          <SettingsSection
+            title="Diagnostics"
+            description="Paths and system information for troubleshooting."
+          >
+            <SettingsRow label="Log files" description="Location of the app logs.">
+              <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded select-all">
+                {logPath || '—'}
+              </code>
+            </SettingsRow>
+          </SettingsSection>
+          <Separator />
+
+          {/* Data refresh actions */}
+          <SettingsSection
+            title="Update data"
+            description="Refresh the application data. These actions may take a while"
+          >
+            <SettingsRow
+              label="Refresh All"
+              description="Re-download all card data and set information from Scryfall, mana and set symbols."
             >
-              Light
-            </button>
-            <button
-              onClick={() => setTheme('dark')}
-              className={`px-3 py-1.5 text-sm transition-colors ${
-                theme === 'dark'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-background text-muted-foreground hover:text-foreground'
-              }`}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshAll}
+                disabled={isAnyRefreshPending}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshAllPending ? 'animate-spin' : ''}`} />
+                {refreshAllPending ? 'Refreshing…' : 'Refresh All'}
+              </Button>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Refresh Cards"
+              description={cardsLastRefreshed
+                ? `Last refreshed ${new Date(cardsLastRefreshed).toLocaleString()}`
+                : 'Update card catalog from Scryfall.'}
             >
-              Dark
-            </button>
-          </div>
-        </SettingsRow>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshCards}
+                disabled={isAnyRefreshPending}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshCardsPending ? 'animate-spin' : ''}`} />
+                {refreshCardsPending ? 'Refreshing…' : 'Refresh Cards'}
+              </Button>
+            </SettingsRow>
 
-        <SettingsRow label="Font" description={fontDescription}>
-          <div className="flex rounded-md border overflow-hidden">
-            <button
-              onClick={() => handleSetFont('default')}
-              disabled={downloadingFont}
-              className={`px-3 py-1.5 text-sm transition-colors ${
-                font === 'default'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-background text-muted-foreground hover:text-foreground'
-              }`}
+            <SettingsRow
+              label="Refresh Sets"
+              description={setsLastRefreshed
+                ? `Last refreshed ${new Date(setsLastRefreshed).toLocaleString()}`
+                : 'Update the list of Magic sets and their metadata.'}
             >
-              Default
-            </button>
-            <button
-              onClick={() => handleSetFont('ccmg')}
-              disabled={downloadingFont}
-              className={`px-3 py-1.5 text-sm transition-colors ${
-                font === 'ccmg'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-background text-muted-foreground hover:text-foreground'
-              }`}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshSets}
+                disabled={isAnyRefreshPending}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshSetsPending ? 'animate-spin' : ''}`} />
+                {refreshSetsPending ? 'Refreshing…' : 'Refresh Sets'}
+              </Button>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Refresh Mana Symbols"
+              description={manaSymbolsLastRefreshed
+                ? `Last refreshed ${new Date(manaSymbolsLastRefreshed).toLocaleString()}`
+                : 'Update the mana symbol images from Scryfall.'}
             >
-              {downloadingFont ? 'Downloading…' : 'CCMG'}
-            </button>
-          </div>
-        </SettingsRow>
-      </SettingsSection>
-      <Separator />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshManaSymbols}
+                disabled={isAnyRefreshPending}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshManaSymbolsPending ? 'animate-spin' : ''}`} />
+                {refreshManaSymbolsPending ? 'Refreshing…' : 'Refresh Mana Symbols'}
+              </Button>
+            </SettingsRow>
 
-      {/* Diagnostics and troubleshooting */}
-      <SettingsSection
-        title="Diagnostics"
-        description="Paths and system information for troubleshooting."
-      >
-        <SettingsRow label="Log files" description="Location of the app logs.">
-          <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded select-all">
-            {logPath || '—'}
-          </code>
-        </SettingsRow>
-      </SettingsSection>
-      <Separator />
-      
-      {/* Data refresh actions */}
-      <SettingsSection
-        title="Update data"
-        description="Refresh the application data. These actions may take a while"
-      >
-        <SettingsRow
-          label="Refresh All"
-          description="Re-download all card data and set information from Scryfall, mana and set symbols."
-        >
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefreshAll}
-            disabled={isAnyRefreshPending}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshAllPending ? 'animate-spin' : ''}`} />
-            {refreshAllPending ? 'Refreshing…' : 'Refresh All'}
-          </Button>
-        </SettingsRow>
+            <SettingsRow
+              label="Refresh Set Symbols"
+              description={keyruneDescription}
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshSetSymbols}
+                disabled={isAnyRefreshPending}
+                className="gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshSetSymbolsPending ? 'animate-spin' : ''}`} />
+                {refreshSetSymbolsPending ? 'Refreshing…' : 'Refresh Set Symbols'}
+              </Button>
+            </SettingsRow>
+          </SettingsSection>
+        </div>
 
-        <SettingsRow
-          label="Refresh Cards"
-          description={cardsLastRefreshed
-            ? `Last refreshed ${new Date(cardsLastRefreshed).toLocaleString()}`
-            : 'Update card catalog from Scryfall.'}
-        >
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefreshCards}
-            disabled={isAnyRefreshPending}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshCardsPending ? 'animate-spin' : ''}`} />
-            {refreshCardsPending ? 'Refreshing…' : 'Refresh Cards'}
-          </Button>
-        </SettingsRow>
+        <div className="w-px bg-border self-stretch" />
 
-        <SettingsRow
-          label="Refresh Sets"
-          description={setsLastRefreshed
-            ? `Last refreshed ${new Date(setsLastRefreshed).toLocaleString()}`
-            : 'Update the list of Magic sets and their metadata.'}
-        >
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefreshSets}
-            disabled={isAnyRefreshPending}
-            className="gap-2"
+        {/* Right column */}
+        <div className="flex-1 space-y-8">
+          {/* Import/export */}
+          <SettingsSection
+            title="Import/Export"
+            description="Import and export your collection data."
           >
-            <RefreshCw className={`h-4 w-4 ${refreshSetsPending ? 'animate-spin' : ''}`} />
-            {refreshSetsPending ? 'Refreshing…' : 'Refresh Sets'}
-          </Button>
-        </SettingsRow>
-
-        <SettingsRow
-          label="Refresh Mana Symbols"
-          description={manaSymbolsLastRefreshed
-            ? `Last refreshed ${new Date(manaSymbolsLastRefreshed).toLocaleString()}`
-            : 'Update the mana symbol images from Scryfall.'}
-        >
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefreshManaSymbols}
-            disabled={isAnyRefreshPending}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshManaSymbolsPending ? 'animate-spin' : ''}`} />
-            {refreshManaSymbolsPending ? 'Refreshing…' : 'Refresh Mana Symbols'}
-          </Button>
-        </SettingsRow>
-
-        <SettingsRow
-          label="Refresh Set Symbols"
-          description={keyruneDescription}
-        >
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefreshSetSymbols}
-            disabled={isAnyRefreshPending}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshSetSymbolsPending ? 'animate-spin' : ''}`} />
-            {refreshSetSymbolsPending ? 'Refreshing…' : 'Refresh Set Symbols'}
-          </Button>
-        </SettingsRow>
-      </SettingsSection>
+            <SettingsRow
+              label="Import collection"
+              description="Import collection data from a CSV file."
+            >
+              <CollectionImport />
+            </SettingsRow>
+            <SettingsRow
+              label="Export collection"
+              description="Export your collection data to a CSV file."
+            >
+              <CollectionExport />
+            </SettingsRow>
+          </SettingsSection>
+        </div>
+      </div>
     </div>
 
     <RefreshLoadingDialog open={isAnyRefreshPending} />

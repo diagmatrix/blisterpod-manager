@@ -29,6 +29,8 @@ export interface CollectionAddParams {
   collector_number: string
   quantity_nonfoil: number
   quantity_foil: number
+  created_at?: string
+  updated_at?: string
 }
 
 export interface CollectionUpdateParams {

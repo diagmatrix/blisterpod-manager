@@ -99,4 +99,12 @@ contextBridge.exposeInMainWorld('api', {
   // App icon (base64 data URL, theme-aware)
   getAppIcon: (): Promise<string> =>
     ipcRenderer.invoke('app:icon'),
+
+  // Import/export
+  showSaveDialog: (defaultName: string): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:showSaveDialog', defaultName),
+  exportCollection: (filePath: string): Promise<{ exported: number }> =>
+    ipcRenderer.invoke('collection:export', filePath),
+  exportCollectionMoxfield: (filePath: string): Promise<{ exported: number }> =>
+    ipcRenderer.invoke('collection:export-moxfield', filePath),
 })
