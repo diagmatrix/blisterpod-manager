@@ -92,13 +92,13 @@ export function FirstRunDialog({ open, onClose }: FirstRunDialogProps) {
     }
   }
 
-  const handleDismiss = () => {
-    window.api.settingsSet('firstRun', false)
+  const handleDismiss = async () => {
+    await window.api.settingsSet('firstRun', false)
     onClose()
   }
 
-  const handleRestart = () => {
-    window.api.settingsSet('firstRun', false)
+  const handleRestart = async () => {
+    await window.api.settingsSet('firstRun', false)
     window.api.restartApp()
   }
 

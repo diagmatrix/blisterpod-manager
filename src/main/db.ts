@@ -23,7 +23,7 @@ export function initDatabase(): void {
   db = new Database(DB_PATH)
   db.pragma('journal_mode = WAL')
 
-  const sqlDir = join(process.cwd(), 'db')
+  const sqlDir = join(app.getAppPath(), 'db')
   const tables = ['cards.sql', 'scryfall_cards.sql', 'scryfall_sets.sql']
   const views = [
     'duplicates.sql',

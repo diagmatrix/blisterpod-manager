@@ -8,8 +8,25 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
+    "package": "npm run build && electron-builder",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "npm run lint -- --fix"
+  },
+  "build": {
+    "appId": "com.blisterpod.manager",
+    "productName": "Blisterpod Manager",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "resources/icon_b.png"
+    },
+    "files": [
+      "out/**/*",
+      "db/**/*",
+      "resources/**/*"
+    ]
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
@@ -45,6 +62,7 @@
     "@types/stream-json": "^1.7.8",
     "@vitejs/plugin-react": "4.3.0",
     "electron": "32.0.0",
+    "electron-builder": "^26.8.1",
     "electron-vite": "2.2.0",
     "eslint": "^9.25.1",
     "eslint-plugin-react-hooks": "^5.2.0",
@@ -58,6 +76,6 @@
     "magic-the-gathering",
     "collection"
   ],
-  "author": "",
+  "author": "diagmatrix",
   "license": "MIT"
 }
