@@ -98,12 +98,15 @@ export function parseMoxfieldCSV(text: string): CollectionAddParams[] {
 
 export function parseGoogleDriveCSV(text: string): CollectionAddParams[] {
   const lines = text.split('\n').map(l => l.trimEnd()).filter(l => l)
-  const headerIdx = lines.findIndex(l => l.startsWith('NAME,'))
+  const headerIdx = lines.findIndex(l => {
+    const cols = parseCSVRow(l).map(h => h.trim().toUpperCase())
+    return (cols.includes('NAME') || cols.includes('TYPE')) && cols.includes('SET') && cols.includes('NUMBER')
+  })
   if (headerIdx === -1) return []
 
-  const headers = parseCSVRow(lines[headerIdx])
+  const headers = parseCSVRow(lines[headerIdx]).map(h => h.trim().toUpperCase())
   const col = (name: string) => headers.indexOf(name)
-  const nameIdx = col('NAME')
+  const nameIdx = col('NAME') !== -1 ? col('NAME') : col('TYPE')
   const setIdx = col('SET')
   const numberIdx = col('NUMBER')
   const quantityIdx = col('QUANTITY')
