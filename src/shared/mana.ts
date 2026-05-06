@@ -44,7 +44,7 @@ const COLOR_QUARTETS: Record<string, string> = {
 }
 
 export function getManaSymbolUrl(symbol: string): string {
-  const cost = symbol.toUpperCase().replace(/[\{\}]/g, '') // Remove curly braces if present
+  const cost = symbol.toUpperCase().replace(/[{}]/g, '') // Remove curly braces if present
   const parsedCost = cost.replace(/\//g, '') // Remove slashes if present
   return `mana-symbol://app/${parsedCost}.svg`
 }

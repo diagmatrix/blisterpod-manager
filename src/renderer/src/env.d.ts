@@ -5,7 +5,6 @@ import type {
   CardSearchParams,
   CardSearchResponse,
   CardDetailParams,
-  CardDetailResponse,
   OtherPrintingsResponse,
   CollectionAddParams,
   CollectionListParams,
@@ -48,6 +47,9 @@ export interface ElectronAPI {
   getAppIcon: () => Promise<string>
   appVersion: () => Promise<string>
   restartApp: () => Promise<void>
+  showSaveDialog: (defaultName: string) => Promise<string | null>
+  exportCollection: (filePath: string) => Promise<{ exported: number }>
+  exportCollectionMoxfield: (filePath: string) => Promise<{ exported: number }>
 }
 
 declare global {
