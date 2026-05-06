@@ -214,8 +214,8 @@ function setupIpcHandlers(): void {
     }
 
     // Validation to prevent SQL injection on sortColumn/sortOrder
-    const validColumns = ['card_name', 'set_code', 'collector_number', 'quantity_nonfoil', 'quantity_foil', 'total', 'value', 'scryfall_id', 'color_identity', 'rarity']
-    const rawColumn = validColumns.includes(sortColumn) ? sortColumn : 'card_name'
+    const validColumns = ['name', 'set_code', 'collector_number', 'quantity_nonfoil', 'quantity_foil', 'total', 'value', 'scryfall_id', 'color_identity', 'rarity']
+    const rawColumn = validColumns.includes(sortColumn) ? sortColumn : 'name'
     const finalSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC'
     const finalSortColumn = rawColumn === 'collector_number' ? 'collector_number_normalised' : rawColumn
 
