@@ -47,6 +47,8 @@ export interface CardSearchParams {
   rarities?: string[]
   colors?: string[]
   colorMode?: 'atLeast' | 'exactly' | 'atMost'
+  sortColumn?: string
+  sortOrder?: 'ASC' | 'DESC'
   page?: number
   pageSize?: number
 }
