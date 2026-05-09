@@ -59,8 +59,14 @@ contextBridge.exposeInMainWorld('api', {
   // Collection errors (BM-05)
   duplicatesList: (): Promise<DuplicateCard[]> =>
     ipcRenderer.invoke('db:duplicates:list'),
+  duplicatesRows: (ids: number[]): Promise<{ id: number; quantity_nonfoil: number; quantity_foil: number; created_at: string | null; updated_at: string | null }[]> =>
+    ipcRenderer.invoke('db:duplicates:rows', ids),
   duplicatesMerge: (params: { set_code: string; collector_number: string }): Promise<{ success: true } | { error: string }> =>
     ipcRenderer.invoke('db:duplicates:merge', params),
+  duplicatesMergeAll: (): Promise<{ merged: number } | { error: string }> =>
+    ipcRenderer.invoke('db:duplicates:merge-all'),
+  duplicatesRemoveAll: (): Promise<{ removed: number } | { error: string }> =>
+    ipcRenderer.invoke('db:duplicates:remove-all'),
   missingList: (): Promise<MissingCard[]> =>
     ipcRenderer.invoke('db:missing:list'),
   missingFetchSet: (params: { set_code: string }): Promise<{ success: true } | { error: string }> =>

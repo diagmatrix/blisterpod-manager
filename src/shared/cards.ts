@@ -41,6 +41,12 @@ export interface DuplicateCard extends Card {
   row_ids: string
 }
 
+export interface DuplicateCardRow {
+    id: number
+    quantity_nonfoil: number
+    quantity_foil: number
+}
+
 export interface CardDetail extends CollectionCard {
   type_line: string | null
   mana_costs: string | null    // JSON array string, one entry per face
