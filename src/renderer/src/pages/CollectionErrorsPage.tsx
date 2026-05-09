@@ -4,11 +4,20 @@ import { toast } from 'sonner'
 import { TableSkeleton } from '@/components/skeletons'
 import { Button } from '@/components/ui/button'
 import { MergeDuplicateCardDialog } from '@/components/MergeDuplicateDialog'
+import { MergeAllDuplicatesDialog } from '@/components/MergeAllDuplicatesDialog'
+import { RemoveAllDuplicatesDialog } from '@/components/RemoveAllDuplicatesDialog'
+import { DeleteDuplicateRowsDialog } from '@/components/DeleteDuplicateRowsDialog'
 import { CardQuickDialog } from '@/components/CardQuickDialog'
 import { DeleteCardDialog } from '@/components/DeleteCardDialog'
 import type { DuplicateCard, MissingCard, CollectionCard } from '../../../shared/cards'
 import { missingCardToCollectionCard } from '../../../shared/cards'
 import { Pencil, RefreshCw, Trash2, X } from 'lucide-react'
+
+interface DuplicateTableProps {
+  duplicates: DuplicateCard[]
+  onMerge: (dup: DuplicateCard) => void
+  onDelete: (dup: DuplicateCard) => void
+}
 
 interface MissingTableProps {
   cards: MissingCard[]
@@ -20,19 +29,19 @@ interface MissingTableProps {
   onDelete: (row: MissingCard) => void
 }
 
-function DuplicateCardTable({ duplicates, setMergeTarget }: { duplicates: DuplicateCard[]; setMergeTarget: (dup: DuplicateCard) => void }) {
+function DuplicateCardTable({ duplicates, onMerge, onDelete }: DuplicateTableProps) {
   return (
     <div className="rounded-md border border-border overflow-auto">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm">
           <tr className="border-b border-border">
-            <th className="px-3 py-2 text-left font-medium text-muted-foreground">Name</th>
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground min-w-80">Name</th>
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-24">Set code</th>
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Collector number</th>
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Total nonfoil</th>
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Total foil</th>
             <th className="px-3 py-2 text-center font-medium text-muted-foreground w-40">Duplicate count</th>
-            <th className="px-3 py-2 w-20" />
+            <th className="px-3 py-2 w-40" />
           </tr>
         </thead>
         <tbody>
@@ -48,9 +57,14 @@ function DuplicateCardTable({ duplicates, setMergeTarget }: { duplicates: Duplic
               <td className="px-3 py-1.5 text-right tabular-nums">{dup.total_foil}</td>
               <td className="px-3 py-1.5 text-right tabular-nums">{dup.row_count}</td>
               <td className="px-3 py-1.5 text-right">
-                <Button size="sm" variant="outline" onClick={() => setMergeTarget(dup)}>
-                  Merge rows
-                </Button>
+                <div className="flex items-center justify-end gap-1">
+                  <Button size="sm" variant="outline" title="Merge rows" onClick={() => onMerge(dup)}>
+                    Merge rows
+                  </Button>
+                  <Button size="sm" variant="destructive" title="Delete duplicate" onClick={() => onDelete(dup)}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}
@@ -139,12 +153,16 @@ function MissingTable({ cards, loadingKeys, onFetchSet, onFetchCards, onFetchCar
 export default function CollectionErrorsPage() {
   const queryClient = useQueryClient()
   const [mergeTarget, setMergeTarget] = useState<DuplicateCard | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<DuplicateCard | null>(null)
   const [editCard, setEditCard] = useState<CollectionCard | null>(null)
   const [deleteCard, setDeleteCard] = useState<CollectionCard | null>(null)
   const [loadingKeys, setLoadingKeys] = useState<Set<string>>(new Set())
 
   function addKey(key: string) { setLoadingKeys((prev) => new Set([...prev, key])) }
   function removeKey(key: string) { setLoadingKeys((prev) => { const s = new Set(prev); s.delete(key); return s }) }
+
+  const [mergeAllOpen, setMergeAllOpen] = useState(false)
+  const [removeAllOpen, setRemoveAllOpen] = useState(false)
 
   const { data: duplicates, isLoading, isError } = useQuery({
     queryKey: ['duplicates'],
@@ -204,10 +222,23 @@ export default function CollectionErrorsPage() {
         <p className="text-muted-foreground">Review and fix data issues in your collection.</p>
       </div>
 
+      {/* Duplicate cards section */}
       <div className="space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold">Duplicate cards</h2>
-          <p className="text-sm text-muted-foreground">Detect and merge duplicate card entries.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Duplicate cards</h2>
+            <p className="text-sm text-muted-foreground">Detect and merge duplicate card entries.</p>
+          </div>
+          {!!duplicates?.length && (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setMergeAllOpen(true)}>
+                Merge all
+              </Button>
+              <Button variant="destructive" size="sm" onClick={() => setRemoveAllOpen(true)}>
+                Remove all
+              </Button>
+            </div>
+          )}
         </div>
         {isLoading ? (
           <TableSkeleton rows={7} />
@@ -216,10 +247,11 @@ export default function CollectionErrorsPage() {
         ) : duplicates?.length === 0 ? (
           <p className="text-sm text-muted-foreground">No duplicates found. Your collection is clean!</p>
         ) : (
-          <DuplicateCardTable duplicates={duplicates ?? []} setMergeTarget={setMergeTarget} />
+          <DuplicateCardTable duplicates={duplicates ?? []} onMerge={setMergeTarget} onDelete={setDeleteTarget} />
         )}
       </div>
 
+      {/* Missing / Not Found section */}
       <div className="space-y-4">
         <div>
           <h2 className="text-xl font-semibold">Missing / Not Found</h2>
@@ -243,7 +275,25 @@ export default function CollectionErrorsPage() {
           />
         )}
       </div>
-
+      
+      {/* Dialogs */}
+      <MergeAllDuplicatesDialog
+        count={duplicates?.length ?? 0}
+        open={mergeAllOpen}
+        onOpenChange={setMergeAllOpen}
+      />
+      <RemoveAllDuplicatesDialog
+        count={duplicates?.length ?? 0}
+        open={removeAllOpen}
+        onOpenChange={setRemoveAllOpen}
+      />
+      {deleteTarget && (
+        <DeleteDuplicateRowsDialog
+          duplicate={deleteTarget}
+          open={!!deleteTarget}
+          onOpenChange={(open) => { if (!open) setDeleteTarget(null) }}
+        />
+      )}
       {mergeTarget && (
         <MergeDuplicateCardDialog
           duplicate={mergeTarget}

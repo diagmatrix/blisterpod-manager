@@ -30,7 +30,10 @@ export interface ElectronAPI {
   statsTopValue: (params?: { limit?: number }) => Promise<CollectionCard[]>
   statsBySet: (params?: { limit?: number }) => Promise<StatsSetEntry[]>
   duplicatesList: () => Promise<DuplicateCard[]>
+  duplicatesRows: (ids: number[]) => Promise<{ id: number; quantity_nonfoil: number; quantity_foil: number; created_at: string | null; updated_at: string | null }[]>
   duplicatesMerge: (params: { set_code: string; collector_number: string }) => Promise<{ success: true } | { error: string }>
+  duplicatesMergeAll: () => Promise<{ merged: number } | { error: string }>
+  duplicatesRemoveAll: () => Promise<{ removed: number } | { error: string }>
   missingList: () => Promise<MissingCard[]>
   missingFetchSet: (params: { set_code: string }) => Promise<{ success: true } | { error: string }>
   missingFetchCards: (params: { set_code: string }) => Promise<{ inserted: number } | { error: string }>
