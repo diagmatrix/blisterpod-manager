@@ -9,9 +9,9 @@ import { DuplicateCardRow } from '../shared/cards'
 const log = createLogger('db')
 
 let db: Database.Database
-// const DB_NAME = 'collection.db'
+const DB_NAME = 'collection.db'
 // For testing, the database name is overwritten
-const DB_NAME = 'test_collection.db'
+// const DB_NAME = 'test_collection.db'
 const DB_PATH = join(app.getPath('userData'), DB_NAME)
 
 export function getDb(): Database.Database {
