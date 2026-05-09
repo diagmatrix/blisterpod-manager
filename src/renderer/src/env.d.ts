@@ -24,6 +24,7 @@ export interface ElectronAPI {
   collectionAddBatch: (items: CollectionAddParams[]) => Promise<{ inserted: number; errors: { index: number; message: string }[] }>
   collectionUpdate: (params: CollectionUpdateParams) => Promise<{ success: true } | { error: string }>
   collectionDelete: (params: { id: number }) => Promise<{ success: true } | { error: string }>
+  collectionDeleteMany: (ids: number[]) => Promise<{ deleted: number }>
   statsSummary: () => Promise<StatsSummary>
   statsColors: () => Promise<StatsColors>
   statsRarity: () => Promise<StatsRarityEntry[]>
