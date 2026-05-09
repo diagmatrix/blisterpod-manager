@@ -7,7 +7,7 @@ export const COLOR_SYMBOL_MAP: Record<string, string> = {
   C: 'mana-symbol://app/C.svg',
 }
 
-export const WUBRG_ORDER: string[] = ['W', 'U', 'B', 'R', 'G']
+export const WUBRG_ORDER: string[] = ['W', 'U', 'B', 'R', 'G', 'C']
 
 const COLOR_PAIRS: Record<string, string> = {
   'WU': 'WU', // Azorius
