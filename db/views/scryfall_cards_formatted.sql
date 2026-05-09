@@ -1,5 +1,5 @@
-DROP VIEW IF EXISTS available_cards;
-CREATE VIEW available_cards AS
+DROP VIEW IF EXISTS scryfall_cards_formatted;
+CREATE VIEW scryfall_cards_formatted AS
 SELECT
     id AS scryfall_id,
     oracle_id,
@@ -21,5 +21,6 @@ SELECT
             THEN cast(substr(collector_number, instr(collector_number, '-') + 1) AS integer)
         ELSE
             cast(collector_number AS integer)
-    END AS collector_number_normalised
+    END AS collector_number_normalised,
+    released_at
 FROM scryfall_cards

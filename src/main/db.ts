@@ -30,7 +30,7 @@ export function initDatabase(): void {
     'duplicates.sql',
     'missing.sql',
     'mapped_collection.sql',
-    'available_cards.sql',
+    'scryfall_cards_formatted.sql',
     'stats_summary.sql',
     'stats_colors.sql',
     'stats_rarity.sql',
@@ -215,7 +215,7 @@ function setupIpcHandlers(): void {
     }
 
     // Validation to prevent SQL injection on sortColumn/sortOrder
-    const validColumns = ['name', 'set_code', 'collector_number', 'quantity_nonfoil', 'quantity_foil', 'total', 'value', 'scryfall_id', 'color_identity', 'rarity']
+    const validColumns = ['name', 'set_code', 'collector_number', 'total', 'value', 'scryfall_id', 'color_identity', 'rarity']
     const rawColumn = validColumns.includes(sortColumn) ? sortColumn : 'name'
     const finalSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC'
     const finalSortColumn = rawColumn === 'collector_number' ? 'collector_number_normalised' : rawColumn
@@ -253,7 +253,7 @@ function setupIpcHandlers(): void {
       return { error: 'At least one copy must be owned' }
     }
 
-    const exists = db.prepare('SELECT 1 FROM available_cards WHERE set_code = ? AND collector_number = ?').get(set_code, collector_number)
+    const exists = db.prepare('SELECT 1 FROM scryfall_cards_formatted WHERE set_code = ? AND collector_number = ?').get(set_code, collector_number)
     if (!exists) {
       log.warn('Card add validation failed', { error: `Card not found: ${set_code} #${collector_number}` })
       return { error: `Card not found: ${set_code} #${collector_number}` }
@@ -563,9 +563,15 @@ function setupIpcHandlers(): void {
 
   // Search available cards
   ipcMain.handle('db:cards:search', (_, params: import('../shared/search').CardSearchParams) => {
-    const { query, set_code, rarities, colors, colorMode = 'including', page = 1, pageSize = 60 } = params
+    const { query, set_code, rarities, colors, colorMode = 'including', sortColumn = 'collector_number', sortOrder, page = 1, pageSize = 60 } = params
     const safePageSize = Math.min(pageSize, 120)
     const offset = (page - 1) * safePageSize
+    const validSearchColumns = ['name', 'set_code', 'collector_number', 'rarity', 'color_identity', 'released_at']
+    const rawSearchColumn = validSearchColumns.includes(sortColumn) ? sortColumn : 'collector_number'
+    const finalSearchSortColumn =
+      rawSearchColumn === 'collector_number' ? 'collector_number_normalised' :
+      rawSearchColumn
+    const finalSearchSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC'
 
     const conditions: string[] = []
     const values: any[] = []
@@ -586,11 +592,11 @@ function setupIpcHandlers(): void {
     values.push(...rarityVals, ...colorVals)
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
-    const sql = `SELECT * FROM available_cards ${where} ORDER BY collector_number_normalised ASC, name ASC LIMIT ? OFFSET ?`
+    const sql = `SELECT * FROM scryfall_cards_formatted ${where} ORDER BY ${finalSearchSortColumn} ${finalSearchSortOrder} LIMIT ? OFFSET ?`
     log.info('db:cards:search', sql)
 
     const rows = db.prepare(sql).all(...values, safePageSize, offset)
-    const { total } = db.prepare(`SELECT COUNT(*) as total FROM available_cards ${where}`).get(...values) as { total: number }
+    const { total } = db.prepare(`SELECT COUNT(*) as total FROM scryfall_cards_formatted ${where}`).get(...values) as { total: number }
 
     return { rows, total }
   })

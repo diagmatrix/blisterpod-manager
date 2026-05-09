@@ -5,6 +5,8 @@ import type { ScryfallCard } from '../../../shared/cards'
 import type { BatchItem, CardSearchParams } from '../../../shared/search'
 import { CardFilters } from '@/components/CardFilters'
 import { useCardFilters } from '@/hooks/useCardFilters'
+import { useCardSort } from '@/hooks/useCardSort'
+import { CardSort } from '@/components/CardSort'
 import { ViewToggle, type ViewMode } from '@/components/ViewToggle'
 import { SectionHeader } from '@/components/SectionHeader'
 import { BatchPanel } from '@/components/BatchPanel'
@@ -17,11 +19,17 @@ import { ImageGridSkeleton, TableSkeleton } from '@/components/skeletons'
 
 const PAGE_SIZES = [30, 60, 120] as const
 
+const SORT_OPTIONS = [
+  { value: 'rarity', label: 'Rarity' },
+  { value: 'released_at', label: 'Release date' },
+]
+
 export default function AddCardPage() {
   const queryClient = useQueryClient()
 
   const [view, setView] = useState<ViewMode>('image')
   const [filterExpanded, setFilterExpanded] = useState(true)
+  const [sortExpanded, setSortExpanded] = useState(true)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0])
   const [batch, setBatch] = useState<BatchItem[]>([])
@@ -29,6 +37,7 @@ export default function AddCardPage() {
 
   const onFilterCommit = useCallback(() => setPage(1), [])
   const { filtersState, filtersHandlers } = useCardFilters({ onCommit: onFilterCommit })
+  const { sortColumn, sortOrder, handleSort, toggleOrder } = useCardSort({ defaultColumn: 'collector_number', defaultOrder: 'ASC' })
   const { searchInput, searchSetInput, raritiesInput, colorsInput, colorMode } = filtersState
 
   const searchParams: CardSearchParams = {
@@ -37,6 +46,8 @@ export default function AddCardPage() {
     rarities: raritiesInput.length > 0 ? raritiesInput : undefined,
     colors: colorsInput.length > 0 ? colorsInput : undefined,
     colorMode: colorsInput.length > 0 ? colorMode : undefined,
+    sortColumn,
+    sortOrder,
     page,
     pageSize,
   }
@@ -120,6 +131,19 @@ export default function AddCardPage() {
         <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
           <SectionHeader label="Filter by" expanded={filterExpanded} onToggle={() => setFilterExpanded((v) => !v)} />
           {filterExpanded && <CardFilters state={filtersState} handlers={filtersHandlers} showTokenFilter={false} />}
+        </div>
+
+        <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
+          <SectionHeader label="Sort by" expanded={sortExpanded} onToggle={() => setSortExpanded((v) => !v)} />
+          {sortExpanded && (
+            <CardSort
+              options={SORT_OPTIONS}
+              sortColumn={sortColumn}
+              sortOrder={sortOrder}
+              onSort={(col) => { handleSort(col); setPage(1) }}
+              onToggleOrder={() => { toggleOrder(); setPage(1) }}
+            />
+          )}
         </div>
 
         {isLoading ? (

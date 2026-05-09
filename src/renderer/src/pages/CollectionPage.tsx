@@ -1,9 +1,8 @@
 import { useState, useCallback } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
-import { Pencil, RotateCcw, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
+import { Pencil, RotateCcw, Trash2 } from 'lucide-react'
 import type { CollectionCard } from '../../../shared/cards'
-import type { CollectionListParams } from '../../../shared/search'
 import { ManaSymbols } from '@/components/ManaSymbols'
 import { SetSymbol } from '@/components/SetSymbol'
 import { CollectionImageGrid } from '@/components/CollectionImageGrid'
@@ -15,19 +14,13 @@ import { Pagination } from '@/components/Pagination'
 import { DeleteCardDialog } from '@/components/DeleteCardDialog'
 import { CardQuickDialog } from '@/components/CardQuickDialog'
 import { useCardFilters } from '@/hooks/useCardFilters'
+import { useCardSort } from '@/hooks/useCardSort'
+import { CardSort } from '@/components/CardSort'
 import { Button } from '@/components/ui/button'
 
 const PAGE_SIZES = [30, 60, 120] as const
 
-type SortColumn = CollectionListParams['sortColumn']
-type SortOrder = 'ASC' | 'DESC'
-
-const SORT_OPTIONS: { value: string; label: string }[] = [
-  { value: 'card_name', label: 'Name' },
-  { value: 'set_code', label: 'Set' },
-  { value: 'collector_number', label: 'Collector number' },
-  { value: 'quantity_nonfoil', label: 'Nonfoil' },
-  { value: 'quantity_foil', label: 'Foil' },
+const SORT_OPTIONS = [
   { value: 'total', label: 'Total' },
   { value: 'value', label: 'Value' },
 ]
@@ -115,8 +108,7 @@ export default function CollectionPage() {
 
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0])
-  const [sortColumn, setSortColumn] = useState<SortColumn>('value')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('DESC')
+  const { sortColumn, sortOrder, handleSort, toggleOrder, reset: resetSort } = useCardSort({ defaultColumn: 'value', defaultOrder: 'DESC' })
   const [view, setView] = useState<ViewMode>('image')
 
   const [filterExpanded, setFilterExpanded] = useState(true)
@@ -144,9 +136,9 @@ export default function CollectionPage() {
 
   const handleReset = useCallback(() => {
     resetFilters()
-    setSortColumn('value'); setSortOrder('DESC')
+    resetSort()
     setPage(1); setPageSize(PAGE_SIZES[0])
-  }, [resetFilters])
+  }, [resetFilters, resetSort])
 
   const handleRowClick = useCallback((card: CollectionCard) => {
     setQuickCard(card)
@@ -189,31 +181,13 @@ export default function CollectionPage() {
       <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
         <SectionHeader label="Sort by" expanded={sortExpanded} onToggle={() => setSortExpanded((v) => !v)} />
         {sortExpanded && (
-          <div className="flex flex-wrap items-center gap-2">
-            {SORT_OPTIONS.map((opt) => {
-              const isActive = sortColumn === opt.value
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    if (opt.value === sortColumn) setSortOrder((p) => p === 'ASC' ? 'DESC' : 'ASC')
-                    else { setSortColumn(opt.value); setSortOrder('ASC') }
-                    setPage(1)
-                  }}
-                  className={`h-8 px-3 rounded-md text-sm font-medium border transition-colors ${isActive ? 'bg-primary text-primary-foreground border-primary' : 'border-input text-muted-foreground hover:bg-muted hover:text-foreground'}`}
-                >
-                  {opt.label}
-                </button>
-              )
-            })}
-            <button
-              onClick={() => { setSortOrder((p) => p === 'ASC' ? 'DESC' : 'ASC'); setPage(1) }}
-              className="h-8 px-3 rounded-md border border-input text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1 text-sm"
-            >
-              <span>{sortOrder === 'ASC' ? 'Ascending' : 'Descending'}</span>
-              {sortOrder === 'ASC' ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </button>
-          </div>
+          <CardSort
+            options={SORT_OPTIONS}
+            sortColumn={sortColumn as string}
+            sortOrder={sortOrder}
+            onSort={(col) => { handleSort(col); setPage(1) }}
+            onToggleOrder={() => { toggleOrder(); setPage(1) }}
+          />
         )}
       </div>
 

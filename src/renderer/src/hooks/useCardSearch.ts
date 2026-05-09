@@ -4,10 +4,10 @@ import type { CardSearchParams } from '../../../shared/search'
 
 const DEBOUNCE_MS = 500
 
-type FilterParams = Omit<CardSearchParams, 'page' | 'pageSize'>
+type FilterParams = Omit<CardSearchParams, 'page' | 'pageSize' | 'sortColumn' | 'sortOrder'>
 
 export function useCardSearch(params: CardSearchParams) {
-  const { page, pageSize, ...filterParams } = params
+  const { page, pageSize, sortColumn, sortOrder, ...filterParams } = params
   const latestFilters = useRef<FilterParams>(filterParams)
   latestFilters.current = filterParams
 
@@ -26,7 +26,7 @@ export function useCardSearch(params: CardSearchParams) {
     params.colorMode,
   ])
 
-  const committedParams: CardSearchParams = { ...committedFilters, page, pageSize }
+  const committedParams: CardSearchParams = { ...committedFilters, page, pageSize, sortColumn, sortOrder }
   const hasFilter = !!(committedFilters.query || committedFilters.set_code || committedFilters.rarities?.length || committedFilters.colors?.length)
 
   const { data, isLoading } = useQuery({
