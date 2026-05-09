@@ -9,7 +9,7 @@ import { DuplicateCardRow } from '../shared/cards'
 const log = createLogger('db')
 
 let db: Database.Database
-//const DB_NAME = 'collection.db'
+// const DB_NAME = 'collection.db'
 // For testing, the database name is overwritten
 const DB_NAME = 'test_collection.db'
 const DB_PATH = join(app.getPath('userData'), DB_NAME)
@@ -27,10 +27,11 @@ export function initDatabase(): void {
   const sqlDir = join(app.getAppPath(), 'db')
   const tables = ['cards.sql', 'scryfall_cards.sql', 'scryfall_sets.sql']
   const views = [
+    'scryfall_sets_formatted.sql',
+    'scryfall_cards_formatted.sql',
     'duplicates.sql',
     'missing.sql',
     'mapped_collection.sql',
-    'scryfall_cards_formatted.sql',
     'stats_summary.sql',
     'stats_colors.sql',
     'stats_rarity.sql',
@@ -638,40 +639,33 @@ function setupIpcHandlers(): void {
 
   // Color distribution stats
   ipcMain.handle('db:stats:colors', () => {
-    log.info('db:stats:colors', 'SELECT * FROM stats_colors')
-    return db.prepare('SELECT * FROM stats_colors').get()
+    const sql = 'SELECT * FROM stats_colors'
+    log.info('db:stats:colors', sql)
+    return db.prepare(sql).get()
   })
 
   // Rarity breakdown stats
   ipcMain.handle('db:stats:rarity', () => {
     const sql = `SELECT * FROM stats_rarity ORDER BY CASE rarity WHEN 'common' THEN 1 WHEN 'uncommon' THEN 2 WHEN 'rare' THEN 3 WHEN 'mythic' THEN 4 WHEN 'special' THEN 5 ELSE 6 END`
     log.info('db:stats:rarity', sql)
-    const rows = db.prepare(`
-      SELECT * FROM stats_rarity
-      ORDER BY CASE rarity
-        WHEN 'common'   THEN 1
-        WHEN 'uncommon' THEN 2
-        WHEN 'rare'     THEN 3
-        WHEN 'mythic'   THEN 4
-        WHEN 'special'  THEN 5
-        ELSE 6
-      END
-    `).all() as { rarity: string; total_cards: number }[]
+    const rows = db.prepare(sql).all() as { rarity: string; total_cards: number }[]
     return rows.map((r) => ({ rarity: r.rarity, totalCards: r.total_cards }))
   })
 
   // Top cards by EUR price
   ipcMain.handle('db:stats:top-value', (_, params: { limit?: number } = {}) => {
     const limit = Math.min(params?.limit ?? 10, 50)
-    log.info('db:stats:top-value', 'SELECT * FROM mapped_collection ORDER BY value DESC LIMIT ?')
-    return db.prepare('SELECT * FROM mapped_collection ORDER BY value DESC LIMIT ?').all(limit)
+    const sql = 'SELECT * FROM mapped_collection ORDER BY value DESC LIMIT ?'
+    log.info('db:stats:top-value', sql)
+    return db.prepare(sql).all(limit)
   })
 
   // Cards per set
   ipcMain.handle('db:stats:by-set', (_, params: { limit?: number } = {}) => {
     const limit = Math.min(params?.limit ?? 20, 100)
-    log.info('db:stats:by-set', 'SELECT * FROM stats_by_set ORDER BY unique_printings DESC LIMIT ?')
-    return db.prepare('SELECT * FROM stats_by_set ORDER BY unique_printings DESC LIMIT ?').all(limit)
+    const sql = 'SELECT * FROM stats_by_set ORDER BY percentage_collected DESC, unique_printings DESC LIMIT ?'
+    log.info('db:stats:by-set', sql)
+    return db.prepare(sql).all(limit)
   })
 
   // Show native save dialog and return chosen path (or null if cancelled)

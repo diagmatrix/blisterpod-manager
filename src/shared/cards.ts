@@ -8,6 +8,7 @@ export interface ScryfallCard extends Card {
     scryfall_id: string | null
     oracle_id: string | null
     set_name: string
+    base_set_code: string
     image_url: string | null
     rarity: string | null
     value_nonfoil?: number | null
@@ -19,7 +20,6 @@ export interface ScryfallCard extends Card {
 
 export interface CollectionCard extends ScryfallCard {
     collection_id: number
-    base_set_code: string
     quantity_nonfoil: number
     quantity_foil: number
     total: number

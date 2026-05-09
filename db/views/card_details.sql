@@ -44,12 +44,7 @@ SELECT
             json_array(sc.mana_cost)
     END                                   AS mana_costs,
     sc.set_code,
-    CASE
-        WHEN coalesce(ss.set_type, '') IN ('promo', 'token')
-            OR coalesce(ss.name, '') = 'Universes Within'
-            THEN coalesce(ss.parent_set_code, c.set_code)
-        ELSE c.set_code
-    END                                   AS base_set_code,
+    ssf.base_set_code,
     sc.collector_number,
     sc.set_name,
     CASE
@@ -100,5 +95,5 @@ LEFT JOIN meld_result mr
     ON sc.id = mr.id
 LEFT JOIN scryfall_cards sc_meld
     ON mr.meld_id = sc_meld.id
-LEFT JOIN scryfall_sets ss
-    ON c.set_code = ss.code
+LEFT JOIN scryfall_sets_formatted ssf
+    ON c.set_code = ssf.code

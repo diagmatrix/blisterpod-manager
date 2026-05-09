@@ -6,13 +6,8 @@ SELECT
     coalesce(sc.oracle_id, sc.card_faces -> 0 ->> 'oracle_id') AS oracle_id,
     coalesce(sc.name, 'Not found')                             AS name,
     c.set_code,
-    CASE
-        WHEN coalesce(ss.set_type, '') IN ('promo', 'token')
-            OR coalesce(ss.name, '') = 'Universes Within'
-            THEN coalesce(ss.parent_set_code, c.set_code)
-        ELSE c.set_code
-    END                                                        AS base_set_code,
-    coalesce(ss.name, c.set_code)                              AS set_name,
+    ssf.base_set_code,
+    coalesce(ssf.name, c.set_code)                             AS set_name,
     c.collector_number,
     sc.collector_number_normalised,
     c.quantity_nonfoil,
@@ -38,5 +33,5 @@ FROM cards c
 LEFT JOIN scryfall_cards sc
     ON c.set_code = sc.set_code
     AND c.collector_number = sc.collector_number
-LEFT JOIN scryfall_sets ss
-    ON c.set_code = ss.code
+LEFT JOIN scryfall_sets_formatted ssf
+    ON c.set_code = ssf.code
