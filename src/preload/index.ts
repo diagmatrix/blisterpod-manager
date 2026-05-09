@@ -43,6 +43,8 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('db:collection:update', params),
   collectionDelete: (params: { id: number }): Promise<{ success: true } | { error: string }> =>
     ipcRenderer.invoke('db:collection:delete', params),
+  collectionDeleteMany: (ids: number[]): Promise<{ deleted: number }> =>
+    ipcRenderer.invoke('db:collection:delete-many', ids),
 
   // Stats (BM-04)
   statsSummary: (): Promise<StatsSummary> =>

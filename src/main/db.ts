@@ -350,6 +350,19 @@ function setupIpcHandlers(): void {
     return result
   })
 
+  // Delete multiple cards from the collection
+  ipcMain.handle('db:collection:delete-many', (_, ids: number[]) => {
+    if (!ids.length) return { deleted: 0 }
+    const placeholders = ids.map(() => '?').join(', ')
+    const deleteSql = `DELETE FROM cards WHERE id IN (${placeholders})`
+    log.info('db:collection:delete-many', deleteSql)
+    const del = db.transaction(() => {
+      const result = db.prepare(deleteSql).run(...ids)
+      return { deleted: result.changes }
+    })
+    return del()
+  })
+
   // List duplicate card entries
   ipcMain.handle('db:duplicates:list', () => {
     const sql = `SELECT * FROM duplicates ORDER BY name, set_code, collector_number`

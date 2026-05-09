@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
-import { Pencil, RotateCcw, Trash2 } from 'lucide-react'
+import { Eye, RotateCcw, Trash2 } from 'lucide-react'
 import type { CollectionCard } from '../../../shared/cards'
 import { ManaSymbols } from '@/components/ManaSymbols'
 import { SetSymbol } from '@/components/SetSymbol'
@@ -12,6 +12,7 @@ import { ViewToggle, type ViewMode } from '@/components/ViewToggle'
 import { CardFilters } from '@/components/CardFilters'
 import { Pagination } from '@/components/Pagination'
 import { DeleteCardDialog } from '@/components/DeleteCardDialog'
+import { DeleteSelectedCardsDialog } from '@/components/DeleteSelectedCardsDialog'
 import { CardQuickDialog } from '@/components/CardQuickDialog'
 import { useCardFilters } from '@/hooks/useCardFilters'
 import { useCardSort } from '@/hooks/useCardSort'
@@ -26,76 +27,96 @@ const SORT_OPTIONS = [
 ]
 
 interface CollectionTableProps {
-  cards: CollectionCard[],
-  onRowClick?: (card: CollectionCard) => void,
-  onDeleteClick?: (card: CollectionCard) => void,
+  cards: CollectionCard[]
+  selectedIds: Set<number>
+  onToggleSelect: (id: number) => void
+  onToggleSelectAll: (selected: boolean) => void
+  onRowClick?: (card: CollectionCard) => void
+  onDeleteClick?: (card: CollectionCard) => void
 }
 
 function CollectionTable(props: CollectionTableProps) {
-  const columns: { key: string; label: string; className?: string }[] = [
-    { key: 'card_name', label: 'Name', className: 'text-left' },
-    { key: 'set_code', label: 'Set', className: 'w-14 text-center' },
-    { key: 'collector_number', label: 'Collector Number', className: 'w-40 text-right' },
-    { key: 'color_identity', label: 'Colors', className: 'w-24 text-center' },
-    { key: 'quantity_nonfoil', label: 'Nonfoil', className: 'w-16 text-right' },
-    { key: 'quantity_foil', label: 'Foil', className: 'w-16 text-right' },
-    { key: 'total', label: 'Total', className: 'w-16 text-right' },
-    { key: 'value', label: '€', className: 'w-20 text-right' },
-    { key: 'actions', label: '', className: 'w-16 text-right' },
-  ]
+  const { cards, selectedIds, onToggleSelect, onToggleSelectAll } = props
+  const allSelected = cards.length > 0 && cards.every((c) => selectedIds.has(c.collection_id))
+  const someSelected = !allSelected && cards.some((c) => selectedIds.has(c.collection_id))
 
   return (
     <div className="flex-1 overflow-auto rounded-md border border-border">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
           <tr className="border-b border-border">
-            {columns.map((col) => (
-              <th key={col.key} className={`px-3 py-2 font-medium text-muted-foreground ${col.className ?? ''}`}>
-                {col.label}
-              </th>
-            ))}
+            <th className="px-3 py-2 w-8">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                ref={(el) => { if (el) el.indeterminate = someSelected }}
+                onChange={(e) => onToggleSelectAll(e.target.checked)}
+                className="cursor-pointer"
+              />
+            </th>
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground">Name</th>
+            <th className="px-3 py-2 font-medium text-muted-foreground w-14 text-center">Set</th>
+            <th className="px-3 py-2 font-medium text-muted-foreground w-40 text-right">Collector Number</th>
+            <th className="px-3 py-2 font-medium text-muted-foreground w-24 text-center">Colors</th>
+            <th className="px-3 py-2 font-medium text-muted-foreground w-16 text-right">Nonfoil</th>
+            <th className="px-3 py-2 font-medium text-muted-foreground w-16 text-right">Foil</th>
+            <th className="px-3 py-2 font-medium text-muted-foreground w-16 text-right">Total</th>
+            <th className="px-3 py-2 font-medium text-muted-foreground w-20 text-right">€</th>
+            <th className="px-3 py-2 w-16" />
           </tr>
         </thead>
         <tbody>
-          {props.cards.map((card, i) => (
-            <tr
-              key={`${card.set_code}-${card.collector_number}-${i}`}
-              className="border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors"
-            >
-              <td className="px-3 py-1.5 truncate font-medium">{card.name}</td>
-              <td className="px-3 py-1.5 w-14 text-center">
-                <SetSymbol setCode={card.base_set_code} setName={card.set_name} rarity={card.rarity} />
-              </td>
-              <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.collector_number}</td>
-              <td className="px-3 py-1.5 w-24 text-center">
-                <ManaSymbols value={card.color_identity} />
-              </td>
-              <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.quantity_nonfoil}</td>
-              <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.quantity_foil}</td>
-              <td className="px-3 py-1.5 w-16 text-right tabular-nums font-medium">{card.total}</td>
-              <td className="px-3 py-1.5 w-20 text-right tabular-nums">
-                {card.value != null ? `${card.value.toFixed(2)}€` : '-€'}
-              </td>
-              <td className="px-3 py-1.5 w-16 text-right">
-                <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    title="Edit"
-                    onClick={() => props.onRowClick?.(card)}
-                    variant="outline"
-                  >
-                    <Pencil className="w-2 h-2" />
-                  </Button>
-                  <Button
-                    title="Delete"
-                    onClick={() => props.onDeleteClick?.(card)}
-                    variant="destructive"
-                  >
-                    <Trash2 className="w-2 h-2" />
-                  </Button>
-                </div>
-              </td>
-            </tr>
-          ))}
+          {cards.map((card, i) => {
+            const isSelected = selectedIds.has(card.collection_id)
+            return (
+              <tr
+                key={`${card.set_code}-${card.collector_number}-${i}`}
+                className={`border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors ${isSelected ? 'bg-muted/40' : ''}`}
+                onClick={() => onToggleSelect(card.collection_id)}
+              >
+                <td className="px-3 py-1.5 w-8" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => onToggleSelect(card.collection_id)}
+                    className="cursor-pointer"
+                  />
+                </td>
+                <td className="px-3 py-1.5 truncate font-medium">{card.name}</td>
+                <td className="px-3 py-1.5 w-14 text-center">
+                  <SetSymbol setCode={card.base_set_code} setName={card.set_name} rarity={card.rarity} />
+                </td>
+                <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.collector_number}</td>
+                <td className="px-3 py-1.5 w-24 text-center">
+                  <ManaSymbols value={card.color_identity} />
+                </td>
+                <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.quantity_nonfoil}</td>
+                <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.quantity_foil}</td>
+                <td className="px-3 py-1.5 w-16 text-right tabular-nums font-medium">{card.total}</td>
+                <td className="px-3 py-1.5 w-20 text-right tabular-nums">
+                  {card.value != null ? `${card.value.toFixed(2)}€` : '-€'}
+                </td>
+                <td className="px-3 py-1.5 w-16 text-right" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      title="View"
+                      onClick={() => props.onRowClick?.(card)}
+                      variant="outline"
+                    >
+                      <Eye className="w-2 h-2" />
+                    </Button>
+                    <Button
+                      title="Delete"
+                      onClick={() => props.onDeleteClick?.(card)}
+                      variant="destructive"
+                    >
+                      <Trash2 className="w-2 h-2" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>
@@ -116,6 +137,8 @@ export default function CollectionPage() {
 
   const [quickCard, setQuickCard] = useState<CollectionCard | null>(null)
   const [deleteCard, setDeleteCard] = useState<CollectionCard | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [deleteSelectedOpen, setDeleteSelectedOpen] = useState(false)
 
   const onFilterCommit = useCallback(() => setPage(1), [])
 
@@ -147,6 +170,24 @@ export default function CollectionPage() {
   const handlePageSizeChange = useCallback((newSize: number) => {
     setPageSize(newSize); setPage(1)
   }, [])
+
+  const handleToggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }, [])
+
+  const handleToggleSelectAll = useCallback((selected: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      const pageIds = data?.rows.map((c) => c.collection_id) ?? []
+      if (selected) pageIds.forEach((id) => next.add(id))
+      else pageIds.forEach((id) => next.delete(id))
+      return next
+    })
+  }, [data?.rows])
 
   return (
     <div className="flex flex-col h-full p-3 gap-3">
@@ -199,7 +240,24 @@ export default function CollectionPage() {
           Error loading collection: {(error as Error)?.message ?? 'Unknown error'}
         </div>
       ) : view === 'table' ? (
-        <CollectionTable cards={data?.rows ?? []} onRowClick={handleRowClick} onDeleteClick={setDeleteCard} />
+        <>
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{selectedIds.size} selected</span>
+              <Button size="sm" variant="destructive" onClick={() => setDeleteSelectedOpen(true)}>
+                <Trash2 className="w-3 h-3" /> Remove selected
+              </Button>
+            </div>
+          )}
+          <CollectionTable
+            cards={data?.rows ?? []}
+            selectedIds={selectedIds}
+            onToggleSelect={handleToggleSelect}
+            onToggleSelectAll={handleToggleSelectAll}
+            onRowClick={handleRowClick}
+            onDeleteClick={setDeleteCard}
+          />
+        </>
       ) : (
         <CollectionImageGrid cards={data?.rows ?? []} onCardClick={handleRowClick} />
       )}
@@ -232,6 +290,12 @@ export default function CollectionPage() {
           onOpenChange={(open) => { if (!open) setDeleteCard(null) }}
         />
       )}
+      <DeleteSelectedCardsDialog
+        ids={[...selectedIds]}
+        open={deleteSelectedOpen}
+        onOpenChange={setDeleteSelectedOpen}
+        onDeleted={() => setSelectedIds(new Set())}
+      />
     </div>
   )
 }
