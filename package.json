@@ -22,6 +22,11 @@
       "target": "nsis",
       "icon": "resources/icon_b.png"
     },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
     "files": [
       "out/**/*",
       "db/**/*",
