@@ -1,40 +1,37 @@
-## What this repo is today
+## Repo shape (high signal)
 
-- This is a hybrid codebase: Electron app is active (`src/main`, `src/preload`, `src/renderer`) and Python importer is still used to populate Scryfall data.
-- `requirements/SPEC.md` and `requirements/BM-*.md` drive feature scope/tasks; check them before implementing BM-labeled UI/IPC work.
-- Ignore `.opencode/` and `.claude/` for product changes (tool metadata/agent docs).
+- Active app is Electron + React + TypeScript only: `src/main`, `src/preload`, `src/renderer`, `src/shared`.
+- Ignore `.opencode/` and `.claude/` for product work (tooling metadata/agent docs).
+- DB schema source of truth is SQL files under `db/tables/*.sql` and `db/views/*.sql`; never edit `.db` files directly.
 
-## Commands you will actually use
+## Commands you will actually run
 
-- Electron dev: `npm run dev`
-- Electron build: `npm run build`
-- Electron preview: `npm run preview`
-- TypeScript check (no script provided): `npx tsc -b`
-- Python deps: `python -m pip install -r requirements.txt`
-- Bulk import into SQLite: `python main.py`
+- Dev: `npm run dev`
+- Build: `npm run build`
+- Preview packaged app: `npm run preview`
+- Lint: `npm run lint` (or `npm run lint:fix`)
+- Type-check all TS projects: `npx tsc -b`
+- Package installer/app bundle: `npm run package`
 
-## Data and schema rules (easy to break)
+## Wiring and architecture gotchas
 
-- SQL files in `db/tables/*.sql` and `db/views/*.sql` are the schema source of truth; do not hand-edit `db/*.db`.
-- The canonical join between `cards` and `scryfall_cards` is `(set_code, collector_number)`.
-- `set` from Scryfall is intentionally renamed to `set_code` in storage/import logic; keep importer + SQL aligned.
-- `cards` constraints are enforced in DB: `quantity_nonfoil >= 0`, `quantity_foil >= 0`, and total quantity > 0.
-- `scryfall_cards` JSON-like fields are stored as JSON strings/text; parse before renderer use.
+- Security boundary is enforced: renderer must use `window.api` from preload; `nodeIntegration: false` and `contextIsolation: true` are intentional in `src/main/index.ts`.
+- IPC changes require synchronized edits in all layers: main handler(s), preload bridge (`src/preload/index.ts`), and renderer typings (`src/renderer/src/env.d.ts`, plus `src/shared/*` types when needed).
+- `src/main/db.ts` initializes schema from hardcoded SQL filename arrays; adding a new SQL file requires adding it to those arrays or it will never execute.
+- Path alias is target-specific: main/preload (`electron.vite.config.ts`) map `@` to `src`, renderer maps `@` to `src/renderer/src`.
+- Router uses `HashRouter` (`src/renderer/src/App.tsx`); do not switch to browser-history routing without Electron packaging changes.
 
-## Electron wiring gotchas
+## Data rules that break features if missed
 
-- Renderer must go through preload only (`window.api` from `src/preload/index.ts`); keep `nodeIntegration: false` and `contextIsolation: true`.
-- If you add or rename IPC channels, update all three: `src/main/*.ts` handler, `src/preload/index.ts` bridge, and `src/renderer/src/env.d.ts` + shared types.
-- `src/main/db.ts` currently executes a hardcoded SQL file list at startup (not directory globbing). If you add SQL files, also add them to those arrays.
-- Path alias differs by target: main/preload use `@ -> src`, renderer uses `@ -> src/renderer/src`.
-
-## Python importer gotchas
-
-- `main.py` imports with `exclude_filter={"digital": True, "set_codes": {"unk"}}`; preserve behavior unless intentionally changing import policy.
-- `ScryfallClient` applies a 100ms delay between requests and accepts full URLs unchanged (used for `download_uri`).
+- Canonical join is `cards.(set_code, collector_number)` to `scryfall_cards.(set_code, collector_number)` (see `db/views/mapped_collection.sql`, `db/views/card_details.sql`).
+- Scryfall field `set` is intentionally stored as `set_code` in DB ingest paths (`src/main/db.ts`, `src/main/scryfallRefresh.ts`).
+- `cards` enforces quantity invariants in SQL: non-negative each, and combined quantity must be `> 0`.
+- Many Scryfall structured fields are persisted as JSON text (serialized in TS); treat them as JSON strings at boundaries.
+- Scryfall refresh logic intentionally excludes digital cards and set code `UNK`, and throttles requests by 100ms in API paging paths (`src/main/scryfallRefresh.ts`).
 
 ## Verification expectations
 
-- There is no CI, lint config, or test suite configured; validate manually.
-- Minimum safe checks after changes: run `npx tsc -b`, run `npm run build`, and for importer/schema work run `python main.py` against local `db/collection.db`.
-- After SQL changes, verify dependent views still match table columns (especially join keys and JSON field usage).
+- No CI workflows are present; run checks manually before finishing.
+- Minimum safe pass after code changes: `npm run lint` -> `npx tsc -b` -> `npm run build`.
+- After schema/query edits, verify dependent views still match table columns and join keys.
+- Runtime DB path defaults to Electron `app.getPath('userData')/collection.db` (not repo-local `db/collection.db`), so validate against the app-run database unless you intentionally change path logic.
