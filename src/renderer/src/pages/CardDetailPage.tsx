@@ -242,9 +242,10 @@ export default function CardDetailPage() {
   const oracleTexts = parseJsonArray(card?.oracle_texts)
   const isMultiFace = imageUrls.length > 1
   const currentImageUrl = imageUrls[faceIndex] ?? null
+  const activeScryfallId = (faceIndex === 1 && card?.meld_scryfall_id) ? card.meld_scryfall_id : card?.scryfall_id
   const imageSrc =
-    !imgErrored && card?.scryfall_id && currentImageUrl
-      ? `card-image://${card.scryfall_id}?u=${encodeURIComponent(currentImageUrl)}`
+    !imgErrored && activeScryfallId && currentImageUrl
+      ? `card-image://${activeScryfallId}?u=${encodeURIComponent(currentImageUrl)}`
       : null
 
   const { data: printingsData, isLoading: printingsLoading } = useQuery({

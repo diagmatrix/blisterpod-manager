@@ -54,6 +54,7 @@ export interface CardDetail extends CollectionCard {
   image_urls: string | null    // JSON array string, one entry per face
   color_identity: string | null
   rarity: string | null
+  meld_scryfall_id: string | null
 }
 
 export function missingCardToCollectionCard(missing: MissingCard): CollectionCard {
