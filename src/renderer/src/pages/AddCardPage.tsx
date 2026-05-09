@@ -167,6 +167,8 @@ export default function AddCardPage() {
                   name={card.name ?? `${card.set_code.toUpperCase()} #${card.collector_number}`}
                   collector_number={card.collector_number}
                   set_code={card.set_code}
+                  base_set_code={card.base_set_code}
+                  set_name={card.set_name}
                   rarity={card.rarity}
                   value_nonfoil={card.value_nonfoil}
                   value_foil={card.value_foil}

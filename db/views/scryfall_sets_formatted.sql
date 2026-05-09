@@ -10,7 +10,7 @@ SELECT
         WHEN coalesce(name, '') = 'Universes Within'
             THEN coalesce(parent_set_code, code)
         -- Promos and tokens from sets
-        WHEN coalesce(set_type, '') IN ('promo', 'Token')
+        WHEN coalesce(set_type, '') IN ('promo', 'token')
             THEN coalesce(parent_set_code, code)
         ELSE
             code
