@@ -1,26 +1,29 @@
 DROP VIEW IF EXISTS scryfall_cards_formatted;
 CREATE VIEW scryfall_cards_formatted AS
 SELECT
-    id AS scryfall_id,
-    oracle_id,
-    name,
-    set_name,
-    set_code,
-    collector_number,
+    sc.id                                    AS scryfall_id,
+    sc.oracle_id,
+    sc.name,
+    sc.set_name,
+    sc.set_code,
+    coalesce(ssf.base_set_code, sc.set_code) AS base_set_code,
+    sc.collector_number,
     CASE
-        WHEN image_uris IS NULL AND instr(coalesce(name, 'Not found'), '//') > 0
-            THEN card_faces -> 0 ->> 'image_uris' ->> 'normal'
-        ELSE image_uris ->> 'normal'
-    END                                AS image_url,
-    rarity,
-    color_identity,
-    coalesce(prices ->> 'eur', 0)      AS value_nonfoil,
-    coalesce(prices ->> 'eur_foil', 0) AS value_foil,
+        WHEN sc.image_uris IS NULL AND instr(coalesce(sc.name, 'Not found'), '//') > 0
+            THEN sc.card_faces -> 0 ->> 'image_uris' ->> 'normal'
+        ELSE sc.image_uris ->> 'normal'
+    END                                      AS image_url,
+    sc.rarity,
+    sc.color_identity,
+    coalesce(sc.prices ->> 'eur', 0)         AS value_nonfoil,
+    coalesce(sc.prices ->> 'eur_foil', 0)    AS value_foil,
     CASE
-        WHEN instr(collector_number, '-') > 0
-            THEN cast(substr(collector_number, instr(collector_number, '-') + 1) AS integer)
+        WHEN instr(sc.collector_number, '-') > 0
+            THEN cast(substr(sc.collector_number, instr(sc.collector_number, '-') + 1) AS integer)
         ELSE
-            cast(collector_number AS integer)
+            cast(sc.collector_number AS integer)
     END AS collector_number_normalised,
-    released_at
-FROM scryfall_cards
+    sc.released_at
+FROM scryfall_cards sc
+LEFT JOIN scryfall_sets_formatted ssf
+    ON sc.set_code = ssf.code
