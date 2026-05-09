@@ -1,7 +1,7 @@
 import { ipcMain, app, dialog, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync } from 'fs'
-import Database from 'better-sqlite3'
+import Database, { Transaction } from 'better-sqlite3'
 import { createLogger } from './logger'
 import { WUBRG_ORDER } from '../shared/mana'
 import { DuplicateCardRow } from '../shared/cards'
@@ -151,6 +151,25 @@ function buildCardValues(cardJson: Record<string, unknown>, columns: string[]): 
     row[col] = serializeVal(val ?? null)
   }
   return row
+}
+
+function removeAllDuplicates(): number {
+  const remove = db.transaction(() => {
+  const sql = `
+  DELETE FROM cards WHERE id IN (
+    SELECT id FROM (
+      SELECT id, ROW_NUMBER() OVER (PARTITION BY set_code, collector_number ORDER BY id) rn
+      FROM cards
+    ) WHERE rn > 1
+  )
+  `
+  log.info('db:duplicates:remove-all', sql)
+  const { changes } = db.prepare(sql).run()
+
+  return changes
+  })
+
+  return remove()
 }
 
 function setupIpcHandlers(): void {
@@ -416,34 +435,8 @@ function setupIpcHandlers(): void {
 
   // Remove all duplicate rows, keeping only the first row per group
   ipcMain.handle('db:duplicates:remove-all', () => {
-    log.info('db:duplicates:remove-all')
-
-    const removeAll = db.transaction(() => {
-      const sqlGroups = `SELECT set_code, collector_number FROM duplicates`
-      log.info('db:duplicates:remove-all', sqlGroups)
-      const groups = db.prepare(sqlGroups).all() as { set_code: string; collector_number: string }[]
-
-      let removed = 0
-      for (const { set_code, collector_number } of groups) {
-        const sqlDups = 'SELECT id FROM cards WHERE set_code = ? AND collector_number = ? ORDER BY id ASC'
-        log.info('db:duplicates:remove-all', sqlDups)
-        const rows = db.prepare(sqlDups).all(set_code, collector_number) as { id: number }[]
-
-        const deleteIds = rows.slice(1).map((r) => r.id)
-        if (!deleteIds.length) continue
-
-        const sqlDelete = `DELETE FROM cards WHERE id IN (${deleteIds.map(() => '?').join(', ')})`
-        log.info('db:duplicates:remove-all', sqlDelete)
-        db.prepare(sqlDelete).run(...deleteIds)
-
-        removed += deleteIds.length
-      }
-
-      return { removed }
-    })
-
     try {
-      return removeAll()
+      return { removed: removeAllDuplicates() }
     } catch (e) {
       log.error('db:duplicates:remove-all failed', { error: (e as Error).message })
       return { error: (e as Error).message }
@@ -455,39 +448,30 @@ function setupIpcHandlers(): void {
     log.info('db:duplicates:merge-all')
 
     const mergeAll = db.transaction(() => {
-      const groups = db.prepare(
-        `SELECT set_code, collector_number FROM duplicates`
-      ).all() as { set_code: string; collector_number: string }[]
-
-      let merged = 0
-      for (const { set_code, collector_number } of groups) {
-        const sqlDups = 'SELECT id, quantity_nonfoil, quantity_foil FROM cards WHERE set_code = ? AND collector_number = ? ORDER BY id ASC'
-        log.info('db:duplicates:merge-all', sqlDups)
-        const rows = db.prepare(sqlDups).all(set_code, collector_number) as DuplicateCardRow[]
-
-        if (rows.length < 2) continue
-
-        const sumNonfoil = rows.reduce((acc, r) => acc + r.quantity_nonfoil, 0)
-        const sumFoil = rows.reduce((acc, r) => acc + r.quantity_foil, 0)
-        const keepId = rows[0].id
-        const deleteIds = rows.slice(1).map((r) => r.id)
-
-        const sqlUpdate = 'UPDATE cards SET quantity_nonfoil = ?, quantity_foil = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-        log.info('db:duplicates:merge-all', sqlUpdate)
-        db.prepare(sqlUpdate).run(sumNonfoil, sumFoil, keepId)
-
-        const sqlDelete = `DELETE FROM cards WHERE id IN (${deleteIds.map(() => '?').join(', ')})`
-        log.info('db:duplicates:merge-all', sqlDelete)
-        db.prepare(sqlDelete).run(...deleteIds)
-
-        merged++
-      }
-
-      return { merged }
+      const updateSql = `
+      WITH sums AS (
+        SELECT MIN(id) AS keep_id,
+              SUM(quantity_nonfoil) AS sn,
+              SUM(quantity_foil) AS sf
+        FROM cards
+        GROUP BY set_code, collector_number
+        HAVING COUNT(*) > 1
+      )
+      UPDATE cards
+      SET quantity_nonfoil = sums.sn,
+          quantity_foil = sums.sf,
+          updated_at = CURRENT_TIMESTAMP
+      FROM sums
+      WHERE cards.id = sums.keep_id
+      `
+      log.info('db:duplicates:merge-all', updateSql)
+      db.prepare(updateSql).run()
+      
+      return removeAllDuplicates()
     })
 
     try {
-      return mergeAll()
+      return { merged: mergeAll() }
     } catch (e) {
       log.error('db:duplicates:merge-all failed', { error: (e as Error).message })
       return { error: (e as Error).message }
