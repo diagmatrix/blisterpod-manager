@@ -93,7 +93,7 @@ export function CardImageCell(props: CardImageCellProps) {
 
       <div className="flex flex-col space-y-0.5 items-center justify-center w-full">
         <div className="flex items-center justify-center gap-1.5 w-full overflow-hidden">
-          <SetSymbol setCode={props.base_set_code ?? props.set_code} setName={props.set_name} rarity={props.rarity} size="1rem" />
+          <SetSymbol setCode={props.base_set_code ?? props.set_code} setName={props.set_name} rarity={props.rarity} size="1rem" collectorNumber={props.collector_number} />
           <span className="text-xs text-muted-foreground shrink-0">#{props.collector_number}</span>
           <span className="text-sm font-medium truncate min-w-0">{props.name}</span>
         </div>

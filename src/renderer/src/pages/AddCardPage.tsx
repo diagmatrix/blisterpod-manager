@@ -209,7 +209,7 @@ export default function AddCardPage() {
                       </td>
                       <td className="px-3 py-1.5 font-medium truncate max-w-0">{card.name}</td>
                       <td className="px-3 py-1.5 w-16 text-center">
-                        <SetSymbol setCode={card.set_code} setName={card.set_name} rarity={card.rarity} />
+                        <SetSymbol setCode={card.set_code} setName={card.set_name} rarity={card.rarity} collectorNumber={card.collector_number} />
                       </td>
                       <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.collector_number}</td>
                       <td className="px-3 py-1.5 w-24 text-center">

@@ -12,6 +12,8 @@ WITH sets_aggregated AS (
     FROM cards c
     LEFT JOIN scryfall_sets_formatted ssf
         ON c.set_code = ssf.code
+    WHERE
+        ssf.set_type NOT IN ('token', 'promo')
     GROUP BY c.set_code
 )
 SELECT
