@@ -84,7 +84,7 @@ function CollectionTable(props: CollectionTableProps) {
                 </td>
                 <td className="px-3 py-1.5 truncate font-medium">{card.name}</td>
                 <td className="px-3 py-1.5 w-14 text-center">
-                  <SetSymbol setCode={card.base_set_code} setName={card.set_name} rarity={card.rarity} />
+                  <SetSymbol setCode={card.base_set_code} setName={card.set_name} rarity={card.rarity} collectorNumber={card.collector_number} />
                 </td>
                 <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.collector_number}</td>
                 <td className="px-3 py-1.5 w-24 text-center">

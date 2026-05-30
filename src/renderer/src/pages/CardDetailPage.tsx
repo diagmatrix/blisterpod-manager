@@ -57,6 +57,7 @@ interface CardHeaderProps {
   name: string | null
   setName: string
   setCode: string
+  collectorNumber: string
   rarity: string | null
   typeLine: string | null
 }
@@ -70,7 +71,7 @@ function CardHeader(props: CardHeaderProps) {
       <p className="text-sm mt-1">
         <span className="font-medium">{props.setName}</span>
         <span className="text-muted-foreground ml-2">({props.setCode.toUpperCase()})</span>
-        <SetSymbol setCode={props.setCode} size={'1.5rem'} rarity={props.rarity} setName={props.setName}/>
+        <SetSymbol setCode={props.setCode} size={'1.5rem'} rarity={props.rarity} setName={props.setName} collectorNumber={props.collectorNumber}/>
       </p>
       {props.typeLine && (
         <p className="text-sm text-muted-foreground mt-1">{props.typeLine}</p>
@@ -310,6 +311,7 @@ export default function CardDetailPage() {
                   name={card?.name ?? 'Unknown'}
                   setName={card.set_name}
                   setCode={card.base_set_code}
+                  collectorNumber={card.collector_number}
                   rarity={card.rarity}
                   typeLine={card.type_line}
                 />
