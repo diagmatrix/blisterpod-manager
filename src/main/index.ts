@@ -43,7 +43,8 @@ const DEFAULT_WINDOW_BOUNDS: WindowBounds = {
 const store = new Store<AppSettings>({
   defaults: {
     windowBounds: DEFAULT_WINDOW_BOUNDS,
-    theme: 'light'
+    theme: 'light',
+    defaultPageSize: 30
   }
 })
 

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ScryfallCard } from '../../../shared/cards'
@@ -16,8 +16,7 @@ import { ManaSymbols } from '@/components/ManaSymbols'
 import { Pagination } from '@/components/Pagination'
 import { useCardSearch } from '@/hooks/useCardSearch'
 import { ImageGridSkeleton, TableSkeleton } from '@/components/skeletons'
-
-const PAGE_SIZES = [30, 60, 120] as const
+import { PAGE_SIZES, FALLBACK_PAGE_SIZE, useDefaultPageSize } from '@/hooks/useDefaultPageSize'
 
 const SORT_OPTIONS = [
   { value: 'rarity', label: 'Rarity' },
@@ -31,9 +30,12 @@ export default function AddCardPage() {
   const [filterExpanded, setFilterExpanded] = useState(true)
   const [sortExpanded, setSortExpanded] = useState(true)
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0])
+  const defaultPageSize = useDefaultPageSize()
+  const [pageSize, setPageSize] = useState<number>(FALLBACK_PAGE_SIZE)
   const [batch, setBatch] = useState<BatchItem[]>([])
   const [isAdding, setIsAdding] = useState(false)
+
+  useEffect(() => { setPageSize(defaultPageSize) }, [defaultPageSize])
 
   const onFilterCommit = useCallback(() => setPage(1), [])
   const { filtersState, filtersHandlers, search, searchSet, tokenFilter, rarities, colors, colorMode } = useCardFilters({ onCommit: onFilterCommit })

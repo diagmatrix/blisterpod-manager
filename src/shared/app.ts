@@ -14,6 +14,7 @@ export interface AppSettings {
   cardsLastRefreshed?: string
   manaSymbolsLastRefreshed?: string
   firstRun?: boolean
+  defaultPageSize?: number
 }
 
 export type Theme = 'dark' | 'light'

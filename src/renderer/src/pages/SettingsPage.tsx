@@ -8,6 +8,7 @@ import { useTheme } from '@/components/ThemeProvider'
 import { RefreshLoadingDialog } from '@/components/RefreshLoadingDialog'
 import { injectKeyruneCSS } from '@/lib/keyruneCSS'
 import { applyCCMGFont } from '@/lib/ccmgFont'
+import { PAGE_SIZES, FALLBACK_PAGE_SIZE, isPageSize, type PageSize } from '@/hooks/useDefaultPageSize'
 import type { KeyruneVersion } from '../../../shared/app'
 
 /**
@@ -59,6 +60,7 @@ export default function SettingsPage() {
   const [font, setFont] = useState<'default' | 'ccmg'>('default')
   const [ccmgDownloaded, setCcmgDownloaded] = useState(false)
   const [downloadingFont, setDownloadingFont] = useState(false)
+  const [defaultPageSize, setDefaultPageSize] = useState<PageSize>(FALLBACK_PAGE_SIZE)
 
   const [refreshAllPending, setRefreshAllPending] = useState(false)
   const [refreshCardsPending, setRefreshCardsPending] = useState(false)
@@ -80,6 +82,7 @@ export default function SettingsPage() {
     window.api.settingsGet('cardsLastRefreshed').then((v) => setCardsLastRefreshed(v ?? null))
     window.api.settingsGet('manaSymbolsLastRefreshed').then((v) => setManaSymbolsLastRefreshed(v ?? null))
     window.api.settingsGet('font').then((v) => setFont(v ?? 'default'))
+    window.api.settingsGet('defaultPageSize').then((v) => { if (isPageSize(v)) setDefaultPageSize(v) })
     window.api.ccmgFontStatus().then((s) => setCcmgDownloaded(s.downloaded))
   }, [])
 
@@ -96,6 +99,11 @@ export default function SettingsPage() {
     setFont(value)
     window.api.settingsSet('font', value)
     applyCCMGFont(value === 'ccmg')
+  }
+
+  const handleSetDefaultPageSize = (value: PageSize) => {
+    setDefaultPageSize(value)
+    window.api.settingsSet('defaultPageSize', value)
   }
 
   const handleRefreshAll = async () => {
@@ -255,6 +263,27 @@ export default function SettingsPage() {
                 >
                   {downloadingFont ? 'Downloading…' : 'CCMG'}
                 </button>
+              </div>
+            </SettingsRow>
+
+            <SettingsRow
+              label="Default page size"
+              description="Number of cards shown per page when browsing or adding cards."
+            >
+              <div className="flex rounded-md border overflow-hidden">
+                {PAGE_SIZES.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => handleSetDefaultPageSize(size)}
+                    className={`px-3 py-1.5 text-sm transition-colors ${
+                      defaultPageSize === size
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-background text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
               </div>
             </SettingsRow>
           </SettingsSection>
