@@ -23,7 +23,12 @@ SELECT
         ELSE
             cast(sc.collector_number AS integer)
     END AS collector_number_normalised,
-    sc.released_at
+    sc.released_at,
+    CASE
+        WHEN sc.set_type = 'token'
+            THEN true
+        ELSE false
+    END                                      AS is_token
 FROM scryfall_cards sc
 LEFT JOIN scryfall_sets_formatted ssf
     ON sc.set_code = ssf.code

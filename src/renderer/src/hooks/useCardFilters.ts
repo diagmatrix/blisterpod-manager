@@ -3,7 +3,7 @@ import type { CardFiltersState, CardFiltersHandlers, TokenFilter, ColorMode } fr
 
 const MIN_SEARCH_CARD_NAME = 3
 const MIN_SEARCH_SET_CODE = 2
-const SEARCH_DEBOUNCE_MS = 500
+const SEARCH_DEBOUNCE_MS = 1000
 
 interface UseCardFiltersOptions {
   initialSet?: string
@@ -53,19 +53,28 @@ export function useCardFilters({ initialSet = '', onCommit }: UseCardFiltersOpti
   }, [searchSetInput, searchSet, onCommit])
 
   useEffect(() => {
-    const t = setTimeout(() => { setRarities(raritiesInput); onCommit?.() }, SEARCH_DEBOUNCE_MS)
+    const t = setTimeout(() => {
+      const canSearch = searchSetInput.length >= MIN_SEARCH_SET_CODE || searchInput.length >= MIN_SEARCH_CARD_NAME
+      if (canSearch) { setRarities(raritiesInput); onCommit?.() }
+    }, SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(t)
-  }, [raritiesInput, onCommit])
+  }, [raritiesInput, searchInput, searchSetInput, onCommit])
 
   useEffect(() => {
-    const t = setTimeout(() => { setColors(colorsInput); onCommit?.() }, SEARCH_DEBOUNCE_MS)
+    const t = setTimeout(() => { 
+      const canSearch = searchSetInput.length >= MIN_SEARCH_SET_CODE || searchInput.length >= MIN_SEARCH_CARD_NAME
+      if (canSearch) { setColors(colorsInput); onCommit?.() }
+    }, SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(t)
-  }, [colorsInput, onCommit])
+  }, [colorsInput, searchInput, searchSetInput, onCommit])
 
   useEffect(() => {
-    const t = setTimeout(() => { setCommittedColorMode(colorMode); onCommit?.() }, SEARCH_DEBOUNCE_MS)
+    const t = setTimeout(() => { 
+      const canSearch = searchSetInput.length >= MIN_SEARCH_SET_CODE || searchInput.length >= MIN_SEARCH_CARD_NAME
+      if (canSearch) { setCommittedColorMode(colorMode); onCommit?.() }
+    }, SEARCH_DEBOUNCE_MS)
     return () => clearTimeout(t)
-  }, [colorMode, onCommit])
+  }, [colorMode, searchInput, searchSetInput, onCommit])
 
   const filtersState: CardFiltersState = {
     searchInput, searchSetInput, tokenFilter, raritiesInput, colorsInput, colorMode,
