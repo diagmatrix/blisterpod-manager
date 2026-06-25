@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
 import { Eye, RotateCcw, Trash2 } from 'lucide-react'
@@ -18,8 +18,7 @@ import { useCardFilters } from '@/hooks/useCardFilters'
 import { useCardSort } from '@/hooks/useCardSort'
 import { CardSort } from '@/components/CardSort'
 import { Button } from '@/components/ui/button'
-
-const PAGE_SIZES = [30, 60, 120] as const
+import { PAGE_SIZES, FALLBACK_PAGE_SIZE, useDefaultPageSize } from '@/hooks/useDefaultPageSize'
 
 const SORT_OPTIONS = [
   { value: 'total', label: 'Total' },
@@ -128,8 +127,11 @@ export default function CollectionPage() {
   const initialSet: string = location.state?.filterSet ?? ''
 
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0])
+  const defaultPageSize = useDefaultPageSize()
+  const [pageSize, setPageSize] = useState<number>(FALLBACK_PAGE_SIZE)
   const { sortColumn, sortOrder, handleSort, toggleOrder, reset: resetSort } = useCardSort({ defaultColumn: 'value', defaultOrder: 'DESC' })
+
+  useEffect(() => { setPageSize(defaultPageSize) }, [defaultPageSize])
   const [view, setView] = useState<ViewMode>('image')
 
   const [filterExpanded, setFilterExpanded] = useState(true)
@@ -160,8 +162,8 @@ export default function CollectionPage() {
   const handleReset = useCallback(() => {
     resetFilters()
     resetSort()
-    setPage(1); setPageSize(PAGE_SIZES[0])
-  }, [resetFilters, resetSort])
+    setPage(1); setPageSize(defaultPageSize)
+  }, [resetFilters, resetSort, defaultPageSize])
 
   const handleRowClick = useCallback((card: CollectionCard) => {
     setQuickCard(card)
