@@ -40,7 +40,7 @@ function CollectionTable(props: CollectionTableProps) {
   const someSelected = !allSelected && cards.some((c) => selectedIds.has(c.collection_id))
 
   return (
-    <div className="flex-1 overflow-auto rounded-md border border-border">
+    <div className="overflow-x-auto rounded-md border border-border">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
           <tr className="border-b border-border">
@@ -192,7 +192,7 @@ export default function CollectionPage() {
   }, [data?.rows])
 
   return (
-    <div className="flex flex-col h-full p-3 gap-3">
+    <div className="flex flex-col p-3 gap-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
