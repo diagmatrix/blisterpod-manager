@@ -36,16 +36,16 @@ export default function AddCardPage() {
   const [isAdding, setIsAdding] = useState(false)
 
   const onFilterCommit = useCallback(() => setPage(1), [])
-  const { filtersState, filtersHandlers } = useCardFilters({ onCommit: onFilterCommit })
+  const { filtersState, filtersHandlers, search, searchSet, tokenFilter, rarities, colors, colorMode } = useCardFilters({ onCommit: onFilterCommit })
   const { sortColumn, sortOrder, handleSort, toggleOrder } = useCardSort({ defaultColumn: 'collector_number', defaultOrder: 'ASC' })
-  const { searchInput, searchSetInput, raritiesInput, colorsInput, colorMode } = filtersState
 
   const searchParams: CardSearchParams = {
-    query: searchInput.length >= 2 ? searchInput : undefined,
-    set_code: searchSetInput.length >= 2 ? searchSetInput : undefined,
-    rarities: raritiesInput.length > 0 ? raritiesInput : undefined,
-    colors: colorsInput.length > 0 ? colorsInput : undefined,
-    colorMode: colorsInput.length > 0 ? colorMode : undefined,
+    query: search || undefined,
+    set_code: searchSet || undefined,
+    rarities: rarities.length > 0 ? rarities : undefined,
+    colors: colors.length > 0 ? colors : undefined,
+    colorMode: colors.length > 0 ? colorMode : undefined,
+    tokenFilter: tokenFilter || 'all',
     sortColumn,
     sortOrder,
     page,
@@ -130,7 +130,7 @@ export default function AddCardPage() {
 
         <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
           <SectionHeader label="Filter by" expanded={filterExpanded} onToggle={() => setFilterExpanded((v) => !v)} />
-          {filterExpanded && <CardFilters state={filtersState} handlers={filtersHandlers} showTokenFilter={false} />}
+          {filterExpanded && <CardFilters state={filtersState} handlers={filtersHandlers} showTokenFilter={true} />}
         </div>
 
         <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">

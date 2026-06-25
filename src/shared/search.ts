@@ -47,6 +47,7 @@ export interface CardSearchParams {
   rarities?: string[]
   colors?: string[]
   colorMode?: 'atLeast' | 'exactly' | 'atMost'
+  tokenFilter?: 'all' | 'cards' | 'tokens'
   sortColumn?: string
   sortOrder?: 'ASC' | 'DESC'
   page?: number

@@ -561,7 +561,7 @@ function setupIpcHandlers(): void {
 
   // Search available cards
   ipcMain.handle('db:cards:search', (_, params: import('../shared/search').CardSearchParams) => {
-    const { query, set_code, rarities, colors, colorMode = 'including', sortColumn = 'collector_number', sortOrder, page = 1, pageSize = 60 } = params
+    const { query, set_code, rarities, colors, colorMode = 'including', tokenFilter, sortColumn = 'collector_number', sortOrder, page = 1, pageSize = 60 } = params
     const safePageSize = Math.min(pageSize, 120)
     const offset = (page - 1) * safePageSize
     const validSearchColumns = ['name', 'set_code', 'collector_number', 'rarity', 'color_identity', 'released_at']
@@ -582,6 +582,12 @@ function setupIpcHandlers(): void {
     if (set_code) {
       conditions.push('set_code = ?')
       values.push(set_code.toUpperCase())
+    }
+
+    if (tokenFilter === 'cards') {
+      conditions.push('is_token = 0')
+    } else if (tokenFilter === 'tokens') {
+      conditions.push('is_token = 1')
     }
 
     const { conditions: rarityConds, values: rarityVals } = buildRarityConditions(rarities)

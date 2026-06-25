@@ -15,7 +15,8 @@ export interface ScryfallCard extends Card {
     value_foil?: number | null
     collector_number_normalised?: number | null
     released_at?: string | null // ISO date string, e.g. "2024-01-01"
-    color_identity: string | null  // JSON array string, e.g. '["W","U"]'
+    color_identity: string | null
+    is_token: number // 1 = token, 0 = non-token
 }
 
 export interface CollectionCard extends ScryfallCard {
@@ -23,7 +24,6 @@ export interface CollectionCard extends ScryfallCard {
     quantity_nonfoil: number
     quantity_foil: number
     total: number
-    is_token: number // 1 = token, 0 = non-token
     value: number | null
 }
 

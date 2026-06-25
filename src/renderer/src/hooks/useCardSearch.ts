@@ -24,6 +24,7 @@ export function useCardSearch(params: CardSearchParams) {
     raritiesKey,
     colorsKey,
     params.colorMode,
+    params.tokenFilter,
   ])
 
   const committedParams: CardSearchParams = { ...committedFilters, page, pageSize, sortColumn, sortOrder }
