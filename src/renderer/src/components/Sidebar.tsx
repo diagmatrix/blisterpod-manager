@@ -1,4 +1,4 @@
-import { BarChart2, AlertTriangle, Archive, ArchiveRestore, Settings, PanelLeftClose, PanelLeftOpen, Sun, Moon, Info } from 'lucide-react'
+import { Home, AlertTriangle, Archive, ArchiveRestore, Settings, PanelLeftClose, PanelLeftOpen, Sun, Moon, Info } from 'lucide-react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useTheme } from '@/components/ThemeProvider'
 import {
@@ -21,7 +21,7 @@ interface NavItemProps {
 }
 
 const navItems: NavItemProps[] = [
-  { label: 'Statistics', icon: BarChart2, route: '/statistics' },
+  { label: 'Home', icon: Home, route: '/statistics' },
   { label: 'Collection', icon: Archive, route: '/collection' },
   { label: 'Add Cards', icon: ArchiveRestore, route: '/add-card' },
   { label: 'Collection errors', icon: AlertTriangle, route: '/collection-errors' },
