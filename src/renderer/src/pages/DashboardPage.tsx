@@ -168,7 +168,7 @@ export default function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-1">Statistics</h1>
+        <h1 className="text-3xl font-bold mb-1">Home</h1>
         <p className="text-muted-foreground text-sm">Overview of your collection.</p>
       </div>
 
