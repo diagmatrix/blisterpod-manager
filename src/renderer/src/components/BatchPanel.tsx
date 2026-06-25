@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight, X, Plus } from 'lucide-react'
+import { X, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { ScryfallCard } from '../../../shared/cards'
 import type { BatchItem } from '../../../shared/search'
@@ -15,7 +15,6 @@ interface BatchPanelProps {
 }
 
 export function BatchPanel({ items, onAddCard, onUpdate, onRemove, onDiscard, onAddAll, isAdding }: BatchPanelProps) {
-  const [expanded, setExpanded] = useState(true)
   const [directSet, setDirectSet] = useState('')
   const [directNum, setDirectNum] = useState('')
   const [directNF, setDirectNF] = useState(1)
@@ -42,32 +41,23 @@ export function BatchPanel({ items, onAddCard, onUpdate, onRemove, onDiscard, on
     setDirectSet(''); setDirectNum(''); setDirectNF(1); setDirectFoil(0)
   }
 
+  const totalCards = items.reduce((sum, item) => sum + item.quantity_nonfoil + item.quantity_foil, 0)
+
   return (
-    <div className={`flex flex-col border border-border rounded-md bg-background transition-all ${expanded ? 'w-72' : 'w-10'}`}>
+    <div className="sticky top-0 flex flex-col min-h-0 max-h-[calc(100svh-2rem)] w-72 border border-border rounded-md bg-background">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0">
-        {expanded && (
-          <span className="text-sm font-semibold flex items-center gap-2">
-            Batch
-            {items.length > 0 && (
-              <span className="text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 leading-none">
-                {items.length}
-              </span>
-            )}
-          </span>
-        )}
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          className="p-1 rounded hover:bg-muted text-muted-foreground"
-          title={expanded ? 'Collapse batch panel' : 'Expand batch panel'}
-        >
-          {expanded ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
+        <span className="text-sm font-semibold flex items-center gap-2">
+          Batch
+          {totalCards > 0 && (
+            <span className="text-xs bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 leading-none">
+              {totalCards}
+            </span>
+          )}
+        </span>
       </div>
 
-      {expanded && (
-        <>
-          {/* Direct-add form */}
+      {/* Direct-add form */}
           <div className="border-t border-border px-3 py-2 flex flex-col gap-2 items-center">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Add directly</p>
             <div className="flex gap-2">
@@ -195,8 +185,6 @@ export function BatchPanel({ items, onAddCard, onUpdate, onRemove, onDiscard, on
               ))
             )}
           </div>
-        </>
-      )}
     </div>
   )
 }

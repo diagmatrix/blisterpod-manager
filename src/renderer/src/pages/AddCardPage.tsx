@@ -105,7 +105,7 @@ export default function AddCardPage() {
     setIsAdding(false)
 
     if (result.inserted > 0) {
-      toast.success(`${result.inserted} card${result.inserted === 1 ? '' : 's'} added to collection`)
+      toast.success('Cards added to collection')
       queryClient.invalidateQueries({ queryKey: ['collection'] })
       setBatch([])
     }
@@ -113,7 +113,7 @@ export default function AddCardPage() {
   }, [batch, queryClient])
 
   return (
-    <div className="flex h-full p-3 gap-3 overflow-hidden">
+    <div className="flex p-3 gap-3 items-start">
       {/* Left: search panel */}
       <div className="flex-1 flex flex-col gap-3 min-w-0">
         <div className="flex items-center justify-between">
@@ -149,15 +149,15 @@ export default function AddCardPage() {
         {isLoading ? (
           view === 'image' ? <ImageGridSkeleton /> : <TableSkeleton />
         ) : !hasFilter ? (
-          <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+          <div className="min-h-[50vh] flex items-center justify-center text-sm text-muted-foreground">
             Enter a name or set code to search the local card catalog
           </div>
         ) : rows.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+          <div className="min-h-[50vh] flex items-center justify-center text-sm text-muted-foreground">
             No cards found in local catalog
           </div>
         ) : view === 'image' ? (
-          <div className="flex-1 overflow-y-auto overflow-x-hidden rounded-md border border-border">
+          <div className="overflow-x-hidden rounded-md border border-border">
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 p-4">
               {rows.map((card, i) => (
                 <CardImageCell
@@ -181,7 +181,7 @@ export default function AddCardPage() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 overflow-auto rounded-md border border-border">
+          <div className="overflow-x-auto rounded-md border border-border">
             <table className="w-full text-sm">
               <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
                 <tr className="border-b border-border">
