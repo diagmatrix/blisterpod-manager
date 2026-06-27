@@ -1,7 +1,7 @@
 import { ipcMain, app, dialog, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { readFileSync, writeFileSync } from 'fs'
-import Database, { Transaction } from 'better-sqlite3'
+import Database from 'better-sqlite3'
 import { createLogger } from './logger'
 import { USER_AGENT } from './utils'
 import { WUBRG_ORDER } from '../shared/mana'
