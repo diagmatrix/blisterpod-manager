@@ -7,6 +7,7 @@
 
 ### Improvements
 - **More reliable image downloads** — Card image fetches now have a timeout and write to the cache without blocking, so a slow or stalled download no longer hangs image loading.
+- **Added new distribution targets** — Now windowsx64 and windowsx32 can be chosen for install. 
 
 ## v1.0.2
 
