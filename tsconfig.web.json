@@ -11,9 +11,8 @@
     "noEmit": true,
     "types": ["node", "vite/client"],
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/renderer/src/*"]
+      "@/*": ["./src/renderer/src/*"]
     }
   },
   "include": ["src/renderer/**/*", "src/shared/**/*"]
