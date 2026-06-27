@@ -3,6 +3,7 @@ import { join } from 'path'
 import { readFileSync, writeFileSync } from 'fs'
 import Database, { Transaction } from 'better-sqlite3'
 import { createLogger } from './logger'
+import { USER_AGENT } from './utils'
 import { WUBRG_ORDER } from '../shared/mana'
 import { DuplicateCardRow } from '../shared/cards'
 
@@ -108,7 +109,7 @@ function buildColorConditions(colors: string[] | undefined, colorMode: string): 
 
 async function scryfallFetch(pathOrUrl: string): Promise<unknown> {
   const url = pathOrUrl.startsWith('http') ? pathOrUrl : `https://api.scryfall.com${pathOrUrl}`
-  const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': 'blisterpod-manager/0.1' } })
+  const res = await fetch(url, { headers: { Accept: 'application/json', 'User-Agent': USER_AGENT } })
   if (!res.ok) throw new Error(`Scryfall ${res.status}: ${pathOrUrl}`)
   return res.json()
 }

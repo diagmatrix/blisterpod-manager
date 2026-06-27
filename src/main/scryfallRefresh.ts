@@ -2,6 +2,7 @@ import { Readable } from 'node:stream'
 import { createRequire } from 'node:module'
 import Database from 'better-sqlite3'
 import { createLogger } from './logger'
+import { USER_AGENT } from './utils'
 
 // stream-json v2 is CJS-only with an "./*":"./src/*" exports wildcard that omits
 // the .js suffix, breaking ESM resolution. Use createRequire + explicit .js paths.
@@ -27,7 +28,7 @@ async function scryfallGet(url: string): Promise<unknown> {
   lastRequestAt = Date.now()
 
   const res = await fetch(fullUrl, {
-    headers: { Accept: 'application/json', 'User-Agent': 'blisterpod-manager/0.1' },
+    headers: { Accept: 'application/json', 'User-Agent': USER_AGENT },
   })
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as Record<string, unknown>
@@ -129,7 +130,7 @@ export async function refreshCards(db: Database.Database): Promise<{ inserted: n
 
   log.info('Downloading bulk card data', { uri: downloadUri })
   const response = await fetch(downloadUri, {
-    headers: { 'User-Agent': 'blisterpod-manager/0.1' },
+    headers: { 'User-Agent': USER_AGENT },
   })
   if (!response.ok) throw new Error(`Failed to download bulk data: ${response.status}`)
   if (!response.body) throw new Error('Response body is null')

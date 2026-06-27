@@ -3,6 +3,7 @@ import { join } from 'path'
 import { existsSync, mkdirSync, writeFileSync, renameSync } from 'fs'
 import { pathToFileURL } from 'url'
 import { createLogger } from './logger'
+import { USER_AGENT } from './utils'
 
 const log = createLogger('ccmg-font')
 
@@ -25,7 +26,7 @@ export function initFontProtocol(): void {
 export async function downloadCCMGFont(): Promise<void> {
   mkdirSync(FONTS_DIR, { recursive: true })
   log.info('Downloading CCMG font', { url: FONT_URL })
-  const res = await fetch(FONT_URL, { headers: { 'User-Agent': 'blisterpod-manager/0.1' } })
+  const res = await fetch(FONT_URL, { headers: { 'User-Agent': USER_AGENT } })
   if (!res.ok) throw new Error(`Failed to download CCMG font: ${res.status}`)
   const bytes = new Uint8Array(await res.arrayBuffer())
   const tmpPath = `${FONT_FILE}.tmp`

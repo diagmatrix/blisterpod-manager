@@ -1,17 +1,18 @@
 import { app, protocol, net } from 'electron'
+import { join } from 'path'
+import { existsSync } from 'fs'
+import { mkdir, rename, writeFile } from 'fs/promises'
+import { pathToFileURL } from 'url'
 import { createLogger } from './logger'
+import { USER_AGENT } from './utils'
 
 const log = createLogger('card-images')
-import { join } from 'path'
-import { mkdirSync, existsSync, renameSync, writeFileSync } from 'fs'
-import { pathToFileURL } from 'url'
 
 const CACHE_DIR = join(app.getPath('userData'), 'card-images')
+const FETCH_TIMEOUT_MS = 15_000
 
-function ensureCacheDir(): void {
-  if (!existsSync(CACHE_DIR)) {
-    mkdirSync(CACHE_DIR, { recursive: true })
-  }
+async function ensureCacheDir(): Promise<void> {
+  await mkdir(CACHE_DIR, { recursive: true })
 }
 
 function notFound(url?: URL): Response {
@@ -41,15 +42,18 @@ function isAllowedSource(url: string): boolean {
 }
 
 async function downloadAndCache(sourceUrl: string, cachePath: string): Promise<Response> {
-  const upstream = await fetch(sourceUrl)
+  const upstream = await fetch(sourceUrl, {
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    headers: { 'User-Agent': USER_AGENT, Accept: 'image/*' },
+  })
   if (!upstream.ok) {
     return new Response(null, { status: upstream.status })
   }
 
   const bytes = new Uint8Array(await upstream.arrayBuffer())
-  const tmpPath = `${cachePath}.tmp`
-  writeFileSync(tmpPath, bytes)
-  renameSync(tmpPath, cachePath)
+  const tmpPath = `${cachePath}.${process.pid}.${Date.now()}.tmp`
+  await writeFile(tmpPath, bytes)
+  await rename(tmpPath, cachePath)
 
   return new Response(bytes, {
     status: 200,
@@ -58,7 +62,7 @@ async function downloadAndCache(sourceUrl: string, cachePath: string): Promise<R
 }
 
 export function initCardImageProtocol(): void {
-  ensureCacheDir()
+  void ensureCacheDir()
 
   protocol.handle('card-image', async (request) => {
     const url = URL.canParse(request.url) ? new URL(request.url) : null
@@ -71,15 +75,16 @@ export function initCardImageProtocol(): void {
     const sourceUrl = url.searchParams.get('u')
     if (!sourceUrl || !isAllowedSource(sourceUrl)) return notFound(url)
 
-    const cachePath = join(CACHE_DIR, `${scryfallId}${faceFromUrl(sourceUrl)}.jpg`)
+    const face = faceFromUrl(sourceUrl)
+    const cachePath = join(CACHE_DIR, `${scryfallId}${face}.jpg`)
 
     if (existsSync(cachePath)) {
-      log.debug('Serving card image from cache', { scryfallId, face: faceFromUrl(sourceUrl) })
+      log.debug('Serving card image from cache', { scryfallId, face })
       return net.fetch(pathToFileURL(cachePath).toString())
     }
 
     try {
-      log.debug('Fetching card image', { scryfallId, face: faceFromUrl(sourceUrl) })
+      log.debug('Fetching card image', { scryfallId, face })
       return await downloadAndCache(sourceUrl, cachePath)
     } catch (err) {
       log.error('Card image fetch failed', { scryfallId, err })
