@@ -104,7 +104,7 @@ function MissingTable({ cards, loadingKeys, onFetchSet, onFetchCards, onFetchCar
                 <td className="px-3 py-1.5 text-center tabular-nums">{row.quantity_nonfoil}</td>
                 <td className="px-3 py-1.5 text-center tabular-nums">{row.quantity_foil}</td>
                 <td className="px-3 py-1.5 text-center">
-                  {!!row.set_cards_missing ? (
+                  {row.set_cards_missing ? (
                     <Button size="sm" variant="outline" disabled={loadingKeys.has(fetchCardsKey)} onClick={() => onFetchCards(row)}>
                       <RefreshCw className={`h-3.5 w-3.5 ${loadingKeys.has(fetchCardsKey) ? 'animate-spin' : ''}`} />
                       Fetch cards
@@ -116,7 +116,7 @@ function MissingTable({ cards, loadingKeys, onFetchSet, onFetchCards, onFetchCar
                   )}
                 </td>
                 <td className="px-3 py-1.5 text-center">
-                  {!!row.set_metadata_missing ? (
+                  {row.set_metadata_missing ? (
                     <Button size="sm" variant="outline" disabled={loadingKeys.has(fetchSetKey)} onClick={() => onFetchSet(row)}>
                       <RefreshCw className={`h-3.5 w-3.5 ${loadingKeys.has(fetchSetKey) ? 'animate-spin' : ''}`} />
                       Fetch set

@@ -39,8 +39,8 @@ function getDisplayCode(setCode: string, collectorNumber?: string | null): strin
 export function SetSymbol({ setCode, setName, rarity, size = '1.2rem', collectorNumber }: SetSymbolProps) {
   if (!setCode) return null
 
-  let displayCode = getDisplayCode(setCode, collectorNumber)
-  let displayName = setName ?? setCode.toUpperCase()
+  const displayCode = getDisplayCode(setCode, collectorNumber)
+  const displayName = setName ?? setCode.toUpperCase()
   const rarityClass = rarity ? `ss-${rarity}` : ''
 
   return (
