@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.3
+
+### Bug Fixes
+- **Card images now load again** — Scryfall began rejecting requests that didn't send a custom User-Agent, which caused card images to fail with a 400 error and show as blank. All requests now send a proper User-Agent.
+
+### Improvements
+- **More reliable image downloads** — Card image fetches now have a timeout and write to the cache without blocking, so a slow or stalled download no longer hangs image loading.
+
 ## v1.0.2
 
 ### New Features
