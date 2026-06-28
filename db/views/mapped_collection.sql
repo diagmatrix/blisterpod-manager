@@ -15,6 +15,7 @@ SELECT
     c.quantity_nonfoil + c.quantity_foil                       AS total,
     sc.color_identity,
     sc.rarity,
+    coalesce(sc.cmc, 0)                                        AS mana_value,
     CASE
         WHEN sc.set_type = 'token'
             THEN true
