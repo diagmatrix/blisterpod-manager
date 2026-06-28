@@ -17,6 +17,7 @@ const DEFAULT_SORT_OPTIONS: SortOption[] = [
   { value: 'name', label: 'Name' },
   { value: 'set_code', label: 'Set code' },
   { value: 'collector_number', label: 'Collector number' },
+  { value: 'mana_value', label: 'Mana value'},
 ]
 
 export function CardSort({ options, sortColumn, sortOrder, onSort, onToggleOrder }: CardSortProps) {
