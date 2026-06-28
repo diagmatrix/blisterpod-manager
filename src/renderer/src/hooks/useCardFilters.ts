@@ -7,6 +7,7 @@ const SEARCH_DEBOUNCE_MS = 1000
 
 interface UseCardFiltersOptions {
   initialSet?: string
+  isFilteringCollection?: boolean
   onCommit?: () => void
 }
 
@@ -22,58 +23,90 @@ interface UseCardFiltersReturn {
   reset: () => void
 }
 
-export function useCardFilters({ initialSet = '', onCommit }: UseCardFiltersOptions = {}): UseCardFiltersReturn {
-  const [searchInput, setSearchInput] = useState('')
-  const [searchSetInput, setSearchSetInput] = useState(initialSet)
-  const [tokenFilter, setTokenFilter] = useState<TokenFilter>('cards')
-  const [raritiesInput, setRaritiesInput] = useState<string[]>([])
-  const [colorsInput, setColorsInput] = useState<string[]>([])
-  const [colorMode, setColorMode] = useState<ColorMode>('atLeast')
+export function useCardFilters({ initialSet = '', isFilteringCollection = true, onCommit }: UseCardFiltersOptions = {}): UseCardFiltersReturn {
+  /** Timeout */
+  let filterTimeout = setTimeout(() => {}, SEARCH_DEBOUNCE_MS)
 
+  /** Name filter */
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    filterTimeout = setTimeout(() => {
+      const newSearch = searchInput.length >= MIN_SEARCH_CARD_NAME ? searchInput : ''
+      if (newSearch !== search) { 
+        setSearch(newSearch); onCommit?.() 
+      }
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(filterTimeout)
+  }, [searchInput, search, onCommit])
+
+  /** Set filter */
   const [searchSet, setSearchSet] = useState(initialSet)
+  const [searchSetInput, setSearchSetInput] = useState(initialSet)
+
+  useEffect(() => {
+    filterTimeout = setTimeout(() => {
+      const newSet = searchSetInput.length >= MIN_SEARCH_SET_CODE ? searchSetInput : ''
+      if (newSet !== searchSet) { 
+        setSearchSet(newSet); onCommit?.() 
+      }
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(filterTimeout)
+  }, [searchSetInput, searchSet, onCommit])
+
+  /** Tokens filter */
+  const [tokenFilter, setTokenFilter] = useState<TokenFilter>('cards')
+  const [commitedTokenFilter, setCommitedTokenFilter] = useState<TokenFilter>('cards')
+
+  useEffect(() => {
+    filterTimeout = setTimeout(() => {
+      const canApplyFilter = isFilteringCollection ? true : searchSetInput.length >= MIN_SEARCH_SET_CODE || searchInput.length >= MIN_SEARCH_CARD_NAME
+      if (canApplyFilter) { 
+        setCommitedTokenFilter(tokenFilter); onCommit?.() 
+      }
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(filterTimeout)
+  })
+
+  /** Rarities filter */
+  const [raritiesInput, setRaritiesInput] = useState<string[]>([])
   const [rarities, setRarities] = useState<string[]>([])
+  
+  useEffect(() => {
+    filterTimeout = setTimeout(() => {
+      const canApplyFilter = isFilteringCollection ? true : searchSetInput.length >= MIN_SEARCH_SET_CODE || searchInput.length >= MIN_SEARCH_CARD_NAME
+      if (canApplyFilter) { 
+        setRarities(raritiesInput); onCommit?.() 
+      }
+    }, SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(filterTimeout)
+  }, [raritiesInput, searchInput, searchSetInput, onCommit])
+  
+  /** Colors filters */
+  const [colorsInput, setColorsInput] = useState<string[]>([])
   const [colors, setColors] = useState<string[]>([])
+  const [colorMode, setColorMode] = useState<ColorMode>('atLeast')
   const [committedColorMode, setCommittedColorMode] = useState<ColorMode>('atLeast')
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      const next = searchInput.length >= MIN_SEARCH_CARD_NAME ? searchInput : ''
-      if (next !== search) { setSearch(next); onCommit?.() }
+    filterTimeout = setTimeout(() => { 
+      const canApplyFilter = isFilteringCollection ? true : searchSetInput.length >= MIN_SEARCH_SET_CODE || searchInput.length >= MIN_SEARCH_CARD_NAME
+      if (canApplyFilter) { 
+        setColors(colorsInput); onCommit?.() 
+      }
     }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
-  }, [searchInput, search, onCommit])
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const next = searchSetInput.length >= MIN_SEARCH_SET_CODE ? searchSetInput : ''
-      if (next !== searchSet) { setSearchSet(next); onCommit?.() }
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
-  }, [searchSetInput, searchSet, onCommit])
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const canSearch = searchSetInput.length >= MIN_SEARCH_SET_CODE || searchInput.length >= MIN_SEARCH_CARD_NAME
-      if (canSearch) { setRarities(raritiesInput); onCommit?.() }
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
-  }, [raritiesInput, searchInput, searchSetInput, onCommit])
-
-  useEffect(() => {
-    const t = setTimeout(() => { 
-      const canSearch = searchSetInput.length >= MIN_SEARCH_SET_CODE || searchInput.length >= MIN_SEARCH_CARD_NAME
-      if (canSearch) { setColors(colorsInput); onCommit?.() }
-    }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
+    return () => clearTimeout(filterTimeout)
   }, [colorsInput, searchInput, searchSetInput, onCommit])
 
   useEffect(() => {
-    const t = setTimeout(() => { 
-      const canSearch = searchSetInput.length >= MIN_SEARCH_SET_CODE || searchInput.length >= MIN_SEARCH_CARD_NAME
-      if (canSearch) { setCommittedColorMode(colorMode); onCommit?.() }
+    filterTimeout = setTimeout(() => { 
+      const canApplyFilter = isFilteringCollection ? true : searchSetInput.length >= MIN_SEARCH_SET_CODE || searchInput.length >= MIN_SEARCH_CARD_NAME
+      if (canApplyFilter) { 
+        setCommittedColorMode(colorMode); onCommit?.() 
+      }
     }, SEARCH_DEBOUNCE_MS)
-    return () => clearTimeout(t)
+    return () => clearTimeout(filterTimeout)
   }, [colorMode, searchInput, searchSetInput, onCommit])
 
   const filtersState: CardFiltersState = {
@@ -97,5 +130,5 @@ export function useCardFilters({ initialSet = '', onCommit }: UseCardFiltersOpti
     setColorMode('atLeast'); setCommittedColorMode('atLeast')
   }
 
-  return { filtersState, filtersHandlers, search, searchSet, tokenFilter, rarities, colors, colorMode: committedColorMode, reset }
+  return { filtersState, filtersHandlers, search, searchSet, tokenFilter: commitedTokenFilter, rarities, colors, colorMode: committedColorMode, reset }
 }
