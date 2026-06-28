@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
 import { Eye, RotateCcw, Trash2 } from 'lucide-react'
@@ -8,7 +8,7 @@ import { SetSymbol } from '@/components/SetSymbol'
 import { CollectionImageGrid } from '@/components/CollectionImageGrid'
 import { TableSkeleton, ImageGridSkeleton } from '@/components/skeletons'
 import { SectionHeader } from '@/components/SectionHeader'
-import { ViewToggle, type ViewMode } from '@/components/ViewToggle'
+import { ViewToggle } from '@/components/ViewToggle'
 import { CardFilters } from '@/components/CardFilters'
 import { Pagination } from '@/components/Pagination'
 import { DeleteCardDialog } from '@/components/DeleteCardDialog'
@@ -18,7 +18,11 @@ import { useCardFilters } from '@/hooks/useCardFilters'
 import { useCardSort } from '@/hooks/useCardSort'
 import { CardSort } from '@/components/CardSort'
 import { Button } from '@/components/ui/button'
-import { PAGE_SIZES, FALLBACK_PAGE_SIZE, useDefaultPageSize } from '@/hooks/useDefaultPageSize'
+import { PAGE_SIZES } from '@/hooks/useDefaultPageSize'
+import { usePagination } from '@/hooks/usePagination'
+import { usePageViewState } from '@/hooks/usePageViewState'
+import { useRowSelection } from '@/hooks/useRowSelection'
+import { useCardImagePreview } from '@/components/CardImagePreview'
 
 const SORT_OPTIONS = [
   { value: 'total', label: 'Total' },
@@ -36,10 +40,12 @@ interface CollectionTableProps {
 
 function CollectionTable(props: CollectionTableProps) {
   const { cards, selectedIds, onToggleSelect, onToggleSelectAll } = props
+  const { bind, element } = useCardImagePreview()
   const allSelected = cards.length > 0 && cards.every((c) => selectedIds.has(c.collection_id))
   const someSelected = !allSelected && cards.some((c) => selectedIds.has(c.collection_id))
 
   return (
+    <>
     <div className="overflow-x-auto rounded-md border border-border">
       <table className="w-full text-sm">
         <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
@@ -67,11 +73,15 @@ function CollectionTable(props: CollectionTableProps) {
         <tbody>
           {cards.map((card, i) => {
             const isSelected = selectedIds.has(card.collection_id)
+            const src = card.scryfall_id && card.image_url
+              ? `card-image://${card.scryfall_id}?u=${encodeURIComponent(card.image_url)}`
+              : null
             return (
               <tr
                 key={`${card.set_code}-${card.collector_number}-${i}`}
                 className={`border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors ${isSelected ? 'bg-muted/40' : ''}`}
                 onClick={() => onToggleSelect(card.collection_id)}
+                {...bind(src)}
               >
                 <td className="px-3 py-1.5 w-8" onClick={(e) => e.stopPropagation()}>
                   <input
@@ -119,37 +129,31 @@ function CollectionTable(props: CollectionTableProps) {
         </tbody>
       </table>
     </div>
+    {element}
+    </>
   )
 }
 
 export default function CollectionPage() {
+  /** Page rendering */
   const location = useLocation()
   const initialSet: string = location.state?.filterSet ?? ''
+  
+  const { view, setView, isFilterExpanded, toggleFilter, isSortExpanded, toggleSort } = usePageViewState()
+  const { page, setPage, pageSize, handlePageSizeChange, reset: resetPagination } = usePagination()
 
-  const [page, setPage] = useState(1)
-  const defaultPageSize = useDefaultPageSize()
-  const [pageSize, setPageSize] = useState<number>(FALLBACK_PAGE_SIZE)
+  /** Sorting */
   const { sortColumn, sortOrder, handleSort, toggleOrder, reset: resetSort } = useCardSort({ defaultColumn: 'value', defaultOrder: 'DESC' })
-
-  useEffect(() => { setPageSize(defaultPageSize) }, [defaultPageSize])
-  const [view, setView] = useState<ViewMode>('image')
-
-  const [filterExpanded, setFilterExpanded] = useState(true)
-  const [sortExpanded, setSortExpanded] = useState(true)
-
-  const [quickCard, setQuickCard] = useState<CollectionCard | null>(null)
-  const [deleteCard, setDeleteCard] = useState<CollectionCard | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-  const [deleteSelectedOpen, setDeleteSelectedOpen] = useState(false)
-
-  const onFilterCommit = useCallback(() => setPage(1), [])
-
+  
+  /** Filtering */
+  const onFilterCommit = useCallback(() => setPage(1), [setPage])
   const {
     filtersState, filtersHandlers,
     search, searchSet, tokenFilter, rarities, colors, colorMode,
     reset: resetFilters,
   } = useCardFilters({ initialSet, onCommit: onFilterCommit })
 
+  /** Card retrieval */
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['collection', page, pageSize, sortColumn, sortOrder, search, searchSet, tokenFilter, rarities, colors, colorMode],
     queryFn: () =>
@@ -159,37 +163,33 @@ export default function CollectionPage() {
     placeholderData: keepPreviousData,
   })
 
+  /** Reset button */
   const handleReset = useCallback(() => {
     resetFilters()
     resetSort()
-    setPage(1); setPageSize(defaultPageSize)
-  }, [resetFilters, resetSort, defaultPageSize])
+    resetPagination()
+  }, [resetFilters, resetSort, resetPagination])
 
+  /** Card selection */
+  const [selectedCard, setSelectedCard] = useState<CollectionCard | null>(null)
+  const [deleteCard, setDeleteCard] = useState<CollectionCard | null>(null)
+  const [deleteSelectedOpen, setDeleteSelectedOpen] = useState(false)
+  
+  const {
+    selectedIds,
+    toggleSingle: toggleSelect,
+    toggleAll,
+    clear: clearSelection,
+    count: selectedCount,
+  } = useRowSelection()
+  
   const handleRowClick = useCallback((card: CollectionCard) => {
-    setQuickCard(card)
+    setSelectedCard(card)
   }, [])
-
-  const handlePageSizeChange = useCallback((newSize: number) => {
-    setPageSize(newSize); setPage(1)
-  }, [])
-
-  const handleToggleSelect = useCallback((id: number) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
-      return next
-    })
-  }, [])
-
   const handleToggleSelectAll = useCallback((selected: boolean) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      const pageIds = data?.rows.map((c) => c.collection_id) ?? []
-      if (selected) pageIds.forEach((id) => next.add(id))
-      else pageIds.forEach((id) => next.delete(id))
-      return next
-    })
-  }, [data?.rows])
+    const pageIds = data?.rows.map((c) => c.collection_id) ?? []
+    toggleAll(pageIds, selected)
+  }, [data?.rows, toggleAll])
 
   return (
     <div className="flex flex-col p-3 gap-3">
@@ -216,14 +216,14 @@ export default function CollectionPage() {
 
       {/* Filter section */}
       <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
-        <SectionHeader label="Filter by" expanded={filterExpanded} onToggle={() => setFilterExpanded((v) => !v)} />
-        {filterExpanded && <CardFilters state={filtersState} handlers={filtersHandlers} showTokenFilter />}
+        <SectionHeader label="Filter by" expanded={isFilterExpanded} onToggle={toggleFilter} />
+        {isFilterExpanded && <CardFilters state={filtersState} handlers={filtersHandlers} showTokenFilter />}
       </div>
 
       {/* Sort section */}
       <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
-        <SectionHeader label="Sort by" expanded={sortExpanded} onToggle={() => setSortExpanded((v) => !v)} />
-        {sortExpanded && (
+        <SectionHeader label="Sort by" expanded={isSortExpanded} onToggle={toggleSort} />
+        {isSortExpanded && (
           <CardSort
             options={SORT_OPTIONS}
             sortColumn={sortColumn as string}
@@ -243,9 +243,9 @@ export default function CollectionPage() {
         </div>
       ) : view === 'table' ? (
         <>
-          {selectedIds.size > 0 && (
+          {selectedCount > 0 && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">{selectedIds.size} selected</span>
+              <span className="text-sm text-muted-foreground">{selectedCount} selected</span>
               <Button size="sm" variant="destructive" onClick={() => setDeleteSelectedOpen(true)}>
                 <Trash2 className="w-3 h-3" /> Remove selected
               </Button>
@@ -254,7 +254,7 @@ export default function CollectionPage() {
           <CollectionTable
             cards={data?.rows ?? []}
             selectedIds={selectedIds}
-            onToggleSelect={handleToggleSelect}
+            onToggleSelect={toggleSelect}
             onToggleSelectAll={handleToggleSelectAll}
             onRowClick={handleRowClick}
             onDeleteClick={setDeleteCard}
@@ -277,11 +277,11 @@ export default function CollectionPage() {
       )}
 
       {/* Dialogs */}
-      {quickCard && (
+      {selectedCard && (
         <CardQuickDialog
-          card={quickCard}
-          open={!!quickCard}
-          onOpenChange={(open) => { if (!open) setQuickCard(null) }}
+          card={selectedCard}
+          open={!!selectedCard}
+          onOpenChange={(open) => { if (!open) setSelectedCard(null) }}
         />
       )}
       {deleteCard && (
@@ -296,7 +296,7 @@ export default function CollectionPage() {
         ids={[...selectedIds]}
         open={deleteSelectedOpen}
         onOpenChange={setDeleteSelectedOpen}
-        onDeleted={() => setSelectedIds(new Set())}
+        onDeleted={clearSelection}
       />
     </div>
   )

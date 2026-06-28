@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ScryfallCard } from '../../../shared/cards'
@@ -7,41 +7,125 @@ import { CardFilters } from '@/components/CardFilters'
 import { useCardFilters } from '@/hooks/useCardFilters'
 import { useCardSort } from '@/hooks/useCardSort'
 import { CardSort } from '@/components/CardSort'
-import { ViewToggle, type ViewMode } from '@/components/ViewToggle'
+import { ViewToggle } from '@/components/ViewToggle'
 import { SectionHeader } from '@/components/SectionHeader'
 import { BatchPanel } from '@/components/BatchPanel'
 import { CardImageCell } from '@/components/CardImageCell'
+import { useCardImagePreview } from '@/components/CardImagePreview'
 import { SetSymbol } from '@/components/SetSymbol'
 import { ManaSymbols } from '@/components/ManaSymbols'
 import { Pagination } from '@/components/Pagination'
 import { useCardSearch } from '@/hooks/useCardSearch'
 import { ImageGridSkeleton, TableSkeleton } from '@/components/skeletons'
-import { PAGE_SIZES, FALLBACK_PAGE_SIZE, useDefaultPageSize } from '@/hooks/useDefaultPageSize'
+import { PAGE_SIZES } from '@/hooks/useDefaultPageSize'
+import { usePagination } from '@/hooks/usePagination'
+import { usePageViewState } from '@/hooks/usePageViewState'
 
 const SORT_OPTIONS = [
   { value: 'rarity', label: 'Rarity' },
   { value: 'released_at', label: 'Release date' },
 ]
 
+interface CardTableProps {
+  cards: ScryfallCard[]
+  onAddNonfoil: (card: ScryfallCard) => void
+  onAddFoil: (card: ScryfallCard) => void
+}
+
+/** Which half of a row the cursor is over (left = nonfoil, right = foil). */
+function sideFromEvent(e: React.MouseEvent): 'left' | 'right' {
+  const rect = e.currentTarget.getBoundingClientRect()
+  return e.clientX - rect.left < rect.width / 2 ? 'left' : 'right'
+}
+
+function CardTable(props: CardTableProps) {
+  const { bind, element } = useCardImagePreview()
+  const [hover, setHover] = useState<{ index: number; side: 'left' | 'right' } | null>(null)
+  return (
+    <>
+    <div className="overflow-x-auto rounded-md border border-border">
+      <table className="w-full text-sm">
+        <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
+          <tr className="border-b border-border">
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground">Name</th>
+            <th className="px-3 py-2 font-medium text-muted-foreground w-14 text-center">Set</th>
+            <th className="px-3 py-2 font-medium text-muted-foreground w-40 text-right">Collector Number</th>
+            <th className="px-3 py-2 font-medium text-muted-foreground w-24 text-center">Colors</th>
+            <th className="px-3 py-2 text-left font-medium text-muted-foreground w-34">Price (€)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {props.cards.map((card, i) => {
+            const src = card.scryfall_id && card.image_url
+              ? `card-image://${card.scryfall_id}?u=${encodeURIComponent(card.image_url)}`
+              : null
+            const bound = bind(src)
+            const isHovered = hover?.index === i
+            return (
+              <tr
+                key={`${card.set_code}-${card.collector_number}-${i}`}
+                className="relative border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors"
+                onMouseEnter={bound.onMouseEnter}
+                onMouseMove={(e) => {
+                  bound.onMouseMove(e)
+                  const side = sideFromEvent(e)
+                  setHover((prev) => (prev && prev.index === i && prev.side === side ? prev : { index: i, side }))
+                }}
+                onMouseLeave={() => {
+                  bound.onMouseLeave()
+                  setHover((prev) => (prev?.index === i ? null : prev))
+                }}
+                onClick={(e) => (sideFromEvent(e) === 'left' ? props.onAddNonfoil(card) : props.onAddFoil(card))}
+              >
+                <td className="px-3 py-1.5 font-medium truncate max-w-0">
+                  {card.name}
+                  {isHovered && (
+                    <div className="pointer-events-none absolute inset-0 z-10 flex">
+                      <div className={`flex-1 flex items-center justify-start pl-3 transition-colors ${hover.side === 'left' ? 'bg-primary/10' : ''}`}>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${hover.side === 'left' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>+ Nonfoil</span>
+                      </div>
+                      <div className={`flex-1 flex items-center justify-end pr-3 transition-colors ${hover.side === 'right' ? 'bg-primary/10' : ''}`}>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${hover.side === 'right' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>+ Foil</span>
+                      </div>
+                    </div>
+                  )}
+                </td>
+                <td className="px-3 py-1.5 w-16 text-center">
+                  <SetSymbol setCode={card.set_code} setName={card.set_name} rarity={card.rarity} collectorNumber={card.collector_number} />
+                </td>
+                <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.collector_number}</td>
+                <td className="px-3 py-1.5 w-24 text-center">
+                  <ManaSymbols value={card.color_identity} />
+                </td>
+                <td className="px-3 py-1.5 w-20 text-xs text-muted-foreground">{card.value_nonfoil}/{card.value_foil}€</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+    {element}
+    </>
+  )
+}
+
 export default function AddCardPage() {
-  const queryClient = useQueryClient()
+  /** Page rendering */
+  const { view, setView, isFilterExpanded, toggleFilter, isSortExpanded, toggleSort } = usePageViewState()
+  const { page, setPage, pageSize, handlePageSizeChange } = usePagination()
 
-  const [view, setView] = useState<ViewMode>('image')
-  const [filterExpanded, setFilterExpanded] = useState(true)
-  const [sortExpanded, setSortExpanded] = useState(true)
-  const [page, setPage] = useState(1)
-  const defaultPageSize = useDefaultPageSize()
-  const [pageSize, setPageSize] = useState<number>(FALLBACK_PAGE_SIZE)
-  const [batch, setBatch] = useState<BatchItem[]>([])
-  const [isAdding, setIsAdding] = useState(false)
-
-  useEffect(() => { setPageSize(defaultPageSize) }, [defaultPageSize])
-
-  const onFilterCommit = useCallback(() => setPage(1), [])
-  const { filtersState, filtersHandlers, search, searchSet, tokenFilter, rarities, colors, colorMode } = useCardFilters({ onCommit: onFilterCommit })
+  /** Sorting */
   const { sortColumn, sortOrder, handleSort, toggleOrder } = useCardSort({ defaultColumn: 'collector_number', defaultOrder: 'ASC' })
 
+  /** Filtering */
+  const onFilterCommit = useCallback(() => setPage(1), [setPage])
+  const { filtersState, filtersHandlers, search, searchSet, tokenFilter, rarities, colors, colorMode } = useCardFilters({ isFilteringCollection: false, onCommit: onFilterCommit })
+
+  /** Card retrieval */
+  const queryClient = useQueryClient()
   const searchParams: CardSearchParams = {
+
+
     query: search || undefined,
     set_code: searchSet || undefined,
     rarities: rarities.length > 0 ? rarities : undefined,
@@ -53,10 +137,12 @@ export default function AddCardPage() {
     page,
     pageSize,
   }
-
+  const hasFilter = !!(searchParams.query || searchParams.set_code)
   const { rows, total, isLoading } = useCardSearch(searchParams)
 
-  const hasFilter = !!(searchParams.query || searchParams.set_code || searchParams.rarities?.length || searchParams.colors?.length)
+  /** Batch */
+  const [batch, setBatch] = useState<BatchItem[]>([])
+  const [isAdding, setIsAdding] = useState(false)
 
   const addToBatch = useCallback((card: ScryfallCard) => {
     setBatch((prev) => {
@@ -131,13 +217,13 @@ export default function AddCardPage() {
         </div>
 
         <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
-          <SectionHeader label="Filter by" expanded={filterExpanded} onToggle={() => setFilterExpanded((v) => !v)} />
-          {filterExpanded && <CardFilters state={filtersState} handlers={filtersHandlers} showTokenFilter={true} />}
+          <SectionHeader label="Filter by" expanded={isFilterExpanded} onToggle={toggleFilter} />
+          {isFilterExpanded && <CardFilters state={filtersState} handlers={filtersHandlers} showTokenFilter={true} />}
         </div>
 
         <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
-          <SectionHeader label="Sort by" expanded={sortExpanded} onToggle={() => setSortExpanded((v) => !v)} />
-          {sortExpanded && (
+          <SectionHeader label="Sort by" expanded={isSortExpanded} onToggle={toggleSort} />
+          {isSortExpanded && (
             <CardSort
               options={SORT_OPTIONS}
               sortColumn={sortColumn}
@@ -183,47 +269,11 @@ export default function AddCardPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-md border border-border">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
-                <tr className="border-b border-border">
-                  <th className="px-3 py-2 text-left font-medium text-muted-foreground w-14">Img</th>
-                  <th className="px-3 py-2 text-left font-medium text-muted-foreground">Name</th>
-                  <th className="px-3 py-2 text-center font-medium text-muted-foreground w-16">Set</th>
-                  <th className="px-3 py-2 text-right font-medium text-muted-foreground w-16">#</th>
-                  <th className="px-3 py-2 text-center font-medium text-muted-foreground w-24">Colors</th>
-                  <th className="px-3 py-2 text-left font-medium text-muted-foreground w-20">Rarity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((card, i) => {
-                  const src = card.scryfall_id && card.image_url
-                    ? `card-image://${card.scryfall_id}?u=${encodeURIComponent(card.image_url)}`
-                    : null
-                  return (
-                    <tr
-                      key={`${card.set_code}-${card.collector_number}-${i}`}
-                      className="border-b border-border/50 hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => addToBatch(card)}
-                    >
-                      <td className="px-3 py-1.5 w-14">
-                        {src && <img src={src} alt="" className="w-8 h-auto rounded" loading="lazy" />}
-                      </td>
-                      <td className="px-3 py-1.5 font-medium truncate max-w-0">{card.name}</td>
-                      <td className="px-3 py-1.5 w-16 text-center">
-                        <SetSymbol setCode={card.set_code} setName={card.set_name} rarity={card.rarity} collectorNumber={card.collector_number} />
-                      </td>
-                      <td className="px-3 py-1.5 w-16 text-right tabular-nums">{card.collector_number}</td>
-                      <td className="px-3 py-1.5 w-24 text-center">
-                        <ManaSymbols value={card.color_identity} />
-                      </td>
-                      <td className="px-3 py-1.5 w-20 text-xs text-muted-foreground capitalize">{card.rarity}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <CardTable
+            cards={rows}
+            onAddNonfoil={addToBatch}
+            onAddFoil={addFoilToBatch}
+          />
         )}
 
         {hasFilter && total > 0 && (
@@ -233,7 +283,7 @@ export default function AddCardPage() {
             total={total}
             pageSizes={PAGE_SIZES}
             onPageChange={setPage}
-            onPageSizeChange={(s) => { setPageSize(s); setPage(1) }}
+            onPageSizeChange={handlePageSizeChange}
           />
         )}
       </div>
