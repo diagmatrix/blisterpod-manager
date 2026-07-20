@@ -1,5 +1,3 @@
-DROP VIEW IF EXISTS card_details;
-CREATE VIEW card_details AS
 WITH card_faces AS (
     SELECT
         sc.id,
@@ -97,3 +95,6 @@ LEFT JOIN scryfall_cards sc_meld
     ON mr.meld_id = sc_meld.id
 LEFT JOIN scryfall_sets_formatted ssf
     ON c.set_code = ssf.code
+WHERE
+    c.set_code = ?
+    AND c.collector_number = ?

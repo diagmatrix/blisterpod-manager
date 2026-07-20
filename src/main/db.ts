@@ -561,8 +561,9 @@ function setupIpcHandlers(): void {
   })
 
   // Search available cards
+  // DONE
   ipcMain.handle('db:cards:search', (_, params: import('../shared/search').CardSearchParams) => {
-    const { query, set_code, rarities, colors, colorMode = 'including', tokenFilter, sortColumn = 'collector_number', sortOrder, page = 1, pageSize = 60 } = params
+    const { cardName, setCode, rarities, colorIdentity, colorMode = 'including', layoutFilter, sortColumn = 'collector_number', sortOrder, page = 1, pageSize = 60 } = params
     const safePageSize = Math.min(pageSize, 120)
     const offset = (page - 1) * safePageSize
     const validSearchColumns = ['name', 'set_code', 'collector_number', 'rarity', 'color_identity', 'released_at']
@@ -575,24 +576,24 @@ function setupIpcHandlers(): void {
     const conditions: string[] = []
     const values: any[] = []
 
-    if (query && query.length >= 2) {
+    if (cardName && cardName.length >= 2) {
       conditions.push('name LIKE ?')
-      values.push(`%${query}%`)
+      values.push(`%${cardName}%`)
     }
 
-    if (set_code) {
+    if (setCode) {
       conditions.push('set_code = ?')
-      values.push(set_code.toUpperCase())
+      values.push(setCode.toUpperCase())
     }
 
-    if (tokenFilter === 'cards') {
+    if (layoutFilter === 'cards') {
       conditions.push('is_token = 0')
-    } else if (tokenFilter === 'tokens') {
+    } else if (layoutFilter === 'tokens') {
       conditions.push('is_token = 1')
     }
 
     const { conditions: rarityConds, values: rarityVals } = buildRarityConditions(rarities)
-    const { conditions: colorConds, values: colorVals } = buildColorConditions(colors, colorMode)
+    const { conditions: colorConds, values: colorVals } = buildColorConditions(colorIdentity, colorMode)
     conditions.push(...rarityConds, ...colorConds)
     values.push(...rarityVals, ...colorVals)
 
@@ -607,6 +608,7 @@ function setupIpcHandlers(): void {
   })
 
   // Card detail: full scryfall data + owned quantities for one printing
+  // DONE
   ipcMain.handle('db:cards:detail', (_, params: { set_code: string; collector_number: string }) => {
     const { set_code, collector_number } = params
 
@@ -620,6 +622,7 @@ function setupIpcHandlers(): void {
   })
 
   // Other printings in collection for the same oracle card
+  // DONE
   ipcMain.handle('db:cards:other-printings', (_, params: { oracle_id: string, scryfall_id: string }) => {
     const sql = `SELECT * FROM mapped_collection WHERE oracle_id = ? AND scryfall_id != ? ORDER BY total DESC, set_code, collector_number_normalised`
 
@@ -630,6 +633,7 @@ function setupIpcHandlers(): void {
   })
 
   // Summary stats
+  // DONE
   ipcMain.handle('db:stats:summary', () => {
     log.info('db:stats:summary', 'SELECT * FROM stats_summary')
     const row = db.prepare('SELECT * FROM stats_summary').get() as { unique_printings: number; unique_names: number; total_cards: number; estimated_value: number }
@@ -642,6 +646,7 @@ function setupIpcHandlers(): void {
   })
 
   // Color distribution stats
+  // DONE
   ipcMain.handle('db:stats:colors', () => {
     const sql = 'SELECT * FROM stats_colors'
     log.info('db:stats:colors', sql)
@@ -649,6 +654,7 @@ function setupIpcHandlers(): void {
   })
 
   // Rarity breakdown stats
+  // DONE
   ipcMain.handle('db:stats:rarity', () => {
     const sql = `SELECT * FROM stats_rarity ORDER BY CASE rarity WHEN 'common' THEN 1 WHEN 'uncommon' THEN 2 WHEN 'rare' THEN 3 WHEN 'mythic' THEN 4 WHEN 'special' THEN 5 ELSE 6 END`
     log.info('db:stats:rarity', sql)
@@ -657,6 +663,7 @@ function setupIpcHandlers(): void {
   })
 
   // Top cards by EUR price
+  // DONE
   ipcMain.handle('db:stats:top-value', (_, params: { limit?: number } = {}) => {
     const limit = Math.min(params?.limit ?? 10, 50)
     const sql = 'SELECT * FROM mapped_collection ORDER BY value DESC LIMIT ?'
@@ -665,6 +672,7 @@ function setupIpcHandlers(): void {
   })
 
   // Cards per set
+  // DONE
   ipcMain.handle('db:stats:by-set', (_, params: { limit?: number } = {}) => {
     const limit = Math.min(params?.limit ?? 20, 100)
     const sql = 'SELECT * FROM stats_by_set ORDER BY percentage_collected DESC, unique_printings DESC LIMIT ?'
@@ -673,6 +681,7 @@ function setupIpcHandlers(): void {
   })
 
   // Show native save dialog and return chosen path (or null if cancelled)
+  // DONE
   ipcMain.handle('dialog:showSaveDialog', async (event, defaultName: string) => {
     const win = BrowserWindow.fromWebContents(event.sender)!
     const result = await dialog.showSaveDialog(win, {
@@ -683,6 +692,7 @@ function setupIpcHandlers(): void {
   })
 
   // Export the cards table as CSV to the given path
+  // DONE
   ipcMain.handle('collection:export', (_, filePath: string) => {
     const rows = db.prepare('SELECT set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at FROM cards ORDER BY set_code, collector_number').all() as {
       set_code: string
@@ -703,6 +713,7 @@ function setupIpcHandlers(): void {
   })
 
   // Export the collection in Moxfield CSV format
+  // DONE
   ipcMain.handle('collection:export-moxfield', (_, filePath: string) => {
     const rows = db.prepare(`
       SELECT name, set_code, collector_number, quantity_nonfoil, quantity_foil

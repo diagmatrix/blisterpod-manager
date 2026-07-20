@@ -13,22 +13,22 @@ export function useCardSearch(params: CardSearchParams) {
 
   const [committedFilters, setCommittedFilters] = useState<FilterParams>(filterParams)
   const raritiesKey = params.rarities?.join(',') ?? ''
-  const colorsKey = params.colors?.join(',') ?? ''
+  const colorsKey = params.colorIdentity?.join(',') ?? ''
 
   useEffect(() => {
     const t = setTimeout(() => setCommittedFilters(latestFilters.current), DEBOUNCE_MS)
     return () => clearTimeout(t)
   }, [
-    params.query,
-    params.set_code,
+    params.cardName,
+    params.setCode,
     raritiesKey,
     colorsKey,
     params.colorMode,
-    params.tokenFilter,
+    params.layoutFilter,
   ])
 
   const committedParams: CardSearchParams = { ...committedFilters, page, pageSize, sortColumn, sortOrder }
-  const hasFilter = !!(committedFilters.query || committedFilters.set_code || committedFilters.rarities?.length || committedFilters.colors?.length)
+  const hasFilter = !!(committedFilters.cardName || committedFilters.setCode || committedFilters.rarities?.length || committedFilters.colorIdentity?.length)
 
   const { data, isLoading } = useQuery({
     queryKey: ['card-search', committedParams],

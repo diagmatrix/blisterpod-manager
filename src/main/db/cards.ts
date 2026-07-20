@@ -1,0 +1,75 @@
+import Database from "better-sqlite3";
+import { createLogger } from "../logger";
+import { CardSearchParams } from "../../shared/search";
+import { ipcMain } from "electron";
+import { buildQueryConditions, validateSearchParams } from "./querybuilder";
+import { CardDetail, CollectionCard, ScryfallCard } from "../../shared/cards";
+import { getQueryFilePath } from ".";
+
+const CARDS_SEARCH_NAME = 'cards:search'
+const CARDS_DETAIL_NAME = 'cards:detail'
+const CARDS_OTHERS_NAME = 'cards:other-printings'
+
+const CARDS_DETAILS_QUERY = 'card_details.sql'
+const CARDS_OTHERS_QUERY = 'other_printings.sql'
+
+const logger = createLogger('db:cards')
+
+export function registerCardsHandlers(db: Database.Database): void {
+    // Search available cards
+    ipcMain.handle(CARDS_SEARCH_NAME, (_, params: CardSearchParams) => {
+        params = validateSearchParams(params)
+        
+        // Maybe refactor as it is validated before that is not null
+        const pageSize = params.pageSize ?? 1
+        const page = params.page ?? 1
+        const offset = (page - 1) * pageSize
+
+        const { sql, values } = buildQueryConditions(params)
+        const whereSQL = values.length > 0 ? `WHERE ${sql}` : ''
+        const orderSQL = `ORDER BY ${params.sortColumn} ${params.sortOrder}`
+
+        const finalQuery = `SELECT * FROM scryfall_cards_formatted ${whereSQL} ${orderSQL} LIMIT ? OFFSET ?`
+        values.push(pageSize, offset)
+
+        let rows: ScryfallCard[] = []
+        try {
+            logger.info(CARDS_SEARCH_NAME, finalQuery)
+            rows = db.prepare(finalQuery).all(values) as ScryfallCard[]
+        } catch (err) {
+            logger.error(`Error fetching cards: ${err}`)
+        } finally {
+            const total = rows.length ?? 0
+            return { rows, total }
+        }
+    })
+
+    // Get card details
+    ipcMain.handle(CARDS_DETAIL_NAME, (_, params: { setCode: string, collectorNumber: string}) => {
+        let row: CardDetail | null = null
+        try {
+            const sql = getQueryFilePath(CARDS_DETAILS_QUERY)
+            logger.info(CARDS_DETAIL_NAME, sql)
+            row = db.prepare(sql).get(params.setCode, params.collectorNumber) as CardDetail
+        } catch (err) {
+            logger.error(`Error fetching details of card: ${err}`)
+        } finally {
+            return row
+        }
+    })
+
+    // Get other printings of the same card
+      ipcMain.handle(CARDS_OTHERS_NAME, (_, params: { oracleID: string, scryfallID: string }) => {
+        let rows: CollectionCard[] = []
+        try {
+            const sql = getQueryFilePath(CARDS_OTHERS_QUERY)
+            logger.info(CARDS_OTHERS_NAME, sql)
+            rows = db.prepare(sql).all(params.oracleID, params.scryfallID) as CollectionCard[]
+        } catch (err) {
+            logger.error(`Error fetching other printings of card: ${err}`)
+        } finally {
+            const total = rows.reduce((sum, row) => sum + (row.total as number), 0)
+            return { rows, total }
+        }
+      })
+}
