@@ -42,12 +42,12 @@ export interface CollectionUpdateParams {
 }
 
 export interface CardSearchParams {
-  query?: string
-  set_code?: string
+  cardName?: string
+  setCode?: string
   rarities?: string[]
-  colors?: string[]
+  colorIdentity?: string[]
   colorMode?: 'atLeast' | 'exactly' | 'atMost'
-  tokenFilter?: 'all' | 'cards' | 'tokens'
+  layoutFilter?: 'all' | 'cards' | 'tokens'
   sortColumn?: string
   sortOrder?: 'ASC' | 'DESC'
   page?: number

@@ -126,18 +126,18 @@ export default function AddCardPage() {
   const searchParams: CardSearchParams = {
 
 
-    query: search || undefined,
-    set_code: searchSet || undefined,
+    cardName: search || undefined,
+    setCode: searchSet || undefined,
     rarities: rarities.length > 0 ? rarities : undefined,
-    colors: colors.length > 0 ? colors : undefined,
+    colorIdentity: colors.length > 0 ? colors : undefined,
     colorMode: colors.length > 0 ? colorMode : undefined,
-    tokenFilter: tokenFilter || 'all',
+    layoutFilter: tokenFilter || 'all',
     sortColumn,
     sortOrder,
     page,
     pageSize,
   }
-  const hasFilter = !!(searchParams.query || searchParams.set_code)
+  const hasFilter = !!(searchParams.cardName || searchParams.setCode)
   const { rows, total, isLoading } = useCardSearch(searchParams)
 
   /** Batch */
