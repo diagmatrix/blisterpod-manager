@@ -1,5 +1,3 @@
-DROP VIEW IF EXISTS stats_by_set;
-CREATE VIEW stats_by_set AS
 WITH sets_aggregated AS (
     SELECT
         c.set_code,
@@ -20,3 +18,5 @@ SELECT
     *,
     trunc(100 * cast(unique_printings AS real) / set_cards) AS percentage_collected
 FROM sets_aggregated
+ORDER BY percentage_collected DESC, unique_printings DESC
+LIMIT ?
