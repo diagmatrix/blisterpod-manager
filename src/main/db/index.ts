@@ -7,6 +7,7 @@ import { readFileSync } from "fs";
 import { registerExportHandlers } from "./export";
 import { registerStatsHandlers } from "./stats";
 import { registerCardsHandlers } from "./cards";
+import { registerMissingCardsHandlers } from "./missing";
 
 // For testing, the database name is overwritten
 // const DB_NAME = 'test_collection.db'
@@ -77,4 +78,7 @@ function setUpIPCHandlers(): void {
 
     // Cards handlers
     registerCardsHandlers(db)
+
+    // Missing cards handlers
+    registerMissingCardsHandlers(db)
 }
