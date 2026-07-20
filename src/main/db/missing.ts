@@ -1,0 +1,81 @@
+import Database from "better-sqlite3"
+import { createLogger } from "../logger"
+import { ipcMain } from "electron"
+import { MissingCard } from "../../shared/cards"
+import { getQueryFilePath } from "."
+import { getCard, getSet, getSetCards } from "../scryfallRefresh"
+
+const MISSING_LIST_NAME = 'missing:list'
+const MISSING_FETCH_SET_NAME = 'missing:fetch-set'
+const MISSING_FETCH_SET_CARDS_NAME = 'missing:fetch-cards'
+const MISSING_FETCH_CARD_NAME = 'missing:fetch-card'
+
+const MISSING_LIST_QUERY = 'missing.sql'
+const MISSING_FETCH_SET_CARDS_QUERY = 'search_uri.sql'
+
+const logger = createLogger('db:missing')
+
+export function registerMissingCardsHandlers(db: Database.Database): void {
+    // List missing cards in collection
+    ipcMain.handle(MISSING_LIST_NAME, () => {
+        let rows: MissingCard[] = []
+        try {
+            const sql = getQueryFilePath(MISSING_LIST_QUERY)
+            logger.info(MISSING_LIST_NAME, sql)
+            rows = db.prepare(sql).all() as MissingCard[]
+        } catch (err) {
+            logger.error(`Error fetching missing cards: ${err}`)
+        } finally {
+            return rows
+        }
+    })
+
+    // Fetch and store a set from Scryfall
+    ipcMain.handle(MISSING_FETCH_SET_NAME, async (_, params: { setCode: string }) => {
+        getSet(db, params.setCode).then((success) => {
+            logger.info(MISSING_FETCH_SET_NAME, 'Successful')
+            return { success: success, error: null }
+        }, 
+        (reason) => {
+            logger.error(`Error fetching set: ${reason}`)
+            return { success: false, error: reason }
+        })
+    })
+
+    // Fetch and store the cards from a set
+    ipcMain.handle(MISSING_FETCH_SET_CARDS_NAME, async (_, params: { setCode: string }) => {
+        let searchUri: string | undefined
+        try {
+            const sql = getQueryFilePath(MISSING_FETCH_SET_CARDS_QUERY)
+            logger.info(MISSING_FETCH_SET_CARDS_NAME, sql)
+            const dbRow = db.prepare(sql).get(params.setCode.toUpperCase()) as { search_uri: string } | undefined
+            if (dbRow?.search_uri) {
+                searchUri = dbRow.search_uri
+            }
+        } catch (err) {
+            logger.error(`Error fetching missing cards: ${err}`)
+            return { inserted: 0, error: (err as Error).message }
+        }
+
+        if (!searchUri) {
+            const errorMessage = 'Set missing or set missing search URL'
+            logger.error(errorMessage)
+            return { inserted: 0, error: errorMessage }
+        }
+
+        const { inserted, error } = await getSetCards(db, searchUri)
+        return { inserted: inserted, error: error }
+    })
+
+    // Fetch and store a card from Scryfall
+    ipcMain.handle(MISSING_FETCH_CARD_NAME, async (_, params: { setCode: string; collectorNumber: string }) => {
+        getCard(db, params.setCode, params.collectorNumber).then((success) => {
+            logger.info(MISSING_FETCH_CARD_NAME, 'Successful')
+            return { success: success, error: null }
+        }, 
+        (reason) => {
+            logger.error(`Error fetching set: ${reason}`)
+            return { success: false, error: reason }
+        })
+    })
+}

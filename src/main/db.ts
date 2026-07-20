@@ -480,6 +480,7 @@ function setupIpcHandlers(): void {
   })
 
   // List missing cards in collection
+  // Done
   ipcMain.handle('db:missing:list', () => {
     const sql = `SELECT * FROM missing ORDER BY set_code, collector_number`
     log.info('db:missing:list', sql)
@@ -487,6 +488,7 @@ function setupIpcHandlers(): void {
   })
 
     // Fetch set metadata from Scryfall and upsert into scryfall_sets
+    // DONE
   ipcMain.handle('db:missing:fetch-set', async (_, params: { set_code: string }) => {
     const { set_code } = params
     log.info('db:missing:fetch-set', { set_code })
@@ -505,6 +507,7 @@ function setupIpcHandlers(): void {
   })
 
   // Fetch all cards for a set from Scryfall and upsert into scryfall_cards
+  // DONE
   ipcMain.handle('db:missing:fetch-cards', async (_, params: { set_code: string }) => {
     const { set_code } = params
     log.info('db:missing:fetch-cards', { set_code })
@@ -544,6 +547,7 @@ function setupIpcHandlers(): void {
   })
 
    // Fetch a single card from Scryfall and upsert into scryfall_cards
+   // DONE
   ipcMain.handle('db:missing:fetch-card', async (_, params: { set_code: string; collector_number: string }) => {
     const { set_code, collector_number } = params
     log.info('db:missing:fetch-card', { set_code, collector_number })
