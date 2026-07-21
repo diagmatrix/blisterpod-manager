@@ -28,7 +28,8 @@ SELECT
         WHEN sc.set_type = 'token'
             THEN true
         ELSE false
-    END                                      AS is_token
+    END                                      AS is_token,
+    coalesce(sc.cmc, 0)                      AS mana_value
 FROM scryfall_cards sc
 LEFT JOIN scryfall_sets_formatted ssf
     ON sc.set_code = ssf.code
