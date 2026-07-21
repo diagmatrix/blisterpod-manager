@@ -3,7 +3,6 @@ import { createRequire } from 'node:module'
 import Database from 'better-sqlite3'
 import { createLogger } from './logger'
 import { getTableColumns, isEmpty, serializeVal, USER_AGENT } from './utils'
-import assert from 'node:assert'
 
 interface Inserted {
     inserted: number

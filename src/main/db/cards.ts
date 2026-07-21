@@ -26,10 +26,9 @@ export function registerCardsHandlers(db: Database.Database): void {
             rows = db.prepare(sql).all(values) as ScryfallCard[]
         } catch (err) {
             logger.error(`Error fetching cards: ${err}`)
-        } finally {
-            const total = rows.length ?? 0
-            return { rows, total }
         }
+        const total = rows.length ?? 0
+        return { rows, total }
     })
 
     // Get card details
@@ -41,9 +40,8 @@ export function registerCardsHandlers(db: Database.Database): void {
             row = db.prepare(sql).get(params.setCode, params.collectorNumber) as CardDetail
         } catch (err) {
             logger.error(`Error fetching details of card: ${err}`)
-        } finally {
-            return row
         }
+        return row
     })
 
     // Get other printings of the same card
@@ -55,9 +53,8 @@ export function registerCardsHandlers(db: Database.Database): void {
             rows = db.prepare(sql).all(params.oracleID, params.scryfallID) as CollectionCard[]
         } catch (err) {
             logger.error(`Error fetching other printings of card: ${err}`)
-        } finally {
-            const total = rows.reduce((sum, row) => sum + (row.total as number), 0)
-            return { rows, total }
         }
+        const total = rows.reduce((sum, row) => sum + (row.total as number), 0)
+        return { rows, total }
       })
 }

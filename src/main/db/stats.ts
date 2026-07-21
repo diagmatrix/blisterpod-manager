@@ -37,9 +37,8 @@ export function registerStatsHandlers(db: Database.Database): void {
             row = db.prepare(sql).get() as StatsSummary
         } catch (err) {
             logger.error(`Error fetching stats summary: ${err}`)
-        } finally {
-            return row
         }
+        return row
     })
 
     // Color distribution stats
@@ -59,9 +58,8 @@ export function registerStatsHandlers(db: Database.Database): void {
             row = db.prepare(sql).get() as StatsColors
         } catch (err) {
             logger.error(`Error fetching stats color distribution: ${err}`)
-        } finally {
-            return row
         }
+        return row
     })
 
     // Rarity breakdown stats
@@ -73,9 +71,8 @@ export function registerStatsHandlers(db: Database.Database): void {
             rows = db.prepare(sql).all() as StatsRarityEntry[]
         } catch (err) {
             logger.error(`Error fetching stats rarity breakdown: ${err}`)
-        } finally {
-            return rows
         }
+        return rows
     })
 
     // Top value cards
@@ -88,9 +85,8 @@ export function registerStatsHandlers(db: Database.Database): void {
             rows = db.prepare(sql).all(limit) as CollectionCard[]
         } catch (err) {
             logger.error(`Error fetching stats top value: ${err}`)
-        } finally {
-            return rows
         }
+        return rows
     })
 
     // Stats by set
@@ -103,8 +99,7 @@ export function registerStatsHandlers(db: Database.Database): void {
             rows = db.prepare(sql).all(limit) as StatsSetEntry[]
         } catch (err) {
             logger.error(`Error fetching stats by set: ${err}`)
-        } finally {
-            return rows
         }
+        return rows
     })
 }
