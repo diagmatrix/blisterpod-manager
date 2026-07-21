@@ -197,7 +197,7 @@ export default function AddCardPage() {
       queryClient.invalidateQueries({ queryKey: ['collection'] })
       setBatch([])
     }
-    result.errors.forEach(({ message }) => toast.error(message))
+    if (result.error) toast.error(result.error)
   }, [batch, queryClient])
 
   return (

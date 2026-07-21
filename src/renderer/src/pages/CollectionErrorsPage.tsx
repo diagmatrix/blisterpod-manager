@@ -177,9 +177,9 @@ export default function CollectionErrorsPage() {
   async function handleFetchSet(row: MissingCard) {
     const key = `fetch-set:${row.set_code}`
     addKey(key)
-    const result = await window.api.missingFetchSet({ set_code: row.set_code })
+    const result = await window.api.missingFetchSet({ setCode: row.set_code })
     removeKey(key)
-    if ('error' in result) {
+    if (result.error) {
       toast.error(`Failed to fetch set: ${result.error}`)
     } else {
       toast.success(`Set ${row.set_code.toUpperCase()} metadata fetched`)
@@ -190,9 +190,9 @@ export default function CollectionErrorsPage() {
   async function handleFetchCards(row: MissingCard) {
     const key = `fetch-cards:${row.set_code}`
     addKey(key)
-    const result = await window.api.missingFetchCards({ set_code: row.set_code })
+    const result = await window.api.missingFetchCards({ setCode: row.set_code })
     removeKey(key)
-    if ('error' in result) {
+    if (result.error) {
       toast.error(`Failed to fetch cards: ${result.error}`)
     } else {
       toast.success(`${result.inserted} card(s) fetched for ${row.set_code.toUpperCase()}`)
@@ -204,9 +204,9 @@ export default function CollectionErrorsPage() {
   async function handleFetchCard(row: MissingCard) {
     const key = `fetch-card:${row.set_code}:${row.collector_number}`
     addKey(key)
-    const result = await window.api.missingFetchCard({ set_code: row.set_code, collector_number: row.collector_number })
+    const result = await window.api.missingFetchCard({ setCode: row.set_code, collectorNumber: row.collector_number })
     removeKey(key)
-    if ('error' in result) {
+    if (result.error) {
       toast.error(`Failed to fetch card: ${result.error}`)
     } else {
       toast.success('Card fetched from Scryfall')

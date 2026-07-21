@@ -229,7 +229,7 @@ export default function CardDetailPage() {
   const [faceIndex, setFaceIndex] = useState(0)
   const [imgErrored, setImgErrored] = useState(false)
 
-  const params = { set_code: setCode!, collector_number: collectorNumber! }
+  const params = { setCode: setCode!, collectorNumber: collectorNumber! }
   const enabled = !!setCode && !!collectorNumber
 
   const { data: detailData, isLoading: detailLoading } = useQuery({
@@ -238,7 +238,7 @@ export default function CardDetailPage() {
     enabled,
   })
   
-  const card = detailData && !('error' in detailData) ? detailData : null
+  const card = detailData ?? null
   const imageUrls = parseJsonArray(card?.image_urls)
   const oracleTexts = parseJsonArray(card?.oracle_texts)
   const isMultiFace = imageUrls.length > 1
@@ -251,11 +251,11 @@ export default function CardDetailPage() {
 
   const { data: printingsData, isLoading: printingsLoading } = useQuery({
     queryKey: ['card-other-printings', card?.oracle_id, card?.scryfall_id],
-    queryFn: () => window.api.cardOtherPrintings({ oracle_id: card?.oracle_id ?? '', scryfall_id: card?.scryfall_id ?? '' }),
+    queryFn: () => window.api.cardOtherPrintings({ oracleID: card?.oracle_id ?? '', scryfallID: card?.scryfall_id ?? '' }),
     enabled: !!card,
   })
 
-  const otherPrintings = printingsData?.other_printings ?? []
+  const otherPrintings = printingsData?.rows ?? []
 
   if (detailLoading) {
     return (

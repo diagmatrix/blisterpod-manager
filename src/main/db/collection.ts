@@ -5,6 +5,7 @@ import { CardSearchParams, CollectionAddParams, CollectionUpdateParams } from ".
 import { buildFullQuery } from "./querybuilder";
 import { CollectionCard } from "../../shared/cards";
 import { getQueryFilePath } from ".";
+import { AddResult, DeleteResult, InsertResult, MutationResult, PaginatedResult } from "../../shared/responses";
 
 const COLLECTION_LIST_NAME = 'collection:list'
 const COLLECTION_ADD_NAME = 'collection:add'
@@ -49,7 +50,7 @@ function checkCardExists(db: Database.Database, setCode: string, collectorNumber
 
 export function registerCollectionHandlers(db: Database.Database): void {
     // Search cards in collection
-    ipcMain.handle(COLLECTION_LIST_NAME, (_, params: CardSearchParams) => {
+    ipcMain.handle(COLLECTION_LIST_NAME, (_, params: CardSearchParams): PaginatedResult<CollectionCard> => {
         const { sql, values } = buildFullQuery(params, 'mapped_collection', ['scryfall_id IS NOT NULL'])
 
         let rows: CollectionCard[] = []
@@ -65,7 +66,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
     })
 
     // Add a card to the collection
-    ipcMain.handle(COLLECTION_ADD_NAME, (_, params: CollectionAddParams) => {
+    ipcMain.handle(COLLECTION_ADD_NAME, (_, params: CollectionAddParams): AddResult => {
         const paramErrors = validateAddCardParams(params)
         if (paramErrors) {
             return { error: paramErrors }
@@ -94,7 +95,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
     })
 
     // Add a batch of cards to the collection
-    ipcMain.handle(COLLECTION_ADD_BATCH_NAME, (_, items: CollectionAddParams[]) => {
+    ipcMain.handle(COLLECTION_ADD_BATCH_NAME, (_, items: CollectionAddParams[]): InsertResult => {
         if (items.length === 0) {
             const warningMessage = 'No cards were requested to be inserted'
             logger.warn(warningMessage)
@@ -134,7 +135,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
     })
 
     // Update a card in the collection
-    ipcMain.handle(COLLECTION_UPDATE_NAME, (_, params: CollectionUpdateParams) => {
+    ipcMain.handle(COLLECTION_UPDATE_NAME, (_, params: CollectionUpdateParams): MutationResult => {
         const paramErrors = validateAddCardParams(params)
         if (paramErrors) {
             return { success: false, error: paramErrors }
@@ -158,7 +159,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
     })
 
     // Delete a card of the collection
-    ipcMain.handle(COLLECTION_DELETE_NAME, (_, id: number) => {
+    ipcMain.handle(COLLECTION_DELETE_NAME, (_, id: number): MutationResult => {
         const sql = 'DELETE FROM cards WHERE id = ?'
         logger.info(COLLECTION_DELETE_NAME, sql)
 
@@ -176,7 +177,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
     })
 
     // Delete multiple cards from the collection
-    ipcMain.handle(COLLECTION_DELETE_MANY_NAME, (_, IDs: number[]) => {
+    ipcMain.handle(COLLECTION_DELETE_MANY_NAME, (_, IDs: number[]): DeleteResult => {
         if (IDs.length === 0) {
             logger.warn('No cards were requested to be deleted')
             return { deleted: 0 }
@@ -185,14 +186,14 @@ export function registerCollectionHandlers(db: Database.Database): void {
         const placeholders = IDs.map(() => '?').join(', ')
         const sql = `DELETE FROM cards WHERE id IN (${placeholders})`
         logger.info(COLLECTION_DELETE_MANY_NAME, sql)
-        
-        const deleteTransaction = db.transaction(() => {
+
+        const deleteTransaction = db.transaction((): DeleteResult => {
             try {
-                db.prepare(sql).run(...IDs)
-                return { success: true }
+                const { changes } = db.prepare(sql).run(...IDs)
+                return { deleted: changes }
             } catch (err) {
                 logger.error(`Error deleting cards: ${err}`)
-                return { success: false, error: (err as Error).message }
+                return { deleted: 0, error: (err as Error).message }
             }
         })
 

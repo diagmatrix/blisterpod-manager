@@ -20,11 +20,11 @@ export function MergeDuplicateCardDialog({ duplicate, open, onOpenChange }: Merg
   async function handleMerge() {
     setMerging(true)
     const result = await window.api.duplicatesMerge({
-      set_code: duplicate.set_code,
-      collector_number: duplicate.collector_number,
+      setCode: duplicate.set_code,
+      collectorNumber: duplicate.collector_number,
     })
     setMerging(false)
-    if ('error' in result) {
+    if (result.error) {
       toast.error(`Failed to merge: ${result.error}`)
     } else {
       toast.success('Duplicate cards merged successfully')

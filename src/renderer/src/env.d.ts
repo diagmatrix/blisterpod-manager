@@ -1,43 +1,50 @@
 import type { AppSettings, LogEntry, KeyruneVersion } from '../../shared/app'
-import type { CollectionCard, MissingCard, DuplicateCard, CardDetail } from '../../shared/cards'
+import type { CollectionCard, MissingCard, DuplicateCard, DuplicateCardInstance, CardDetail, ScryfallCard } from '../../shared/cards'
 import type { StatsSummary, StatsColors, StatsRarityEntry, StatsSetEntry } from '../../shared/stats'
 import type {
   CardSearchParams,
-  CardSearchResponse,
   CardDetailParams,
-  OtherPrintingsResponse,
+  SetCodeParams,
   CollectionAddParams,
-  CollectionListResponse,
   CollectionUpdateParams,
   OtherPrintingParams,
 } from '../../shared/search'
+import type {
+  PaginatedResult,
+  MutationResult,
+  AddResult,
+  InsertResult,
+  DeleteResult,
+  MergeResult,
+  ExportResult,
+} from '../../shared/responses'
 
 export interface ElectronAPI {
   settingsGet: <K extends keyof AppSettings>(key: K) => Promise<AppSettings[K]>
   settingsSet: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => Promise<void>
-  collectionList: (params: CardSearchParams) => Promise<CollectionListResponse>
-  cardSearch: (params: CardSearchParams) => Promise<CardSearchResponse>
-  cardDetail: (params: CardDetailParams) => Promise<CardDetail | { error: string }>
-  cardOtherPrintings: (params: OtherPrintingParams) => Promise<OtherPrintingsResponse>
-  collectionAdd: (params: CollectionAddParams) => Promise<{ id: number } | { error: string }>
-  collectionAddBatch: (items: CollectionAddParams[]) => Promise<{ inserted: number; errors: { index: number; message: string }[] }>
-  collectionUpdate: (params: CollectionUpdateParams) => Promise<{ success: true } | { error: string }>
-  collectionDelete: (params: { id: number }) => Promise<{ success: true } | { error: string }>
-  collectionDeleteMany: (ids: number[]) => Promise<{ deleted: number }>
+  collectionList: (params: CardSearchParams) => Promise<PaginatedResult<CollectionCard>>
+  cardSearch: (params: CardSearchParams) => Promise<PaginatedResult<ScryfallCard>>
+  cardDetail: (params: CardDetailParams) => Promise<CardDetail | null>
+  cardOtherPrintings: (params: OtherPrintingParams) => Promise<PaginatedResult<CollectionCard>>
+  collectionAdd: (params: CollectionAddParams) => Promise<AddResult>
+  collectionAddBatch: (items: CollectionAddParams[]) => Promise<InsertResult>
+  collectionUpdate: (params: CollectionUpdateParams) => Promise<MutationResult>
+  collectionDelete: (id: number) => Promise<MutationResult>
+  collectionDeleteMany: (ids: number[]) => Promise<DeleteResult>
   statsSummary: () => Promise<StatsSummary>
   statsColors: () => Promise<StatsColors>
   statsRarity: () => Promise<StatsRarityEntry[]>
   statsTopValue: (params?: { limit?: number }) => Promise<CollectionCard[]>
   statsBySet: (params?: { limit?: number }) => Promise<StatsSetEntry[]>
   duplicatesList: () => Promise<DuplicateCard[]>
-  duplicatesRows: (ids: number[]) => Promise<{ id: number; quantity_nonfoil: number; quantity_foil: number; created_at: string | null; updated_at: string | null }[]>
-  duplicatesMerge: (params: { set_code: string; collector_number: string }) => Promise<{ success: true } | { error: string }>
-  duplicatesMergeAll: () => Promise<{ merged: number } | { error: string }>
-  duplicatesRemoveAll: () => Promise<{ removed: number } | { error: string }>
+  duplicatesRows: (ids: number[]) => Promise<DuplicateCardInstance[]>
+  duplicatesMerge: (params: CardDetailParams) => Promise<MutationResult>
+  duplicatesMergeAll: () => Promise<MergeResult>
+  duplicatesRemoveAll: () => Promise<DeleteResult>
   missingList: () => Promise<MissingCard[]>
-  missingFetchSet: (params: { set_code: string }) => Promise<{ success: true } | { error: string }>
-  missingFetchCards: (params: { set_code: string }) => Promise<{ inserted: number } | { error: string }>
-  missingFetchCard: (params: { set_code: string; collector_number: string }) => Promise<{ success: true } | { error: string }>
+  missingFetchSet: (params: SetCodeParams) => Promise<MutationResult>
+  missingFetchCards: (params: SetCodeParams) => Promise<InsertResult>
+  missingFetchCard: (params: CardDetailParams) => Promise<MutationResult>
   logMessage: (entry: LogEntry) => void
   logPath: () => Promise<string>
   refreshSetSymbols: () => Promise<string>
@@ -51,8 +58,8 @@ export interface ElectronAPI {
   appVersion: () => Promise<string>
   restartApp: () => Promise<void>
   showSaveDialog: (defaultName: string) => Promise<string | null>
-  exportCollection: (filePath: string) => Promise<{ exported: number }>
-  exportCollectionMoxfield: (filePath: string) => Promise<{ exported: number }>
+  exportCollection: (filePath: string) => Promise<ExportResult>
+  exportCollectionMoxfield: (filePath: string) => Promise<ExportResult>
 }
 
 declare global {

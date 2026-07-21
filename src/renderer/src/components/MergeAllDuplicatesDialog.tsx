@@ -20,7 +20,7 @@ export function MergeAllDuplicatesDialog({ count, open, onOpenChange }: MergeAll
     setMerging(true)
     const result = await window.api.duplicatesMergeAll()
     setMerging(false)
-    if ('error' in result) {
+    if (result.error) {
       toast.error(`Failed to merge: ${result.error}`)
     } else {
       toast.success(`Merged ${result.merged} duplicate group${result.merged !== 1 ? 's' : ''}`)

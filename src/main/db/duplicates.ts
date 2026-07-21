@@ -110,9 +110,9 @@ export function registerDuplicateCardsHandlers(db: Database.Database): void {
             }
         })
 
-        const error = mergeTransaction()
-        if (error) {
-            return { success: false, error: error }
+        const result = mergeTransaction()
+        if (result?.error) {
+            return { success: false, error: result.error }
         }
 
         return { success: true }

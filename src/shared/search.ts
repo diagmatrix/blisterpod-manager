@@ -1,14 +1,23 @@
-import type { CollectionCard, ScryfallCard, CardDetail } from './cards'
-
-export interface CollectionListResponse {
-  rows: CollectionCard[]
-  total: number
-}
+import type { ScryfallCard } from './cards'
 
 export interface BatchItem {
   card: ScryfallCard
   quantity_nonfoil: number
   quantity_foil: number
+}
+
+export interface CardDetailParams {
+  setCode: string
+  collectorNumber: string
+}
+
+export interface SetCodeParams {
+  setCode: string
+}
+
+export interface OtherPrintingParams {
+  oracleID: string
+  scryfallID: string
 }
 
 export interface CollectionAddParams {
@@ -39,27 +48,4 @@ export interface CardSearchParams {
   sortOrder?: 'ASC' | 'DESC'
   page?: number
   pageSize?: number
-}
-
-export interface CardSearchResponse {
-  rows: ScryfallCard[]
-  total: number
-}
-
-export interface CardDetailParams {
-  set_code: string
-  collector_number: string
-}
-
-export interface CardDetailResponse {
-  card: CardDetail
-}
-
-export interface OtherPrintingParams {
-  oracle_id: string
-  scryfall_id: string
-}
-
-export interface OtherPrintingsResponse {
-  other_printings: CollectionCard[]
 }
