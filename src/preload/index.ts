@@ -8,7 +8,6 @@ import type {
   CardDetailParams,
   OtherPrintingsResponse,
   CollectionAddParams,
-  CollectionListParams,
   CollectionListResponse,
   CollectionUpdateParams,
   OtherPrintingParams,
@@ -21,7 +20,7 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('settings:set', key, value),
 
   // Collection read (BM-01)
-  collectionList: (params: CollectionListParams): Promise<CollectionListResponse> =>
+  collectionList: (params: CardSearchParams): Promise<CollectionListResponse> =>
     ipcRenderer.invoke('db:collection:list', params),
 
   // Card search (BM-02)

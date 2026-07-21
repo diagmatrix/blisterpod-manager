@@ -6,6 +6,7 @@ const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonu
 const VALID_COLOR_MODES = ['atLeast', 'exactly', 'atMost']
 const VALID_SORT_COLUMNS = ['name', 'set_code', 'collector_number', 'rarity', 'color_identity', 'released_at']
 const VALID_LAYOUT_FILTERS = ['all', 'cards', 'tokens']
+const VALID_TABLE_NAMES = ['mapped_collection', 'scryfall_cards_formatted']
 
 const DEFAULT_COLOR_MODE = 'atLeast'
 const DEFAULT_SORT_COLUMN = 'collector_number'
@@ -19,19 +20,19 @@ const COLOR_IDENTITY_MISSING_SEARCH_CONDITION = 'instr(color_identity, ?) = 0'
 const COLOR_IDENTITY_TOTAL_SEARCH_CONDITION = 'json_array_length(color_identity) = ?'
 const LAYOUT_FILTER_CONDITION = 'is_token = ?'
 
-interface QueryCondition {
+interface Query {
     sql: string
     values: (string | number)[]
 }
 
-function buildLikeCondition(sql: string, value: string): QueryCondition {
+function buildLikeCondition(sql: string, value: string): Query {
     return {
         sql: sql,
         values: [`%${value}%`]
     }
 }
 
-function buildRaritiesCondition(rarities: string[]): QueryCondition {
+function buildRaritiesCondition(rarities: string[]): Query {
     const baseCondition = 'rarity IN ( '
     const raritiesAsParams = rarities.map(() => '?').join(', ')
     const condition = baseCondition + raritiesAsParams + ' )'
@@ -41,7 +42,7 @@ function buildRaritiesCondition(rarities: string[]): QueryCondition {
     }
 }
 
-function buildColorIdentityCondition(colors: string[], colorMode: string): QueryCondition {
+function buildColorIdentityCondition(colors: string[], colorMode: string): Query {
     const sqlConditions: string[] = []
     const values: (string | number)[] = []
 
@@ -86,7 +87,7 @@ function buildColorIdentityCondition(colors: string[], colorMode: string): Query
     }
 }
 
-function buildLayoutCondition(layoutFilter: string): QueryCondition {
+function buildLayoutCondition(layoutFilter: string): Query {
     const layoutFilterValue = layoutFilter === 'cards' ? 0 : 1
     
     return {
@@ -95,7 +96,7 @@ function buildLayoutCondition(layoutFilter: string): QueryCondition {
     }
 }
 
-export function validateSearchParams(params: CardSearchParams): CardSearchParams {
+function validateSearchParams(params: CardSearchParams): CardSearchParams {
     const rarities = filterArrayContents(params.rarities ?? [], VALID_RARITIES)
     const colorIdentity = filterArrayContents(params.colorIdentity ?? [], WUBRG_ORDER)    
     const sortOrder = params.sortOrder ?? DEFAULT_SORT_ORDER
@@ -126,8 +127,8 @@ export function validateSearchParams(params: CardSearchParams): CardSearchParams
     }
 }
 
-export function buildQueryConditions(params: CardSearchParams): QueryCondition {
-    const conditions: QueryCondition[] = []
+function buildQueryConditions(params: CardSearchParams): Query {
+    const conditions: Query[] = []
 
     if (params.cardName) {
         conditions.push(buildLikeCondition(NAME_SEARCH_CONDITION, params.cardName))
@@ -153,4 +154,31 @@ export function buildQueryConditions(params: CardSearchParams): QueryCondition {
         sql: conditions.map((c) => c.sql).join(' AND '),
         values: conditions.flatMap((c) => c.values),
     }
+}
+
+export function buildFullQuery(params: CardSearchParams, tableName: string, additional_conditions?: string[]): Query {
+    params = validateSearchParams(params)
+    if (!VALID_TABLE_NAMES.includes(tableName)) {
+        return { sql: '', values: [] }
+    }
+    
+    const { sql, values } = buildQueryConditions(params)
+    // Maybe refactor as it is validated before that is not null
+    const pageSize = params.pageSize ?? 1
+    const page = params.page ?? 1
+    const offset = (page - 1) * pageSize
+    values.push(pageSize, offset)
+
+    let whereSQL = values.length > 0 ? `WHERE ${sql}` : ''
+    if (additional_conditions && additional_conditions.length > 0) {
+        const start = whereSQL === '' ? 'WHERE ' : ' AND '
+        const conditions = additional_conditions.join(' AND ')
+        whereSQL = `${whereSQL}${start} ${conditions}`
+    }
+
+    const baseSQL = `SELECT * FROM ${tableName}`
+    const orderSQL = `ORDER BY ${params.sortColumn} ${params.sortOrder}`
+    const finalSQL = `${baseSQL} ${whereSQL} ${orderSQL} LIMIT ? OFFSET ?`
+
+    return { sql: finalSQL, values: values }
 }

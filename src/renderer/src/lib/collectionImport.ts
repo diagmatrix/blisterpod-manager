@@ -45,19 +45,19 @@ export function parseBlisterpodCSV(text: string): CollectionAddParams[] {
 
   return lines.slice(1).flatMap(line => {
     const cols = parseCSVRow(line)
-    const set_code = cols[setIdx]?.trim()
-    const collector_number = cols[numberIdx]?.trim()
-    const quantity_nonfoil = parseInt(cols[nonfoilIdx] ?? '0', 10) || 0
-    const quantity_foil = parseInt(cols[foilIdx] ?? '0', 10) || 0
-    if (!set_code || !collector_number || quantity_nonfoil + quantity_foil === 0) return []
+    const setCode = cols[setIdx]?.trim()
+    const collectorNumber = cols[numberIdx]?.trim()
+    const quantityNonfoil = parseInt(cols[nonfoilIdx] ?? '0', 10) || 0
+    const quantityFoil = parseInt(cols[foilIdx] ?? '0', 10) || 0
+    if (!setCode || !collectorNumber || quantityNonfoil + quantityFoil === 0) return []
 
     return [{
-      set_code,
-      collector_number,
-      quantity_nonfoil,
-      quantity_foil,
-      created_at: cols[createdIdx]?.trim() || undefined,
-      updated_at: cols[updatedIdx]?.trim() || undefined,
+      setCode,
+      collectorNumber,
+      quantityNonfoil,
+      quantityFoil,
+      createdAt: cols[createdIdx]?.trim() || undefined,
+      updatedAt: cols[updatedIdx]?.trim() || undefined,
     }]
   })
 }
@@ -79,17 +79,17 @@ export function parseMoxfieldCSV(text: string): CollectionAddParams[] {
 
   for (const line of lines.slice(1)) {
     const cols = parseCSVRow(line)
-    const set_code = cols[editionIdx]?.trim().toUpperCase()
-    const collector_number = cols[numberIdx]?.trim()
+    const setCode = cols[editionIdx]?.trim().toUpperCase()
+    const collectorNumber = cols[numberIdx]?.trim()
     const count = parseInt(cols[countIdx] ?? '0', 10) || 0
     const isFoil = cols[foilIdx]?.trim().toLowerCase() === 'true'
 
-    if (!set_code || !collector_number || count <= 0) continue
+    if (!setCode || !collectorNumber || count <= 0) continue
 
-    const key = `${set_code}:${collector_number}`
-    const existing = merged.get(key) ?? { set_code, collector_number, quantity_nonfoil: 0, quantity_foil: 0 }
-    if (isFoil) existing.quantity_foil += count
-    else existing.quantity_nonfoil += count
+    const key = `${setCode}:${collectorNumber}`
+    const existing = merged.get(key) ?? { setCode, collectorNumber, quantityNonfoil: 0, quantityFoil: 0 }
+    if (isFoil) existing.quantityFoil += count
+    else existing.quantityNonfoil += count
     merged.set(key, existing)
   }
 
@@ -122,21 +122,21 @@ export function parseGoogleDriveCSV(text: string): CollectionAddParams[] {
     const quantity = parseInt(cols[quantityIdx] ?? '0', 10)
     if (!quantity || quantity <= 0) continue
 
-    const set_code = cols[setIdx]?.trim()
-    const collector_number = cols[numberIdx]?.trim()
-    if (!set_code || !collector_number) continue
+    const setCode = cols[setIdx]?.trim()
+    const collectorNumber = cols[numberIdx]?.trim()
+    if (!setCode || !collectorNumber) continue
 
-    const key = `${set_code}:${collector_number}`
+    const key = `${setCode}:${collectorNumber}`
     const existing = merged.get(key) ?? {
-      set_code,
-      collector_number,
-      quantity_nonfoil: 0,
-      quantity_foil: 0,
-      created_at: parseDate(cols[addedIdx] ?? ''),
-      updated_at: parseDate(cols[modifiedIdx] ?? ''),
+      setCode,
+      collectorNumber,
+      quantityNonfoil: 0,
+      quantityFoil: 0,
+      createdAt: parseDate(cols[addedIdx] ?? ''),
+      updatedAt: parseDate(cols[modifiedIdx] ?? ''),
     }
-    if (isFoil) existing.quantity_foil += quantity
-    else existing.quantity_nonfoil += quantity
+    if (isFoil) existing.quantityFoil += quantity
+    else existing.quantityNonfoil += quantity
     merged.set(key, existing)
   }
 
