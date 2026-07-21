@@ -39,9 +39,9 @@ export function CardQuickDialog({ card, open, onOpenChange, editRef = false }: C
     setSaving(true)
     const result = await window.api.collectionUpdate({
       id: card.collection_id,
-      quantity_nonfoil: nonfoil,
-      quantity_foil: foil,
-      ...(editRef ? { set_code: setCode, collector_number: collectorNumber } : {}),
+      quantityNonfoil: nonfoil,
+      quantityFoil: foil,
+      ...(editRef ? { setCode, collectorNumber } : {}),
     })
     setSaving(false)
     if ('error' in result) {

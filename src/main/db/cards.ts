@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import { createLogger } from "../logger";
 import { CardSearchParams } from "../../shared/search";
 import { ipcMain } from "electron";
-import { buildQueryConditions, validateSearchParams } from "./querybuilder";
+import { buildFullQuery } from "./querybuilder";
 import { CardDetail, CollectionCard, ScryfallCard } from "../../shared/cards";
 import { getQueryFilePath } from ".";
 
@@ -18,24 +18,12 @@ const logger = createLogger('db:cards')
 export function registerCardsHandlers(db: Database.Database): void {
     // Search available cards
     ipcMain.handle(CARDS_SEARCH_NAME, (_, params: CardSearchParams) => {
-        params = validateSearchParams(params)
-        
-        // Maybe refactor as it is validated before that is not null
-        const pageSize = params.pageSize ?? 1
-        const page = params.page ?? 1
-        const offset = (page - 1) * pageSize
-
-        const { sql, values } = buildQueryConditions(params)
-        const whereSQL = values.length > 0 ? `WHERE ${sql}` : ''
-        const orderSQL = `ORDER BY ${params.sortColumn} ${params.sortOrder}`
-
-        const finalQuery = `SELECT * FROM scryfall_cards_formatted ${whereSQL} ${orderSQL} LIMIT ? OFFSET ?`
-        values.push(pageSize, offset)
+        const { sql, values } = buildFullQuery(params, 'scryfall_cards_formatted') 
 
         let rows: ScryfallCard[] = []
         try {
-            logger.info(CARDS_SEARCH_NAME, finalQuery)
-            rows = db.prepare(finalQuery).all(values) as ScryfallCard[]
+            logger.info(CARDS_SEARCH_NAME, sql)
+            rows = db.prepare(sql).all(values) as ScryfallCard[]
         } catch (err) {
             logger.error(`Error fetching cards: ${err}`)
         } finally {

@@ -26,7 +26,7 @@ export function BatchPanel({ items, onAddCard, onUpdate, onRemove, onDiscard, on
     if (!directSet || !directNum) return
     setDirectError('')
     setDirectLoading(true)
-    const results = await window.api.cardSearch({ set_code: directSet.toUpperCase(), pageSize: 500 })
+    const results = await window.api.cardSearch({ setCode: directSet.toUpperCase(), pageSize: 500 })
     setDirectLoading(false)
     const match = results.rows.find((c: ScryfallCard) => c.collector_number === directNum.trim())
     if (!match) {

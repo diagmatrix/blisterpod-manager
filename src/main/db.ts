@@ -175,28 +175,18 @@ function removeAllDuplicates(): number {
 
 function setupIpcHandlers(): void {
   // List collection cards
-  ipcMain.handle('db:collection:list', (_, params: {
-    page: number,
-    pageSize: number,
-    sortColumn?: string,
-    sortOrder?: 'ASC' | 'DESC',
-    search?: string,
-    searchSet?: string,
-    tokenFilter?: 'all' | 'cards' | 'tokens',
-    rarities?: string[],
-    colors?: string[],
-    colorMode?: 'atMost' | 'atLeast' | 'exactly',
-  }) => {
+  // DONE
+  ipcMain.handle('db:collection:list', (_, params: import('../shared/search').CardSearchParams) => {
     const {
-      page,
-      pageSize,
+      page = 1,
+      pageSize = 60,
       sortColumn = 'name',
       sortOrder = 'ASC',
-      search = '',
-      searchSet = '',
-      tokenFilter,
+      cardName = '',
+      setCode = '',
+      layoutFilter,
       rarities,
-      colors,
+      colorIdentity,
       colorMode = 'atLeast',
     } = params
     const offset = (page - 1) * pageSize
@@ -209,25 +199,25 @@ function setupIpcHandlers(): void {
     const conditions: string[] = []
     const values: any[] = []
 
-    if (search) {
+    if (cardName) {
       conditions.push('name LIKE ?')
-      values.push(`%${search}%`)
+      values.push(`%${cardName}%`)
     }
 
-    if (searchSet) {
+    if (setCode) {
       conditions.push('set_code LIKE ?')
-      values.push(`%${searchSet}%`)
+      values.push(`%${setCode}%`)
     }
 
     // Token filter
-    if (tokenFilter === 'cards') {
+    if (layoutFilter === 'cards') {
       conditions.push('is_token = 0')
-    } else if (tokenFilter === 'tokens') {
+    } else if (layoutFilter === 'tokens') {
       conditions.push('is_token = 1')
     }
 
     const { conditions: rarityConds, values: rarityVals } = buildRarityConditions(rarities)
-    const { conditions: colorConds, values: colorVals } = buildColorConditions(colors, colorMode ?? 'atLeast')
+    const { conditions: colorConds, values: colorVals } = buildColorConditions(colorIdentity, colorMode ?? 'atLeast')
     conditions.push(...rarityConds, ...colorConds)
     values.push(...rarityVals, ...colorVals)
 
@@ -258,49 +248,39 @@ function setupIpcHandlers(): void {
   })
 
   // Add a card to the collection
-  ipcMain.handle('db:collection:add', (_, params: {
-    set_code: string
-    collector_number: string
-    quantity_nonfoil: number
-    quantity_foil: number
-  }) => {
-    const { set_code, collector_number, quantity_nonfoil, quantity_foil } = params
-    if (quantity_nonfoil < 0 || quantity_foil < 0) {
+  // DONE
+  ipcMain.handle('db:collection:add', (_, params: import('../shared/search').CollectionAddParams) => {
+    const { setCode, collectorNumber, quantityNonfoil, quantityFoil } = params
+    if (quantityNonfoil < 0 || quantityFoil < 0) {
       log.warn('Card add validation failed', { error: 'Quantities must be non-negative' })
       return { error: 'Quantities must be non-negative' }
     }
-    if (quantity_nonfoil + quantity_foil === 0) {
+    if (quantityNonfoil + quantityFoil === 0) {
       log.warn('Card add validation failed', { error: 'At least one copy must be owned' })
       return { error: 'At least one copy must be owned' }
     }
 
-    const exists = db.prepare('SELECT 1 FROM scryfall_cards_formatted WHERE set_code = ? AND collector_number = ?').get(set_code, collector_number)
+    const exists = db.prepare('SELECT 1 FROM scryfall_cards_formatted WHERE set_code = ? AND collector_number = ?').get(setCode, collectorNumber)
     if (!exists) {
-      log.warn('Card add validation failed', { error: `Card not found: ${set_code} #${collector_number}` })
-      return { error: `Card not found: ${set_code} #${collector_number}` }
+      log.warn('Card add validation failed', { error: `Card not found: ${setCode} #${collectorNumber}` })
+      return { error: `Card not found: ${setCode} #${collectorNumber}` }
     }
 
     const insertSql = 'INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)'
     log.info('db:collection:add', insertSql)
 
     const insert = db.transaction(() => {
-      const result = db.prepare(insertSql).run(set_code, collector_number, quantity_nonfoil, quantity_foil)
+      const result = db.prepare(insertSql).run(setCode, collectorNumber, quantityNonfoil, quantityFoil)
       return { id: result.lastInsertRowid }
     })
     const result = insert()
-    log.info('Card added to collection', { set_code, collector_number })
+    log.info('Card added to collection', { setCode, collectorNumber })
     return result
   })
 
   // Add multiple cards to the collection in a batch
-  ipcMain.handle('db:collection:add-batch', (_, items: {
-    set_code: string
-    collector_number: string
-    quantity_nonfoil: number
-    quantity_foil: number
-    created_at?: string
-    updated_at?: string
-  }[]) => {
+  // DONE
+  ipcMain.handle('db:collection:add-batch', (_, items: import('../shared/search').CollectionAddParams[]) => {
     const insertSql = 'INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
     log.info('db:collection:add-batch', insertSql)
 
@@ -312,16 +292,16 @@ function setupIpcHandlers(): void {
 
     const batchInsert = db.transaction(() => {
       items.forEach((item, index) => {
-        const { set_code, collector_number, quantity_nonfoil, quantity_foil, created_at, updated_at } = item
-        if (quantity_nonfoil < 0 || quantity_foil < 0) {
+        const { setCode, collectorNumber, quantityNonfoil, quantityFoil, createdAt, updatedAt } = item
+        if (quantityNonfoil < 0 || quantityFoil < 0) {
           errors.push({ index, message: 'Quantities must be non-negative' })
           return
         }
-        if (quantity_nonfoil + quantity_foil === 0) {
+        if (quantityNonfoil + quantityFoil === 0) {
           errors.push({ index, message: 'At least one copy must be owned' })
           return
         }
-        insertStmt.run(set_code, collector_number, quantity_nonfoil, quantity_foil, created_at ?? now, updated_at ?? null)
+        insertStmt.run(setCode, collectorNumber, quantityNonfoil, quantityFoil, createdAt ?? now, updatedAt ?? null)
         inserted++
       })
     })
@@ -331,23 +311,18 @@ function setupIpcHandlers(): void {
   })
 
   // Update quantities (and optionally set_code + collector_number) for a collection card
-  ipcMain.handle('db:collection:update', (_, params: {
-    id: number
-    quantity_nonfoil: number
-    quantity_foil: number
-    set_code?: string
-    collector_number?: string
-  }) => {
-    const { id, quantity_nonfoil, quantity_foil, set_code, collector_number } = params
-    if (quantity_nonfoil < 0 || quantity_foil < 0) return { error: 'Quantities must be non-negative' }
-    if (quantity_nonfoil + quantity_foil === 0) return { error: 'At least one copy must be owned' }
+  // DONE
+  ipcMain.handle('db:collection:update', (_, params: import('../shared/search').CollectionUpdateParams) => {
+    const { id, quantityNonfoil, quantityFoil, setCode, collectorNumber } = params
+    if (quantityNonfoil < 0 || quantityFoil < 0) return { error: 'Quantities must be non-negative' }
+    if (quantityNonfoil + quantityFoil === 0) return { error: 'At least one copy must be owned' }
     try {
-      if (set_code !== undefined && collector_number !== undefined) {
+      if (setCode !== undefined && collectorNumber !== undefined) {
         db.prepare('UPDATE cards SET set_code = ?, collector_number = ?, quantity_nonfoil = ?, quantity_foil = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-          .run(set_code, collector_number, quantity_nonfoil, quantity_foil, id)
+          .run(setCode, collectorNumber, quantityNonfoil, quantityFoil, id)
       } else {
         db.prepare('UPDATE cards SET quantity_nonfoil = ?, quantity_foil = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-          .run(quantity_nonfoil, quantity_foil, id)
+          .run(quantityNonfoil, quantityFoil, id)
       }
       log.debug('Collection card updated', { id })
       return { success: true as const }
@@ -358,6 +333,7 @@ function setupIpcHandlers(): void {
   })
 
   // Delete a card from the collection
+  // Done
   ipcMain.handle('db:collection:delete', (_, params: { id: number }) => {
     const deleteSql = 'DELETE FROM cards WHERE id = ?'
     log.info('db:collection:delete', deleteSql)
@@ -371,6 +347,7 @@ function setupIpcHandlers(): void {
   })
 
   // Delete multiple cards from the collection
+  // DONE
   ipcMain.handle('db:collection:delete-many', (_, ids: number[]) => {
     if (!ids.length) return { deleted: 0 }
     const placeholders = ids.map(() => '?').join(', ')

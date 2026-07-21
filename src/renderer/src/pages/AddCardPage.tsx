@@ -184,10 +184,10 @@ export default function AddCardPage() {
     if (batch.length === 0) return
     setIsAdding(true)
     const items = batch.map((b) => ({
-      set_code: b.card.set_code,
-      collector_number: b.card.collector_number,
-      quantity_nonfoil: b.quantity_nonfoil,
-      quantity_foil: b.quantity_foil,
+      setCode: b.card.set_code,
+      collectorNumber: b.card.collector_number,
+      quantityNonfoil: b.quantity_nonfoil,
+      quantityFoil: b.quantity_foil,
     }))
     const result = await window.api.collectionAddBatch(items)
     setIsAdding(false)

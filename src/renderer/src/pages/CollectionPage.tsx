@@ -158,7 +158,7 @@ export default function CollectionPage() {
     queryKey: ['collection', page, pageSize, sortColumn, sortOrder, search, searchSet, tokenFilter, rarities, colors, colorMode],
     queryFn: () =>
       window.api.collectionList({
-        page, pageSize, sortColumn, sortOrder, search, searchSet, tokenFilter, rarities, colors, colorMode,
+        page, pageSize, sortColumn, sortOrder, cardName: search, setCode: searchSet, layoutFilter: tokenFilter, rarities, colorIdentity: colors, colorMode,
       }),
     placeholderData: keepPreviousData,
   })

@@ -7,7 +7,6 @@ import type {
   CardDetailParams,
   OtherPrintingsResponse,
   CollectionAddParams,
-  CollectionListParams,
   CollectionListResponse,
   CollectionUpdateParams,
   OtherPrintingParams,
@@ -16,7 +15,7 @@ import type {
 export interface ElectronAPI {
   settingsGet: <K extends keyof AppSettings>(key: K) => Promise<AppSettings[K]>
   settingsSet: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => Promise<void>
-  collectionList: (params: CollectionListParams) => Promise<CollectionListResponse>
+  collectionList: (params: CardSearchParams) => Promise<CollectionListResponse>
   cardSearch: (params: CardSearchParams) => Promise<CardSearchResponse>
   cardDetail: (params: CardDetailParams) => Promise<CardDetail | { error: string }>
   cardOtherPrintings: (params: OtherPrintingParams) => Promise<OtherPrintingsResponse>
