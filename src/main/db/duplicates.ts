@@ -25,9 +25,8 @@ function getDuplicatesFromSetNumber(db: Database.Database, setCode: string, coll
         rows = db.prepare(sql).all(setCode, collectorNumber) as DuplicateCardRow[]
     } catch (err) {
         logger.error(`Error fetching duplicates from set and number: ${err}`)
-    } finally {
-        return rows
     }
+    return rows
 }
 
 function removeDuplicatesFromDB(db: Database.Database): { deleted: number, error?: string } {
@@ -55,9 +54,8 @@ export function registerDuplicateCardsHandlers(db: Database.Database): void {
             rows = db.prepare(sql).all() as DuplicateCard[]
         } catch (err) {
             logger.error(`Error fetching duplicate cards: ${err}`)
-        } finally {
-            return rows
         }
+        return rows
     })
 
     // Fetch cards from a list of IDs for duplicate grouping
@@ -75,9 +73,8 @@ export function registerDuplicateCardsHandlers(db: Database.Database): void {
             rows = db.prepare(sql).all(...cardIDs) as DuplicateCardInstance[]
         } catch (err) {
             logger.error(`Error fetching duplicate cards from list of IDs: ${err}`)
-        } finally {
-            return rows
         }
+        return rows
     })
 
     // Merge duplicate entries for a card

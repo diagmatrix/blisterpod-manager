@@ -1,4 +1,4 @@
-import Database, { Statement } from "better-sqlite3";
+import Database from "better-sqlite3";
 import { createLogger } from "../logger";
 import { ipcMain } from "electron";
 import { CardSearchParams, CollectionAddParams, CollectionUpdateParams } from "../../shared/search";
@@ -59,10 +59,9 @@ export function registerCollectionHandlers(db: Database.Database): void {
             rows = db.prepare(sql).all(values) as CollectionCard[]
         } catch (err) {
             logger.error(`Error fetching cards: ${err}`)
-        } finally {
-            const total = rows.length ?? 0
-            return { rows, total }
         }
+        const total = rows.length ?? 0
+        return { rows, total }
     })
 
     // Add a card to the collection

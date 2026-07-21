@@ -27,9 +27,8 @@ export function registerMissingCardsHandlers(db: Database.Database): void {
             rows = db.prepare(sql).all() as MissingCard[]
         } catch (err) {
             logger.error(`Error fetching missing cards: ${err}`)
-        } finally {
-            return rows
         }
+        return rows
     })
 
     // Fetch and store a set from Scryfall
