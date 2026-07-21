@@ -12,8 +12,8 @@ import { registerDuplicateCardsHandlers } from "./duplicates";
 import { registerCollectionHandlers } from "./collection";
 
 // For testing, the database name is overwritten
-// const DB_NAME = 'test_collection.db'
-const DB_NAME = 'collection.db'
+const DB_NAME = 'test_collection.db'
+//const DB_NAME = 'collection.db'
 const DB_PATH = join(app.getPath('userData'), DB_NAME)
 const SQL_DIR = join(app.getAppPath(), 'db')
 const TABLES_DIR = join(SQL_DIR, 'tables')

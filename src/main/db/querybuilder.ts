@@ -4,7 +4,7 @@ import { filterArrayContents } from "../utils"
 
 const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
 const VALID_COLOR_MODES = ['atLeast', 'exactly', 'atMost']
-const VALID_SORT_COLUMNS = ['name', 'set_code', 'collector_number', 'rarity', 'color_identity', 'released_at']
+const VALID_SORT_COLUMNS = ['name', 'set_code', 'collector_number', 'rarity', 'color_identity', 'released_at', 'mana_value', 'value']
 const VALID_LAYOUT_FILTERS = ['all', 'cards', 'tokens']
 const VALID_TABLE_NAMES = ['mapped_collection', 'scryfall_cards_formatted']
 
@@ -169,7 +169,7 @@ export function buildFullQuery(params: CardSearchParams, tableName: string, addi
     const offset = (page - 1) * pageSize
     values.push(pageSize, offset)
 
-    let whereSQL = values.length > 0 ? `WHERE ${sql}` : ''
+    let whereSQL = sql !== '' ? `WHERE ${sql}` : ''
     if (additional_conditions && additional_conditions.length > 0) {
         const start = whereSQL === '' ? 'WHERE ' : ' AND '
         const conditions = additional_conditions.join(' AND ')

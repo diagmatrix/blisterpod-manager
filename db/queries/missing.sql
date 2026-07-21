@@ -1,5 +1,3 @@
-DROP VIEW IF EXISTS missing;
-CREATE VIEW missing AS
 WITH sets_with_cards AS (
     SELECT
         DISTINCT set_code
