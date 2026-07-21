@@ -1,5 +1,5 @@
 SELECT
     coalesce(rarity, 'unknown') AS rarity,
-    sum(total)                  AS total_cards
+    coalesce(sum(total), 0)     AS totalCards
 FROM mapped_collection
 GROUP BY rarity

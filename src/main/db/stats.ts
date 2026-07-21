@@ -34,7 +34,7 @@ export function registerStatsHandlers(db: Database.Database): void {
         try {
             const sql = getQueryFilePath(STATS_SUMMARY_QUERY)
             logger.info(STATS_SUMMARY_NAME, sql)
-            row = db.prepare(sql).get() as StatsSummary
+            row = db.prepare(sql).get() as StatsSummary ?? row
         } catch (err) {
             logger.error(`Error fetching stats summary: ${err}`)
         }

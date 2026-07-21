@@ -1,6 +1,6 @@
 SELECT
-    count(DISTINCT set_code || '#' || collector_number) AS unique_printings,
-    count(DISTINCT name)                                AS unique_names,
-    sum(total)                                          AS total_cards,
-    round(sum(value), 2)                                AS estimated_value
+    count(DISTINCT set_code || '#' || collector_number) AS uniquePrintings,
+    count(DISTINCT name)                                AS uniqueNames,
+    coalesce(sum(total), 0)                             AS totalCards,
+    coalesce(round(sum(value), 2), 0)                   AS estimatedValue
 FROM main.mapped_collection
