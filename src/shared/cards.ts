@@ -48,6 +48,11 @@ export interface DuplicateCardRow {
     quantity_foil: number
 }
 
+export interface DuplicateCardInstance extends DuplicateCardRow {
+    created_at: string
+    updated_at?: string | null 
+}
+
 export interface CardDetail extends CollectionCard {
   type_line: string | null
   mana_costs: string | null    // JSON array string, one entry per face

@@ -1,5 +1,3 @@
-DROP VIEW IF EXISTS duplicates;
-CREATE VIEW duplicates AS
 WITH duplicate_card_entries AS (
     SELECT
         set_code,
@@ -19,3 +17,4 @@ FROM duplicate_card_entries dce
 LEFT JOIN scryfall_cards sc
     ON dce.set_code = sc.set_code
     AND dce.collector_number = sc.collector_number
+ORDER BY name, set_code, collector_number

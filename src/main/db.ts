@@ -384,6 +384,7 @@ function setupIpcHandlers(): void {
   })
 
   // List duplicate card entries
+  // DONE
   ipcMain.handle('db:duplicates:list', () => {
     const sql = `SELECT * FROM duplicates ORDER BY name, set_code, collector_number`
     log.info('db:duplicates:list', sql)
@@ -391,6 +392,7 @@ function setupIpcHandlers(): void {
   })
 
   // Fetch individual rows for a duplicate group by their IDs
+  // DONE
   ipcMain.handle('db:duplicates:rows', (_, ids: number[]) => {
     if (!ids.length) return []
     const placeholders = ids.map(() => '?').join(', ')
@@ -400,6 +402,7 @@ function setupIpcHandlers(): void {
   })
 
   // Merge duplicate entries
+  // DONE
   ipcMain.handle('db:duplicates:merge', (_, params: { set_code: string; collector_number: string }) => {
     const { set_code, collector_number } = params
 
@@ -435,6 +438,7 @@ function setupIpcHandlers(): void {
   })
 
   // Remove all duplicate rows, keeping only the first row per group
+  // DONE
   ipcMain.handle('db:duplicates:remove-all', () => {
     try {
       return { removed: removeAllDuplicates() }
@@ -445,6 +449,7 @@ function setupIpcHandlers(): void {
   })
 
   // Merge all duplicate entries in one transaction
+  // DONE
   ipcMain.handle('db:duplicates:merge-all', () => {
     log.info('db:duplicates:merge-all')
 

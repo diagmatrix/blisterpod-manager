@@ -8,6 +8,7 @@ import { registerExportHandlers } from "./export";
 import { registerStatsHandlers } from "./stats";
 import { registerCardsHandlers } from "./cards";
 import { registerMissingCardsHandlers } from "./missing";
+import { registerDuplicateCardsHandlers } from "./duplicates";
 
 // For testing, the database name is overwritten
 // const DB_NAME = 'test_collection.db'
@@ -81,4 +82,7 @@ function setUpIPCHandlers(): void {
 
     // Missing cards handlers
     registerMissingCardsHandlers(db)
+
+    // Duplicate cards handlers
+    registerDuplicateCardsHandlers(db)
 }
