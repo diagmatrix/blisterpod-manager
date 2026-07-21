@@ -20,10 +20,10 @@ export function RemoveAllDuplicatesDialog({ count, open, onOpenChange }: RemoveA
     setRemoving(true)
     const result = await window.api.duplicatesRemoveAll()
     setRemoving(false)
-    if ('error' in result) {
+    if (result.error) {
       toast.error(`Failed to remove: ${result.error}`)
     } else {
-      toast.success(`Removed ${result.removed} duplicate row${result.removed !== 1 ? 's' : ''}`)
+      toast.success(`Removed ${result.deleted} duplicate row${result.deleted !== 1 ? 's' : ''}`)
       queryClient.invalidateQueries({ queryKey: ['duplicates'] })
       queryClient.invalidateQueries({ queryKey: ['collection'] })
       onOpenChange(false)

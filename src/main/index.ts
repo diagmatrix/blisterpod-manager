@@ -72,9 +72,6 @@ ipcMain.on('log:message', (_, entry: LogEntry) => {
   handleRendererLog(entry)
 })
 
-// Initialize database before creating window (NBM-03, NBM-06)
-initDatabase()
-
 let mainWindow: BrowserWindow | null = null
 
 async function createWindow() {
@@ -157,8 +154,10 @@ ipcMain.handle('app:restart', () => {
   app.exit(0)
 })
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   log.info('App ready')
+  // Initialize database before creating window (NBM-03, NBM-06)
+  await initDatabase()
   initCardImageProtocol()
   initKeyruneProtocol()
   initFontProtocol()

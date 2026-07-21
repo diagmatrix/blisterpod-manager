@@ -28,9 +28,9 @@ export function DeleteDuplicateRowsDialog({ duplicate, open, onOpenChange }: Del
 
   async function handleDelete(id: number) {
     setDeletingId(id)
-    const result = await window.api.collectionDelete({ id })
+    const result = await window.api.collectionDelete(id)
     setDeletingId(null)
-    if ('error' in result) {
+    if (!result.success) {
       toast.error(`Failed to remove row: ${result.error}`)
     } else {
       toast.success('Row removed')

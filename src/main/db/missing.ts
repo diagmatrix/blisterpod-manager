@@ -4,6 +4,8 @@ import { ipcMain } from "electron"
 import { MissingCard } from "../../shared/cards"
 import { getQueryFilePath } from "."
 import { getCard, getSet, getSetCards } from "../scryfallRefresh"
+import { CardDetailParams, SetCodeParams } from "../../shared/search"
+import { InsertResult, MutationResult } from "../../shared/responses"
 
 const MISSING_LIST_NAME = 'missing:list'
 const MISSING_FETCH_SET_NAME = 'missing:fetch-set'
@@ -31,19 +33,19 @@ export function registerMissingCardsHandlers(db: Database.Database): void {
     })
 
     // Fetch and store a set from Scryfall
-    ipcMain.handle(MISSING_FETCH_SET_NAME, async (_, params: { setCode: string }) => {
-        getSet(db, params.setCode).then((success) => {
+    ipcMain.handle(MISSING_FETCH_SET_NAME, async (_, params: SetCodeParams): Promise<MutationResult> => {
+        try {
+            const success = await getSet(db, params.setCode)
             logger.info(MISSING_FETCH_SET_NAME, 'Successful')
-            return { success: success, error: null }
-        }, 
-        (reason) => {
-            logger.error(`Error fetching set: ${reason}`)
-            return { success: false, error: reason }
-        })
+            return { success }
+        } catch (err) {
+            logger.error(`Error fetching set: ${err}`)
+            return { success: false, error: (err as Error).message }
+        }
     })
 
     // Fetch and store the cards from a set
-    ipcMain.handle(MISSING_FETCH_SET_CARDS_NAME, async (_, params: { setCode: string }) => {
+    ipcMain.handle(MISSING_FETCH_SET_CARDS_NAME, async (_, params: SetCodeParams): Promise<InsertResult> => {
         let searchUri: string | undefined
         try {
             const sql = getQueryFilePath(MISSING_FETCH_SET_CARDS_QUERY)
@@ -68,14 +70,14 @@ export function registerMissingCardsHandlers(db: Database.Database): void {
     })
 
     // Fetch and store a card from Scryfall
-    ipcMain.handle(MISSING_FETCH_CARD_NAME, async (_, params: { setCode: string; collectorNumber: string }) => {
-        getCard(db, params.setCode, params.collectorNumber).then((success) => {
+    ipcMain.handle(MISSING_FETCH_CARD_NAME, async (_, params: CardDetailParams): Promise<MutationResult> => {
+        try {
+            const success = await getCard(db, params.setCode, params.collectorNumber)
             logger.info(MISSING_FETCH_CARD_NAME, 'Successful')
-            return { success: success, error: null }
-        }, 
-        (reason) => {
-            logger.error(`Error fetching set: ${reason}`)
-            return { success: false, error: reason }
-        })
+            return { success }
+        } catch (err) {
+            logger.error(`Error fetching card: ${err}`)
+            return { success: false, error: (err as Error).message }
+        }
     })
 }

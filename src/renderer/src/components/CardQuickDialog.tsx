@@ -56,7 +56,7 @@ export function CardQuickDialog({ card, open, onOpenChange, editRef = false }: C
 
   async function handleDelete() {
     setDeleting(true)
-    const result = await window.api.collectionDelete({ id: card.collection_id })
+    const result = await window.api.collectionDelete(card.collection_id)
     setDeleting(false)
     if ('error' in result) {
       toast.error(`Failed to delete: ${result.error}`)

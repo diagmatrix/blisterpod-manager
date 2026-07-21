@@ -10,7 +10,7 @@ type ImportState = 'idle' | 'importing' | 'done'
 export function CollectionImport() {
   const [format, setFormat] = useState<ImportFormat>('google-drive')
   const [state, setState] = useState<ImportState>('idle')
-  const [result, setResult] = useState<{ inserted: number; errors: { index: number; message: string }[] } | null>(null)
+  const [result, setResult] = useState<{ inserted: number; error?: string } | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -29,7 +29,7 @@ export function CollectionImport() {
     const response = await window.api.collectionAddBatch(items)
 
     setState('done')
-    setResult({ inserted: response.inserted, errors: response.errors })
+    setResult({ inserted: response.inserted, error: response.error })
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -56,29 +56,29 @@ export function CollectionImport() {
       {state === 'done' && result && (
         <span className="text-xs text-muted-foreground">
           {result.inserted} imported
-          {result.errors.length > 0 && (
+          {result.error && (
             <>
               {', '}
               <button
                 className="underline underline-offset-2 hover:text-foreground"
                 onClick={() => setDialogOpen(true)}
               >
-                {result.errors.length} skipped
+                some skipped
               </button>
             </>
           )}
         </span>
       )}
 
-      {result && (
+      {result?.error && (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Skipped cards ({result.errors.length})</DialogTitle>
+              <DialogTitle>Skipped cards</DialogTitle>
             </DialogHeader>
             <ul className="list-disc list-inside space-y-1 text-sm max-h-96 overflow-y-auto">
-              {result.errors.map((e) => (
-                <li key={e.index}>{e.message}</li>
+              {result.error.split(', ').map((message, i) => (
+                <li key={i}>{message}</li>
               ))}
             </ul>
           </DialogContent>

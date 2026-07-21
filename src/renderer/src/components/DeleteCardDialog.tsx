@@ -20,9 +20,9 @@ export function DeleteCardDialog({ card, collectionId, open, onOpenChange }: Del
 
   async function handleDelete() {
     setDeleting(true)
-    const result = await window.api.collectionDelete({ id: collectionId })
+    const result = await window.api.collectionDelete(collectionId)
     setDeleting(false)
-    if ('error' in result) {
+    if (!result.success) {
       toast.error(`Failed to delete: ${result.error}`)
     } else {
       toast.success('Card removed from collection')
