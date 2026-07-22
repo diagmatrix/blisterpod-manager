@@ -34,7 +34,7 @@ async function executeSQLFilesFromDir(db: Database.Database, dirPath: string): P
     }
 }
 
-export function getQueryFilePath(queryName: string): string {
+export function readQueryFile(queryName: string): string {
     const queryFilePath = join(QUERIES_DIR, `${queryName}`)
     try {
         return readFileSync(queryFilePath, 'utf-8')
