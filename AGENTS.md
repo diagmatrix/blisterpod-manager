@@ -2,7 +2,7 @@
 
 - Active app is Electron + React + TypeScript only: `src/main`, `src/preload`, `src/renderer`, `src/shared`.
 - Ignore `.opencode/` and `.claude/` for product work (tooling metadata/agent docs).
-- DB schema source of truth is SQL files under `db/tables/*.sql` and `db/views/*.sql`; never edit `.db` files directly.
+- DB schema source of truth is SQL files under `db/tables/*.sql` and `db/views/*.sql`; named queries live in `db/queries/*.sql`. Never edit `.db` files directly.
 
 ## Commands you will actually run
 
@@ -17,14 +17,15 @@
 
 - Security boundary is enforced: renderer must use `window.api` from preload; `nodeIntegration: false` and `contextIsolation: true` are intentional in `src/main/index.ts`.
 - IPC changes require synchronized edits in all layers: main handler(s), preload bridge (`src/preload/index.ts`), and renderer typings (`src/renderer/src/env.d.ts`, plus `src/shared/*` types when needed).
-- `src/main/db.ts` initializes schema from hardcoded SQL filename arrays; adding a new SQL file requires adding it to those arrays or it will never execute.
+- DB code lives in `src/main/db/`, split by domain (`cards`, `collection`, `duplicates`, `missing`, `stats`, `export`), each exporting a `register*Handlers(db)` wired together in `src/main/db/index.ts`; `querybuilder.ts` composes dynamic queries.
+- `src/main/db/index.ts` `initDatabase()` walks `db/tables/` then `db/views/` and `exec`s every `.sql` file, so a new schema file is applied automatically (no array to update). Files in `db/queries/` are NOT auto-run — load them on demand with `readQueryFile('name.sql')`.
 - Path alias is target-specific: main/preload (`electron.vite.config.ts`) map `@` to `src`, renderer maps `@` to `src/renderer/src`.
 - Router uses `HashRouter` (`src/renderer/src/App.tsx`); do not switch to browser-history routing without Electron packaging changes.
 
 ## Data rules that break features if missed
 
 - Canonical join is `cards.(set_code, collector_number)` to `scryfall_cards.(set_code, collector_number)` (see `db/views/mapped_collection.sql`, `db/views/card_details.sql`).
-- Scryfall field `set` is intentionally stored as `set_code` in DB ingest paths (`src/main/db.ts`, `src/main/scryfallRefresh.ts`).
+- Scryfall field `set` is intentionally stored as `set_code` in DB ingest paths (`src/main/db/`, `src/main/scryfallRefresh.ts`).
 - `cards` enforces quantity invariants in SQL: non-negative each, and combined quantity must be `> 0`.
 - Many Scryfall structured fields are persisted as JSON text (serialized in TS); treat them as JSON strings at boundaries.
 - Scryfall refresh logic intentionally excludes digital cards and set code `UNK`, and throttles requests by 100ms in API paging paths (`src/main/scryfallRefresh.ts`).

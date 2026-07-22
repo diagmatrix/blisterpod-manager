@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.0.4
+
+### New Features
+- **Hover to preview card images** — On the Collection and Add Cards pages, hovering over a card row now in the table view shows a large image of the card near the cursor after a short pause.
+- **Sort by mana value** — Card lists can now be sorted by mana value, in addition to name, set code, and collector number.
+
+### Bug Fixes
+- **More accurate statistics** — Fixed casing issues that could cause colors and other stats to be miscounted.
+- **More reliable searching** — Fixed several database querying issues, including a bug where a card's file ending was mishandled during search.
+
+### Improvements
+- **Faster, more maintainable database layer** — The card database has been reorganized into modular queries and rewired for more reliable data management, laying the groundwork for future features.
+
 ## v1.0.3
 
 ### Bug Fixes
