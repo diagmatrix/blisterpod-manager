@@ -4,7 +4,7 @@ import { ipcMain } from "electron";
 import { CardSearchParams, CollectionAddParams, CollectionUpdateParams } from "../../shared/search";
 import { buildFullQuery } from "./querybuilder";
 import { CollectionCard } from "../../shared/cards";
-import { getQueryFilePath } from ".";
+import { readQueryFile } from ".";
 import { AddResult, DeleteResult, InsertResult, MutationResult, PaginatedResult } from "../../shared/responses";
 
 const COLLECTION_LIST_NAME = 'collection:list'
@@ -17,9 +17,13 @@ const COLLECTION_DELETE_MANY_NAME = 'collection:delete-many'
 const COLLECTION_ADD_QUERY = 'card_exists.sql'
 const COLLECTION_INSERT_CARD_QUERY = 'add_card.sql'
 const COLLECTION_UPDATE_CARD_QUERY = 'update_card.sql'
-const COLLECTION_UPDATE_CARD_FULL_QUERY = 'update_full_card.sql'
+const COLLECTION_UPDATE_CARD_FULL_QUERY = 'update_card_full.sql'
 
 const logger = createLogger('db:collection')
+
+interface CollectionCardWithTotal extends CollectionCard {
+    total_count?: number
+}
 
 function validateAddCardParams(params: CollectionAddParams | CollectionUpdateParams): string | undefined {
     if (params.quantityNonfoil < 0 || params.quantityFoil < 0) {
@@ -35,7 +39,7 @@ function validateAddCardParams(params: CollectionAddParams | CollectionUpdatePar
 
 function checkCardExists(db: Database.Database, setCode: string, collectorNumber: string): string | undefined {
     try {
-        const existsSQL = getQueryFilePath(COLLECTION_ADD_QUERY)
+        const existsSQL = readQueryFile(COLLECTION_ADD_QUERY)
         logger.info(COLLECTION_ADD_NAME, existsSQL)
         const exists = db.prepare(existsSQL).get(setCode, collectorNumber)
         if (!exists) {
@@ -44,7 +48,9 @@ function checkCardExists(db: Database.Database, setCode: string, collectorNumber
             return notFoundError
         }
     } catch (err) {
-        logger.error(`Error trying to validate if card exists: ${err}`)
+        const dbExecutionError = `Could not verify if card exists: ${setCode} #${collectorNumber}`
+        logger.error(`${dbExecutionError}: ${err}`)
+        return dbExecutionError
     }
 }
 
@@ -54,13 +60,18 @@ export function registerCollectionHandlers(db: Database.Database): void {
         const { sql, values } = buildFullQuery(params, 'mapped_collection', ['scryfall_id IS NOT NULL'])
 
         let rows: CollectionCard[] = []
+        let total = 0
         try {
             logger.info(COLLECTION_LIST_NAME, sql)
-            rows = db.prepare(sql).all(values) as CollectionCard[]
+            const queryRows = db.prepare(sql).all(values) as CollectionCardWithTotal[]
+            total = queryRows[0]?.total_count ?? 0
+            for (const row of queryRows) {
+                delete row.total_count
+            }
+            rows = queryRows as CollectionCard[]
         } catch (err) {
             logger.error(`Error fetching cards: ${err}`)
         }
-        const total = rows.length ?? 0
         return { rows, total }
     })
 
@@ -76,7 +87,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
 
         const insertTransaction = db.transaction(() => {
             try {
-                const insertSQL = getQueryFilePath(COLLECTION_INSERT_CARD_QUERY)
+                const insertSQL = readQueryFile(COLLECTION_INSERT_CARD_QUERY)
                 logger.info(COLLECTION_ADD_NAME, insertSQL)
                 const result = db.prepare(insertSQL).run(params.setCode, params.collectorNumber, params.quantityNonfoil, params.quantityFoil)
                 return { cardID: result.lastInsertRowid }
@@ -101,7 +112,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
             return { inserted: 0, warning: warningMessage }
         }
         
-        const sql = getQueryFilePath(COLLECTION_INSERT_CARD_QUERY)
+        const sql = readQueryFile(COLLECTION_INSERT_CARD_QUERY)
         logger.info(COLLECTION_ADD_BATCH_NAME, sql)
         const dbStatement = db.prepare(sql)
 
@@ -142,11 +153,11 @@ export function registerCollectionHandlers(db: Database.Database): void {
 
         try {
             if (params.setCode !== undefined && params.collectorNumber !== undefined) {
-                const sql = getQueryFilePath(COLLECTION_UPDATE_CARD_FULL_QUERY)
+                const sql = readQueryFile(COLLECTION_UPDATE_CARD_FULL_QUERY)
                 logger.info(COLLECTION_UPDATE_NAME, sql)
                 db.prepare(sql).run(params.setCode, params.collectorNumber, params.quantityNonfoil, params.quantityFoil, params.id)
             } else {
-                const sql = getQueryFilePath(COLLECTION_UPDATE_CARD_QUERY)
+                const sql = readQueryFile(COLLECTION_UPDATE_CARD_QUERY)
                 logger.info(COLLECTION_UPDATE_NAME, sql)
                 db.prepare(sql).run(params.quantityNonfoil, params.quantityFoil, params.id)
             }

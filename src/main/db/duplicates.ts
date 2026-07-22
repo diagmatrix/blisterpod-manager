@@ -1,7 +1,7 @@
 import Database from "better-sqlite3"
 import { createLogger } from "../logger"
 import { ipcMain } from "electron"
-import { getQueryFilePath } from "."
+import { readQueryFile } from "."
 import { DuplicateCard, DuplicateCardInstance, DuplicateCardRow } from "../../shared/cards"
 
 const DUPLICATES_LIST_NAME = 'duplicates:list'
@@ -20,7 +20,7 @@ const logger = createLogger('db:duplicates')
 function getDuplicatesFromSetNumber(db: Database.Database, setCode: string, collectorNumber: string): DuplicateCardRow[] {
     let rows: DuplicateCardRow[] = []
     try {
-        const sql = getQueryFilePath(DUPLICATES_MERGE_QUERY)
+        const sql = readQueryFile(DUPLICATES_MERGE_QUERY)
         logger.info('Getting duplicates from set and number', sql)
         rows = db.prepare(sql).all(setCode, collectorNumber) as DuplicateCardRow[]
     } catch (err) {
@@ -32,7 +32,7 @@ function getDuplicatesFromSetNumber(db: Database.Database, setCode: string, coll
 function removeDuplicatesFromDB(db: Database.Database): { deleted: number, error?: string } {
     const removeFromDBTransaction = db.transaction(() => {
         try {
-            const sql = getQueryFilePath(DUPLICATES_DELETE_QUERY)
+            const sql = readQueryFile(DUPLICATES_DELETE_QUERY)
             logger.info('Removing all duplicates', sql)
             const { changes } = db.prepare(sql).run()
             return { deleted: changes }
@@ -49,7 +49,7 @@ export function registerDuplicateCardsHandlers(db: Database.Database): void {
     ipcMain.handle(DUPLICATES_LIST_NAME, () => {
         let rows: DuplicateCard[] = []
         try {
-            const sql = getQueryFilePath(DUPLICATES_LIST_QUERY)
+            const sql = readQueryFile(DUPLICATES_LIST_QUERY)
             logger.info(DUPLICATES_LIST_NAME, sql)
             rows = db.prepare(sql).all() as DuplicateCard[]
         } catch (err) {
@@ -120,7 +120,7 @@ export function registerDuplicateCardsHandlers(db: Database.Database): void {
         const mergeAllTransaction = db.transaction(() => {
             let merged: number = 0
             try {
-                const sql = getQueryFilePath(DUPLICATES_MERGE_ALL_QUERY)
+                const sql = readQueryFile(DUPLICATES_MERGE_ALL_QUERY)
                 logger.info(DUPLICATES_FULL_MERGE_NAME, sql)
                 const { changes } = db.prepare(sql).run()
                 merged = changes

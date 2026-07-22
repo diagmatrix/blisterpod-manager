@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import { createLogger } from "../logger";
 import { ipcMain } from "electron";
-import { getQueryFilePath } from ".";
+import { readQueryFile } from ".";
 import { writeFileSync } from "fs";
 
 interface CollectionRow {
@@ -34,7 +34,7 @@ export function registerExportHandlers(db: Database.Database): void {
     ipcMain.handle(COLLECTION_EXPORT_NAME, (_, filePath: string) => {
         let rows: CollectionRow[] = []
         try {
-            const sql = getQueryFilePath(COLLECTION_EXPORT_QUERY)
+            const sql = readQueryFile(COLLECTION_EXPORT_QUERY)
             logger.info(COLLECTION_EXPORT_NAME, sql)
             rows = db.prepare(sql).all() as CollectionRow[]
         } catch (err) {
@@ -56,7 +56,7 @@ export function registerExportHandlers(db: Database.Database): void {
     ipcMain.handle(COLLECTION_EXPORT_MOXFIELD_NAME, (_, filePath: string) => {
         let rows: MoxfieldRow[] = []
         try {
-            const sql = getQueryFilePath(COLLECTION_EXPORT_MOXFIELD_QUERY)
+            const sql = readQueryFile(COLLECTION_EXPORT_MOXFIELD_QUERY)
             logger.info(COLLECTION_EXPORT_MOXFIELD_NAME, sql)
             rows = db.prepare(sql).all() as MoxfieldRow[]
         } catch (err) {

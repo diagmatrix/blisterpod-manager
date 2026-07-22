@@ -2,7 +2,7 @@ import Database from "better-sqlite3"
 import { createLogger } from "../logger"
 import { ipcMain } from "electron"
 import { MissingCard } from "../../shared/cards"
-import { getQueryFilePath } from "."
+import { readQueryFile } from "."
 import { getCard, getSet, getSetCards } from "../scryfallRefresh"
 import { CardDetailParams, SetCodeParams } from "../../shared/search"
 import { InsertResult, MutationResult } from "../../shared/responses"
@@ -22,7 +22,7 @@ export function registerMissingCardsHandlers(db: Database.Database): void {
     ipcMain.handle(MISSING_LIST_NAME, () => {
         let rows: MissingCard[] = []
         try {
-            const sql = getQueryFilePath(MISSING_LIST_QUERY)
+            const sql = readQueryFile(MISSING_LIST_QUERY)
             logger.info(MISSING_LIST_NAME, sql)
             rows = db.prepare(sql).all() as MissingCard[]
         } catch (err) {
@@ -47,7 +47,7 @@ export function registerMissingCardsHandlers(db: Database.Database): void {
     ipcMain.handle(MISSING_FETCH_SET_CARDS_NAME, async (_, params: SetCodeParams): Promise<InsertResult> => {
         let searchUri: string | undefined
         try {
-            const sql = getQueryFilePath(MISSING_FETCH_SET_CARDS_QUERY)
+            const sql = readQueryFile(MISSING_FETCH_SET_CARDS_QUERY)
             logger.info(MISSING_FETCH_SET_CARDS_NAME, sql)
             const dbRow = db.prepare(sql).get(params.setCode.toUpperCase()) as { search_uri: string } | undefined
             if (dbRow?.search_uri) {

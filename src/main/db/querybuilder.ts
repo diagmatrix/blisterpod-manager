@@ -5,6 +5,7 @@ import { filterArrayContents } from "../utils"
 const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
 const VALID_COLOR_MODES = ['atLeast', 'exactly', 'atMost']
 const VALID_SORT_COLUMNS = ['name', 'set_code', 'collector_number', 'rarity', 'color_identity', 'released_at', 'mana_value', 'value']
+const VALID_SORT_ORDERS = ['ASC', 'DESC']
 const VALID_LAYOUT_FILTERS = ['all', 'cards', 'tokens']
 const VALID_TABLE_NAMES = ['mapped_collection', 'scryfall_cards_formatted']
 
@@ -99,16 +100,18 @@ function buildLayoutCondition(layoutFilter: string): Query {
 function validateSearchParams(params: CardSearchParams): CardSearchParams {
     const rarities = filterArrayContents(params.rarities ?? [], VALID_RARITIES)
     const colorIdentity = filterArrayContents(params.colorIdentity ?? [], WUBRG_ORDER)    
-    const sortOrder = params.sortOrder ?? DEFAULT_SORT_ORDER
     const page = params.page ?? 1
     const pageSize = Math.min(params.pageSize ?? 60, 120)
     const setCode = params.setCode ? params.setCode.toUpperCase() : params.setCode
-
+    
     const colorModeRaw = params.colorMode ?? DEFAULT_COLOR_MODE
     const colorMode = VALID_COLOR_MODES.includes(colorModeRaw) ? colorModeRaw : DEFAULT_COLOR_MODE
     
     const sortColumnRaw = params.sortColumn ?? DEFAULT_SORT_COLUMN
     const sortColumn = VALID_SORT_COLUMNS.includes(sortColumnRaw) ? sortColumnRaw : DEFAULT_SORT_COLUMN
+    
+    const sortOrderRaw = params.sortOrder ?? DEFAULT_SORT_ORDER
+    const sortOrder = VALID_SORT_ORDERS.includes(sortOrderRaw) ? sortOrderRaw : DEFAULT_SORT_ORDER
 
     const layoutFilterRaw = params.layoutFilter ?? DEFAULT_LAYOUT_FILTER
     const layoutFilter = VALID_LAYOUT_FILTERS.includes(layoutFilterRaw) ? layoutFilterRaw : DEFAULT_LAYOUT_FILTER
@@ -119,7 +122,7 @@ function validateSearchParams(params: CardSearchParams): CardSearchParams {
         rarities: rarities,
         colorIdentity: colorIdentity,
         colorMode: colorMode,
-        sortColumn: sortColumn,
+        sortColumn: sortColumn === 'collector_number' ? 'collector_number_normalised' : sortColumn,
         sortOrder: sortOrder,
         layoutFilter: layoutFilter,
         page: page,
@@ -173,10 +176,10 @@ export function buildFullQuery(params: CardSearchParams, tableName: string, addi
     if (additional_conditions && additional_conditions.length > 0) {
         const start = whereSQL === '' ? 'WHERE ' : ' AND '
         const conditions = additional_conditions.join(' AND ')
-        whereSQL = `${whereSQL}${start} ${conditions}`
+        whereSQL = `${whereSQL}${start}${conditions}`
     }
 
-    const baseSQL = `SELECT * FROM ${tableName}`
+    const baseSQL = `SELECT *, COUNT(*) OVER () AS total_count FROM ${tableName}`
     const orderSQL = `ORDER BY ${params.sortColumn} ${params.sortOrder}`
     const finalSQL = `${baseSQL} ${whereSQL} ${orderSQL} LIMIT ? OFFSET ?`
 

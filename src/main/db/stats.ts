@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import { createLogger } from "../logger";
 import { ipcMain } from "electron";
-import { getQueryFilePath } from ".";
+import { readQueryFile } from ".";
 import { CollectionCard } from "../../shared/cards";
 import { StatsColors, StatsRarityEntry, StatsSetEntry, StatsSummary } from "../../shared/stats";
 
@@ -32,7 +32,7 @@ export function registerStatsHandlers(db: Database.Database): void {
             estimatedValue: 0
         }
         try {
-            const sql = getQueryFilePath(STATS_SUMMARY_QUERY)
+            const sql = readQueryFile(STATS_SUMMARY_QUERY)
             logger.info(STATS_SUMMARY_NAME, sql)
             row = db.prepare(sql).get() as StatsSummary ?? row
         } catch (err) {
@@ -53,7 +53,7 @@ export function registerStatsHandlers(db: Database.Database): void {
             multicolored: 0
         }
         try {
-            const sql = getQueryFilePath(STATS_COLOR_DISTRIBUTION_QUERY)
+            const sql = readQueryFile(STATS_COLOR_DISTRIBUTION_QUERY)
             logger.info(STATS_COLOR_DISTRIBUTION_NAME, sql)
             row = db.prepare(sql).get() as StatsColors
         } catch (err) {
@@ -66,7 +66,7 @@ export function registerStatsHandlers(db: Database.Database): void {
     ipcMain.handle(STATS_RARITY_BREAKDOWN_NAME, () => {
         let rows: StatsRarityEntry[] = []
         try {
-            const sql = getQueryFilePath(STATS_RARITY_BREAKDOWN_QUERY)
+            const sql = readQueryFile(STATS_RARITY_BREAKDOWN_QUERY)
             logger.info(STATS_RARITY_BREAKDOWN_NAME, sql)
             rows = db.prepare(sql).all() as StatsRarityEntry[]
         } catch (err) {
@@ -80,7 +80,7 @@ export function registerStatsHandlers(db: Database.Database): void {
         const limit = Math.min(params?.limit ?? 10, MAX_STATS_TOP_VALUE_LIMIT)
         let rows: CollectionCard[] = []
         try {
-            const sql = getQueryFilePath(STATS_TOP_VALUE_QUERY)
+            const sql = readQueryFile(STATS_TOP_VALUE_QUERY)
             logger.info(STATS_TOP_VALUE_NAME, sql)
             rows = db.prepare(sql).all(limit) as CollectionCard[]
         } catch (err) {
@@ -94,7 +94,7 @@ export function registerStatsHandlers(db: Database.Database): void {
         const limit = Math.min(params?.limit ?? 10, MAX_STATS_BY_SET_LIMIT)
         let rows: StatsSetEntry[] = []
         try {
-            const sql = getQueryFilePath(STATS_BY_SET_QUERY)
+            const sql = readQueryFile(STATS_BY_SET_QUERY)
             logger.info(STATS_BY_SET_NAME, sql)
             rows = db.prepare(sql).all(limit) as StatsSetEntry[]
         } catch (err) {
