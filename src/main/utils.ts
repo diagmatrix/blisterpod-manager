@@ -1,7 +1,7 @@
 import { join } from 'path'
 import { app } from 'electron'
 import type { AppSettings } from '../shared/app'
-import { opendir } from 'fs/promises'
+import { readdirSync, statSync } from 'fs'
 import Database from 'better-sqlite3'
 
 export const USER_AGENT = `blisterpod-manager/${app.getVersion()}`
@@ -11,14 +11,14 @@ export function getIconPath(theme: AppSettings['theme']): string {
 	return join(__dirname, `../../resources/${name}.png`)
 }
 
+// Electron's asar layer does not patch fs.promises.opendir, so it throws for paths inside app.asar
 export async function* walkDir(dirPath: string, onlyFiles: boolean = true): AsyncGenerator<string> {
-	const dir = await opendir(dirPath)
-
-	for await (const entry of dir) {
-		const fullPath = join(dirPath, entry.name)
-		if (entry.isDirectory() && !onlyFiles) {
+	for (const name of readdirSync(dirPath)) {
+		const fullPath = join(dirPath, name)
+		const stats = statSync(fullPath)
+		if (stats.isDirectory() && !onlyFiles) {
 			yield* walkDir(fullPath, onlyFiles)
-		} else if (entry.isFile()) {
+		} else if (stats.isFile()) {
 			yield fullPath
 		}
 	}

@@ -163,6 +163,9 @@ app.whenReady().then(async () => {
   initFontProtocol()
   initManaSymbolProtocol()
   return createWindow()
+}).catch((err) => {
+  log.error('Failed to start app', err)
+  app.quit()
 })
 
 app.on('window-all-closed', () => {
