@@ -19,7 +19,6 @@ import { useCardFilters } from '@/hooks/useCardFilters'
 import { useCardSort } from '@/hooks/useCardSort'
 import { CardSort } from '@/components/CardSort'
 import { Button } from '@/components/ui/button'
-import { PAGE_SIZES } from '../../../shared/app'
 import { usePagination } from '@/hooks/usePagination'
 import { usePageViewState } from '@/hooks/usePageViewState'
 import { useRowSelection } from '@/hooks/useRowSelection'
@@ -141,7 +140,7 @@ export default function CollectionPage() {
     const initialSet: string = location.state?.filterSet ?? ''
 
     const { view, setView, isFilterExpanded, toggleFilter, isSortExpanded, toggleSort } = usePageViewState()
-    const { page, setPage, pageSize, handlePageSizeChange, reset: resetPagination } = usePagination()
+    const { page, setPage, pageSize, pageSizes, handlePageSizeChange, reset: resetPagination } = usePagination()
 
     /** Sorting */
     const { sortColumn, sortOrder, handleSort, toggleOrder, reset: resetSort } = useCardSort({ defaultColumn: 'value', defaultOrder: 'DESC' })
@@ -271,7 +270,7 @@ export default function CollectionPage() {
                     page={page}
                     pageSize={pageSize}
                     total={data.total}
-                    pageSizes={PAGE_SIZES}
+                    pageSizes={pageSizes}
                     onPageChange={setPage}
                     onPageSizeChange={handlePageSizeChange}
                 />

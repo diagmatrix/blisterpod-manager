@@ -17,12 +17,22 @@ export interface AppSettings {
     defaultPageSize?: number
 }
 
-export const PAGE_SIZES = [30, 60, 120] as const
-export type PageSize = (typeof PAGE_SIZES)[number]
-export const FALLBACK_PAGE_SIZE: PageSize = PAGE_SIZES[0]
+export const PAGE_SIZE_FAMILIES = [
+    [25, 50, 100],
+    [30, 60, 120],
+] as const
+export type PageSize = (typeof PAGE_SIZE_FAMILIES)[number][number]
+export const PAGE_SIZES: readonly PageSize[] = PAGE_SIZE_FAMILIES.flat().sort((a, b) => a - b)
+export const FALLBACK_PAGE_SIZE_FAMILY = PAGE_SIZE_FAMILIES[1]
+export const FALLBACK_PAGE_SIZE: PageSize = FALLBACK_PAGE_SIZE_FAMILY[0]
 
 export function isPageSize(value: unknown): value is PageSize {
     return typeof value === 'number' && (PAGE_SIZES as readonly number[]).includes(value)
+}
+
+export function pageSizeFamily(size: number): readonly PageSize[] {
+    return PAGE_SIZE_FAMILIES.find((family) => (family as readonly number[]).includes(size))
+        ?? FALLBACK_PAGE_SIZE_FAMILY
 }
 
 export type Theme = 'dark' | 'light'
