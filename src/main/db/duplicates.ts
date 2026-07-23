@@ -4,11 +4,11 @@ import { ipcMain } from "electron"
 import { readQueryFile } from "."
 import { DuplicateCard, DuplicateCardInstance, DuplicateCardRow } from "../../shared/cards"
 
-const DUPLICATES_LIST_NAME = 'duplicates:list'
-const DUPLICATES_IDS_NAME = 'duplicates:ids'
-const DUPLICATES_MERGE_NAME = 'duplicates:merge'
-const DUPLICATES_FULL_MERGE_NAME = 'duplicates:merge-all'
-const DUPLICATES_DELETE_NAME = 'duplicates:remove-all'
+export const DUPLICATES_LIST_NAME = 'duplicates:list'
+export const DUPLICATES_IDS_NAME = 'duplicates:ids'
+export const DUPLICATES_MERGE_NAME = 'duplicates:merge'
+export const DUPLICATES_FULL_MERGE_NAME = 'duplicates:merge-all'
+export const DUPLICATES_DELETE_NAME = 'duplicates:remove-all'
 
 const DUPLICATES_LIST_QUERY = 'all_duplicates.sql'
 const DUPLICATES_MERGE_QUERY = 'duplicates_set_number.sql'

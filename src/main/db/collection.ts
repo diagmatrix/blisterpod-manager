@@ -7,12 +7,12 @@ import { CollectionCard } from "../../shared/cards";
 import { readQueryFile } from ".";
 import { AddResult, DeleteResult, InsertResult, MutationResult, PaginatedResult } from "../../shared/responses";
 
-const COLLECTION_LIST_NAME = 'collection:list'
-const COLLECTION_ADD_NAME = 'collection:add'
-const COLLECTION_ADD_BATCH_NAME = 'collection:add-batch'
-const COLLECTION_UPDATE_NAME = 'collection:update'
-const COLLECTION_DELETE_NAME = 'collection:delete'
-const COLLECTION_DELETE_MANY_NAME = 'collection:delete-many'
+export const COLLECTION_LIST_NAME = 'collection:list'
+export const COLLECTION_ADD_NAME = 'collection:add'
+export const COLLECTION_ADD_BATCH_NAME = 'collection:add-batch'
+export const COLLECTION_UPDATE_NAME = 'collection:update'
+export const COLLECTION_DELETE_NAME = 'collection:delete'
+export const COLLECTION_DELETE_MANY_NAME = 'collection:delete-many'
 
 const COLLECTION_ADD_QUERY = 'card_exists.sql'
 const COLLECTION_INSERT_CARD_QUERY = 'add_card.sql'

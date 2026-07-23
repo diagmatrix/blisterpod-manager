@@ -21,8 +21,8 @@ interface MoxfieldRow {
     quantity_foil: number
 }
 
-const COLLECTION_EXPORT_NAME = 'collection:export'
-const COLLECTION_EXPORT_MOXFIELD_NAME = 'collection:export-moxfield'
+export const COLLECTION_EXPORT_NAME = 'collection:export'
+export const COLLECTION_EXPORT_MOXFIELD_NAME = 'collection:export-moxfield'
 
 const COLLECTION_EXPORT_QUERY = 'export_blisterpod.sql'
 const COLLECTION_EXPORT_MOXFIELD_QUERY = 'export_moxfield.sql'

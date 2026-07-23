@@ -6,9 +6,9 @@ import { buildFullQuery } from "./querybuilder";
 import { CardDetail, CollectionCard, ScryfallCard } from "../../shared/cards";
 import { readQueryFile } from ".";
 
-const CARDS_SEARCH_NAME = 'cards:search'
-const CARDS_DETAIL_NAME = 'cards:detail'
-const CARDS_OTHERS_NAME = 'cards:other-printings'
+export const CARDS_SEARCH_NAME = 'cards:search'
+export const CARDS_DETAIL_NAME = 'cards:detail'
+export const CARDS_OTHERS_NAME = 'cards:other-printings'
 
 const CARDS_DETAILS_QUERY = 'card_details.sql'
 const CARDS_OTHERS_QUERY = 'other_printings.sql'

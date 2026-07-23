@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "composite": true,
+        "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.test.tsbuildinfo",
+        "skipLibCheck": true,
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "noEmit": true,
+        "jsx": "react-jsx",
+        "types": ["node", "vitest/globals"],
+        "paths": {
+            "@/*": ["./src/renderer/src/*"]
+        }
+    },
+    "include": [
+        "e2e/**/*",
+        "vitest.config.ts",
+        "vitest.workspace.ts",
+        "playwright.config.ts"
+    ]
+}
