@@ -11,6 +11,8 @@
 - Preview packaged app: `npm run preview`
 - Lint: `npm run lint` (or `npm run lint:fix`)
 - Type-check all TS projects: `npx tsc -b`
+- Unit + integration tests: `npm test` (watch: `npm run test:watch`, coverage: `npm run test:coverage`)
+- End-to-end tests: `npm run test:e2e` (builds, rebuilds native deps for Electron, then runs Playwright)
 - Package installer/app bundle: `npm run package`
 
 ## Wiring and architecture gotchas
@@ -30,9 +32,28 @@
 - Many Scryfall structured fields are persisted as JSON text (serialized in TS); treat them as JSON strings at boundaries.
 - Scryfall refresh logic intentionally excludes digital cards and set code `UNK`, and throttles requests by 100ms in API paging paths (`src/main/scryfallRefresh.ts`).
 
+## Testing (and its known debt)
+
+- Two Vitest projects, split because `@` resolves differently per target (see `vitest.workspace.ts`): `main` (node env, `src/main` + `src/shared`) and `renderer` (jsdom env, `src/renderer`). Tests are colocated as `*.test.ts(x)`; only shared machinery lives in `tests/`.
+- Harness lives in `tests/main/` (node side) and `tests/renderer/` (jsdom side). Keep that split — `tsconfig.node.json` and `tsconfig.web.json` include one directory each, and mixing them breaks `tsc -b`.
+- `tests/main/sqlite.ts` builds a real in-memory DB from `db/tables/` then `db/views/`; `tests/fixtures/collection.sql` is the shared seed (also used by the E2E launcher). Do not mock better-sqlite3 — running the real schema is the point.
+- `tests/renderer/window-api.ts` is typed as the real `ElectronAPI`, so `npx tsc -b` fails if the preload bridge gains a method the mock lacks. That is intentional: it makes the "IPC changes require synchronized edits in all layers" rule compiler-enforced. Extend the mock when you extend the bridge.
+- **better-sqlite3 ABI**: it is native, and the two test tiers need opposite builds. Vitest runs under plain Node (`npm run rebuild:node`); E2E and packaging need the Electron build (`npm run package:post`). A `NODE_MODULE_VERSION` error from either means you are on the wrong build — rebuild, do not debug the test.
+- E2E isolation uses Electron's `--user-data-dir` switch, which relocates both the database and the electron-store settings to a temp profile. The launcher pre-seeds it so the app never enters the Scryfall download path.
+
+### Deliberate shortcuts, and the fix each one defers
+
+The main-process tests do not run in Electron. They work because `tests/main/electron-stub.ts` is aliased over the `electron` module (and `electron-log-stub.ts` over `electron-log/main.js`). This is *interim scaffolding with a known exit path*, not the intended end state — it exists so tests could start without a big-bang refactor. Three things it papers over, worth fixing now that a suite exists to catch regressions:
+
+1. `src/main/utils.ts` evaluates `app.getVersion()` at module load for `USER_AGENT`. Make it a lazy function.
+2. `src/main/logger.ts` runs `log.initialize()`, `app.getPath()` and `app.isPackaged` at module load. Move them behind an explicit `initLogger()`.
+3. Every `ipcMain.handle` body in `src/main/db/*.ts` is an anonymous closure with no other entry point, reachable only because the stub records handlers into a Map for `tests/main/ipc-harness.ts` to replay. Extract each into a named exported function that `register*Handlers` merely wires up.
+
+Each fix lets the corresponding stub get thinner. Tests written against the stubs should keep passing throughout — that is what makes them safe to do.
+
 ## Verification expectations
 
 - No CI workflows are present; run checks manually before finishing.
-- Minimum safe pass after code changes: `npm run lint` -> `npx tsc -b` -> `npm run build`.
+- Minimum safe pass after code changes: `npm run lint` -> `npx tsc -b` -> `npm test` -> `npm run build`.
 - After schema/query edits, verify dependent views still match table columns and join keys.
 - Runtime DB path defaults to Electron `app.getPath('userData')/collection.db` (not repo-local `db/collection.db`), so validate against the app-run database unless you intentionally change path logic.

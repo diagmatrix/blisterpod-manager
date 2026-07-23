@@ -5,11 +5,11 @@ import { readQueryFile } from ".";
 import { CollectionCard } from "../../shared/cards";
 import { StatsColors, StatsRarityEntry, StatsSetEntry, StatsSummary } from "../../shared/stats";
 
-const STATS_SUMMARY_NAME = 'stats:summary'
-const STATS_COLOR_DISTRIBUTION_NAME = 'stats:colors'
-const STATS_RARITY_BREAKDOWN_NAME = 'stats:rarity'
-const STATS_TOP_VALUE_NAME = 'stats:top-value'
-const STATS_BY_SET_NAME = 'stats:by-set'
+export const STATS_SUMMARY_NAME = 'stats:summary'
+export const STATS_COLOR_DISTRIBUTION_NAME = 'stats:colors'
+export const STATS_RARITY_BREAKDOWN_NAME = 'stats:rarity'
+export const STATS_TOP_VALUE_NAME = 'stats:top-value'
+export const STATS_BY_SET_NAME = 'stats:by-set'
 
 const STATS_SUMMARY_QUERY = 'stats_summary.sql'
 const STATS_COLOR_DISTRIBUTION_QUERY = 'stats_colors.sql'
