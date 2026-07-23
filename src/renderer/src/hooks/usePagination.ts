@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { FALLBACK_PAGE_SIZE, isPageSize, useDefaultPageSize, type PageSize } from './useDefaultPageSize'
+import { FALLBACK_PAGE_SIZE, isPageSize, type PageSize } from '../../../shared/app'
+import { useDefaultPageSize } from './useDefaultPageSize'
 
 export interface UsePaginationReturn {
   page: number

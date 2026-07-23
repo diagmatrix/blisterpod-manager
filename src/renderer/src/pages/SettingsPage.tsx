@@ -8,7 +8,7 @@ import { useTheme } from '@/components/ThemeProvider'
 import { RefreshLoadingDialog } from '@/components/RefreshLoadingDialog'
 import { injectKeyruneCSS } from '@/lib/keyruneCSS'
 import { applyCCMGFont } from '@/lib/ccmgFont'
-import { PAGE_SIZES, FALLBACK_PAGE_SIZE, isPageSize, type PageSize } from '@/hooks/useDefaultPageSize'
+import { PAGE_SIZES, FALLBACK_PAGE_SIZE, isPageSize, type PageSize } from '../../../shared/app'
 import type { KeyruneVersion } from '../../../shared/app'
 
 /**
