@@ -17,7 +17,6 @@ import { ManaSymbols } from '@/components/ManaSymbols'
 import { Pagination } from '@/components/Pagination'
 import { useCardSearch } from '@/hooks/useCardSearch'
 import { ImageGridSkeleton, TableSkeleton } from '@/components/skeletons'
-import { PAGE_SIZES } from '../../../shared/app'
 import { usePagination } from '@/hooks/usePagination'
 import { usePageViewState } from '@/hooks/usePageViewState'
 
@@ -112,7 +111,7 @@ function CardTable(props: CardTableProps) {
 export default function AddCardPage() {
     /** Page rendering */
     const { view, setView, isFilterExpanded, toggleFilter, isSortExpanded, toggleSort } = usePageViewState()
-    const { page, setPage, pageSize, handlePageSizeChange } = usePagination()
+    const { page, setPage, pageSize, pageSizes, handlePageSizeChange } = usePagination()
 
     /** Sorting */
     const { sortColumn, sortOrder, handleSort, toggleOrder } = useCardSort({ defaultColumn: 'collector_number', defaultOrder: 'ASC' })
@@ -284,7 +283,7 @@ export default function AddCardPage() {
                         page={page}
                         pageSize={pageSize}
                         total={total}
-                        pageSizes={PAGE_SIZES}
+                        pageSizes={pageSizes}
                         onPageChange={setPage}
                         onPageSizeChange={handlePageSizeChange}
                     />
