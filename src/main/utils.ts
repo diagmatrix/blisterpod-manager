@@ -1,6 +1,6 @@
 import { join } from 'path'
 import { app } from 'electron'
-import type { AppSettings } from '../shared/app'
+import type { AppSettings } from '../models/app'
 import { readdirSync, statSync } from 'fs'
 import Database from 'better-sqlite3'
 

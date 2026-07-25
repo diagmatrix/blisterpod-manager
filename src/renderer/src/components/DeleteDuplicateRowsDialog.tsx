@@ -6,7 +6,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
-import type { DuplicateCard } from '../../../shared/cards'
+import type { DuplicateCard } from '../../../models/cards'
 
 interface DeleteDuplicateRowsDialogProps {
   duplicate: DuplicateCard

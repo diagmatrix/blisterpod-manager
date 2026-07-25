@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { X, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { ScryfallCard } from '../../../shared/cards'
-import type { BatchItem } from '../../../shared/search'
+import type { ScryfallCard } from '../../../models/cards'
+import type { BatchItem } from '../../../models/search'
 
 interface BatchPanelProps {
   items: BatchItem[]

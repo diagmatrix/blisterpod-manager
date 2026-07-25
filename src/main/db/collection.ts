@@ -1,11 +1,11 @@
 import Database from "better-sqlite3";
 import { createLogger } from "../logger";
 import { ipcMain } from "electron";
-import { CardSearchParams, CollectionAddParams, CollectionUpdateParams } from "../../shared/search";
+import { CardSearchParams, CollectionAddParams, CollectionUpdateParams } from "../../models/search";
 import { buildFullQuery } from "./querybuilder";
-import { CollectionCard } from "../../shared/cards";
+import { CollectionCard } from "../../models/cards";
 import { readQueryFile } from ".";
-import { AddResult, DeleteResult, InsertResult, MutationResult, PaginatedResult } from "../../shared/responses";
+import { AddResult, DeleteResult, InsertResult, MutationResult, PaginatedResult } from "../../models/responses";
 
 export const COLLECTION_LIST_NAME = 'collection:list'
 export const COLLECTION_ADD_NAME = 'collection:add'

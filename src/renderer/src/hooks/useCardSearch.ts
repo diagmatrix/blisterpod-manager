@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import type { CardSearchParams } from '../../../shared/search'
+import type { CardSearchParams } from '../../../models/search'
 
 const DEBOUNCE_MS = 500
 

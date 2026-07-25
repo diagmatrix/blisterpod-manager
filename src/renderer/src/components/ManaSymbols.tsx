@@ -1,4 +1,4 @@
-import { COLOR_SYMBOL_MAP, getManaSymbolUrl, setStandardColorOrder } from '../../../shared/mana'
+import { COLOR_SYMBOL_MAP, getManaSymbolUrl, setStandardColorOrder } from '../../../models/mana'
 
 interface ColorIdentityProps {
   value: string | null

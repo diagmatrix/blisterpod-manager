@@ -15,5 +15,5 @@
       "@/*": ["./src/renderer/src/*"]
     }
   },
-  "include": ["src/renderer/**/*", "src/shared/**/*", "tests/renderer/**/*"]
+  "include": ["src/renderer/**/*", "src/models/**/*", "tests/renderer/**/*"]
 }

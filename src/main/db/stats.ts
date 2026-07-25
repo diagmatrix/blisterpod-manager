@@ -2,8 +2,8 @@ import Database from "better-sqlite3";
 import { createLogger } from "../logger";
 import { ipcMain } from "electron";
 import { readQueryFile } from ".";
-import { CollectionCard } from "../../shared/cards";
-import { StatsColors, StatsRarityEntry, StatsSetEntry, StatsSummary } from "../../shared/stats";
+import { CollectionCard } from "../../models/cards";
+import { StatsColors, StatsRarityEntry, StatsSetEntry, StatsSummary } from "../../models/stats";
 
 export const STATS_SUMMARY_NAME = 'stats:summary'
 export const STATS_COLOR_DISTRIBUTION_NAME = 'stats:colors'

@@ -8,8 +8,8 @@ import { useTheme } from '@/components/ThemeProvider'
 import { RefreshLoadingDialog } from '@/components/RefreshLoadingDialog'
 import { injectKeyruneCSS } from '@/lib/keyruneCSS'
 import { applyCCMGFont } from '@/lib/ccmgFont'
-import { PAGE_SIZE_FAMILIES, FALLBACK_PAGE_SIZE, isPageSize, pageSizeFamily, type PageSize } from '../../../shared/app'
-import type { KeyruneVersion } from '../../../shared/app'
+import { PAGE_SIZE_FAMILIES, FALLBACK_PAGE_SIZE, isPageSize, pageSizeFamily, type PageSize } from '../../../models/app'
+import type { KeyruneVersion } from '../../../models/app'
 
 /**
  * Settings Section component for grouping related settings together with a title and optional description.

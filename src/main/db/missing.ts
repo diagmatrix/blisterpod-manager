@@ -1,11 +1,11 @@
 import Database from "better-sqlite3"
 import { createLogger } from "../logger"
 import { ipcMain } from "electron"
-import { MissingCard } from "../../shared/cards"
+import { MissingCard } from "../../models/cards"
 import { readQueryFile } from "."
 import { getCard, getSet, getSetCards } from "../scryfallRefresh"
-import { CardDetailParams, SetCodeParams } from "../../shared/search"
-import { InsertResult, MutationResult } from "../../shared/responses"
+import { CardDetailParams, SetCodeParams } from "../../models/search"
+import { InsertResult, MutationResult } from "../../models/responses"
 
 export const MISSING_LIST_NAME = 'missing:list'
 export const MISSING_FETCH_SET_NAME = 'missing:fetch-set'

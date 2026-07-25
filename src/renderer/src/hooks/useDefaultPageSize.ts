@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FALLBACK_PAGE_SIZE, isPageSize, type PageSize } from '../../../shared/app'
+import { FALLBACK_PAGE_SIZE, isPageSize, type PageSize } from '../../../models/app'
 
 /**
  * Reads the user-configured default page size from settings, falling back to

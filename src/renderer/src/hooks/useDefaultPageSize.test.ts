@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { mockWindowApi } from '../../../../tests/renderer/window-api'
-import { FALLBACK_PAGE_SIZE } from '../../../shared/app'
+import { FALLBACK_PAGE_SIZE } from '../../../models/app'
 import { useDefaultPageSize } from './useDefaultPageSize'
 
 // Tier 3c smoke test: proves the typed `window.api` mock is installed and

@@ -1,5 +1,5 @@
-import { CardSearchParams } from "../../shared/search"
-import { WUBRG_ORDER } from '../../shared/mana'
+import { CardSearchParams } from "../../models/search"
+import { WUBRG_ORDER } from '../../models/mana'
 import { filterArrayContents } from "../utils"
 
 const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']

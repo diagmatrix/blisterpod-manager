@@ -1,6 +1,6 @@
-import type { AppSettings, LogEntry, KeyruneVersion } from '../../shared/app'
-import type { CollectionCard, MissingCard, DuplicateCard, DuplicateCardInstance, CardDetail, ScryfallCard } from '../../shared/cards'
-import type { StatsSummary, StatsColors, StatsRarityEntry, StatsSetEntry } from '../../shared/stats'
+import type { AppSettings, LogEntry, KeyruneVersion } from '../../models/app'
+import type { CollectionCard, MissingCard, DuplicateCard, DuplicateCardInstance, CardDetail, ScryfallCard } from '../../models/cards'
+import type { StatsSummary, StatsColors, StatsRarityEntry, StatsSetEntry } from '../../models/stats'
 import type {
   CardSearchParams,
   CardDetailParams,
@@ -8,7 +8,7 @@ import type {
   CollectionAddParams,
   CollectionUpdateParams,
   OtherPrintingParams,
-} from '../../shared/search'
+} from '../../models/search'
 import type {
   PaginatedResult,
   MutationResult,
@@ -17,7 +17,7 @@ import type {
   DeleteResult,
   MergeResult,
   ExportResult,
-} from '../../shared/responses'
+} from '../../models/responses'
 
 export interface ElectronAPI {
   settingsGet: <K extends keyof AppSettings>(key: K) => Promise<AppSettings[K]>

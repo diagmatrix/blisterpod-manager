@@ -5,8 +5,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts'
 import { Hash, Layers, EuroIcon } from 'lucide-react'
-import type { CollectionCard } from '../../../shared/cards'
-import type { StatsSummary, StatsColors, StatsRarityEntry, StatsSetEntry } from '../../../shared/stats'
+import type { CollectionCard } from '../../../models/cards'
+import type { StatsSummary, StatsColors, StatsRarityEntry, StatsSetEntry } from '../../../models/stats'
 import { SummarySkeleton, ChartSkeleton } from '@/components/skeletons'
 import { CollectionImageGrid } from '@/components/CollectionImageGrid'
 import { SetBreakdownGrid } from '@/components/SetBreakdownGrid'
