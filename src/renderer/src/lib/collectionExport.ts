@@ -1,12 +1,16 @@
-export type ExportFormat = 'blisterpod' | 'moxfield'
+import { ProviderID } from "../../../models/transfers"
 
-export const DEFAULT_FILENAMES: Record<ExportFormat, string> = {
-  blisterpod: 'collection.csv',
-  moxfield: 'moxfield_collection.csv',
+export function getDefaultFilename(provider: ProviderID) {
+    return `${provider.toLowerCase()}_collection.csv`
 }
 
-export async function exportCollection(format: ExportFormat, filePath: string): Promise<{ exported: number }> {
-  return format === 'moxfield'
-    ? window.api.exportCollectionMoxfield(filePath)
-    : window.api.exportCollection(filePath)
+export async function exportCollection(provider: ProviderID, filePath: string): Promise<{ exported: number }> {
+    switch(provider) {
+        case 'moxfield':
+            return window.api.exportCollectionMoxfield(filePath)
+        case 'blisterpod':
+            return window.api.exportCollection(filePath)
+        default:
+            return Promise.reject('Invalid provider')
+    }
 }

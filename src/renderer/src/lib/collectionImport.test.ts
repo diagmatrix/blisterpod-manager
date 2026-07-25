@@ -193,7 +193,7 @@ describe('collectionImport', () => {
                 'Lightning Bolt,LEA,161,3',
             ].join('\n')
 
-            expect(parseCSVFile(csv, 'google-drive')).toEqual({
+            expect(parseCSVFile(csv, 'googleDrive')).toEqual({
                 cards: [
                     { setCode: 'LEA', collectorNumber: '161', quantityNonfoil: 3, quantityFoil: 0, createdAt: undefined, updatedAt: undefined },
                 ],
@@ -208,14 +208,13 @@ describe('collectionImport', () => {
                 'Lightning Bolt (F),LEA,161,1,05/06/2024,06/06/2024',
             ].join('\n')
 
-            expect(parseCSVFile(csv, 'google-drive')).toEqual({
+            expect(parseCSVFile(csv, 'googleDrive')).toEqual({
                 cards: [
                     {
                         setCode: 'LEA',
                         collectorNumber: '161',
                         quantityNonfoil: 3,
                         quantityFoil: 1,
-                        // Dates come from the first row that created the entry.
                         createdAt: new Date(2024, 5, 1).toISOString(),
                         updatedAt: new Date(2024, 5, 2).toISOString(),
                     },
@@ -230,7 +229,7 @@ describe('collectionImport', () => {
                 'Creature (F),NEO,100,2',
             ].join('\n')
 
-            expect(parseCSVFile(csv, 'google-drive')).toEqual({
+            expect(parseCSVFile(csv, 'googleDrive')).toEqual({
                 cards: [
                     { setCode: 'NEO', collectorNumber: '100', quantityNonfoil: 0, quantityFoil: 2, createdAt: undefined, updatedAt: undefined },
                 ],
@@ -244,7 +243,7 @@ describe('collectionImport', () => {
                 '"Krenko, Mob Boss",DMR,145,2',
             ].join('\n')
 
-            expect(parseCSVFile(csv, 'google-drive')).toEqual({
+            expect(parseCSVFile(csv, 'googleDrive')).toEqual({
                 cards: [
                     { setCode: 'DMR', collectorNumber: '145', quantityNonfoil: 2, quantityFoil: 0, createdAt: undefined, updatedAt: undefined },
                 ],
@@ -258,7 +257,7 @@ describe('collectionImport', () => {
                 'Lightning Bolt,LEA,161,0',
             ].join('\n')
 
-            expect(parseCSVFile(csv, 'google-drive')).toEqual({
+            expect(parseCSVFile(csv, 'googleDrive')).toEqual({
                 cards: [],
                 error: '1 rows were not imported due to invalid quantity values',
             })
@@ -270,7 +269,7 @@ describe('collectionImport', () => {
                 '1,2,3',
             ].join('\n')
 
-            expect(parseCSVFile(csv, 'google-drive')).toEqual({
+            expect(parseCSVFile(csv, 'googleDrive')).toEqual({
                 cards: [],
                 error: 'Could not find column headers',
             })
