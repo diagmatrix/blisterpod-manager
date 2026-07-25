@@ -326,7 +326,7 @@ export function parseCSVFile(text: string, provider: ProviderID): FileParsingRes
     switch(provider) {
         case 'blisterpod':
             return parseBlisterpodCSV(text)
-        case 'google-drive':
+        case 'googleDrive':
             return parseGoogleDriveCSV(text)
         case 'moxfield':
             return parseMoxfieldCSV(text)

@@ -7,7 +7,7 @@ interface Provider {
 const PROVIDERS = {
     'blisterpod': { name: 'Blisterpod', import: true, export: true },
     'moxfield': { name: 'Moxfield', import: true, export: true },
-    'google-drive': { name: 'Google Drive', import: true, export: false },
+    'googleDrive': { name: 'Google Drive', import: true, export: false },
     'manabox': { name: 'Manabox', import: true, export: false },
     'invalid': { name: 'Invalid Provider', import: false, export: false }
 } as const satisfies Record<string, Provider>
