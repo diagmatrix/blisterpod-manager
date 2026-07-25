@@ -6,7 +6,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import type { CollectionCard } from '../../../shared/cards'
+import type { CollectionCard } from '../../../models/cards'
 
 interface CardQuickDialogProps {
   card: CollectionCard

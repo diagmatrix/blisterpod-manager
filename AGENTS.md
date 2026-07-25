@@ -1,6 +1,6 @@
 ## Repo shape (high signal)
 
-- Active app is Electron + React + TypeScript only: `src/main`, `src/preload`, `src/renderer`, `src/shared`.
+- Active app is Electron + React + TypeScript only: `src/main`, `src/preload`, `src/renderer`, `src/models`.
 - Ignore `.opencode/` and `.claude/` for product work (tooling metadata/agent docs).
 - DB schema source of truth is SQL files under `db/tables/*.sql` and `db/views/*.sql`; named queries live in `db/queries/*.sql`. Never edit `.db` files directly.
 
@@ -18,7 +18,7 @@
 ## Wiring and architecture gotchas
 
 - Security boundary is enforced: renderer must use `window.api` from preload; `nodeIntegration: false` and `contextIsolation: true` are intentional in `src/main/index.ts`.
-- IPC changes require synchronized edits in all layers: main handler(s), preload bridge (`src/preload/index.ts`), and renderer typings (`src/renderer/src/env.d.ts`, plus `src/shared/*` types when needed).
+- IPC changes require synchronized edits in all layers: main handler(s), preload bridge (`src/preload/index.ts`), and renderer typings (`src/renderer/src/env.d.ts`, plus `src/models/*` types when needed).
 - DB code lives in `src/main/db/`, split by domain (`cards`, `collection`, `duplicates`, `missing`, `stats`, `export`), each exporting a `register*Handlers(db)` wired together in `src/main/db/index.ts`; `querybuilder.ts` composes dynamic queries.
 - `src/main/db/index.ts` `initDatabase()` walks `db/tables/` then `db/views/` and `exec`s every `.sql` file, so a new schema file is applied automatically (no array to update). Files in `db/queries/` are NOT auto-run — load them on demand with `readQueryFile('name.sql')`.
 - Path alias is target-specific: main/preload (`electron.vite.config.ts`) map `@` to `src`, renderer maps `@` to `src/renderer/src`.
@@ -34,7 +34,7 @@
 
 ## Testing (and its known debt)
 
-- Two Vitest projects, split because `@` resolves differently per target (see `vitest.workspace.ts`): `main` (node env, `src/main` + `src/shared`) and `renderer` (jsdom env, `src/renderer`). Tests are colocated as `*.test.ts(x)`; only shared machinery lives in `tests/`.
+- Two Vitest projects, split because `@` resolves differently per target (see `vitest.workspace.ts`): `main` (node env, `src/main` + `src/models`) and `renderer` (jsdom env, `src/renderer`). Tests are colocated as `*.test.ts(x)`; only shared machinery lives in `tests/`.
 - Harness lives in `tests/main/` (node side) and `tests/renderer/` (jsdom side). Keep that split — `tsconfig.node.json` and `tsconfig.web.json` include one directory each, and mixing them breaks `tsc -b`.
 - `tests/main/sqlite.ts` builds a real in-memory DB from `db/tables/` then `db/views/`; `tests/fixtures/collection.sql` is the shared seed (also used by the E2E launcher). Do not mock better-sqlite3 — running the real schema is the point.
 - `tests/renderer/window-api.ts` is typed as the real `ElectronAPI`, so `npx tsc -b` fails if the preload bridge gains a method the mock lacks. That is intentional: it makes the "IPC changes require synchronized edits in all layers" rule compiler-enforced. Extend the mock when you extend the bridge.

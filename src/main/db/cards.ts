@@ -1,9 +1,9 @@
 import Database from "better-sqlite3";
 import { createLogger } from "../logger";
-import { CardSearchParams } from "../../shared/search";
+import { CardSearchParams } from "../../models/search";
 import { ipcMain } from "electron";
 import { buildFullQuery } from "./querybuilder";
-import { CardDetail, CollectionCard, ScryfallCard } from "../../shared/cards";
+import { CardDetail, CollectionCard, ScryfallCard } from "../../models/cards";
 import { readQueryFile } from ".";
 
 export const CARDS_SEARCH_NAME = 'cards:search'

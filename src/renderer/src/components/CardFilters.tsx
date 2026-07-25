@@ -1,6 +1,6 @@
 import { Search } from 'lucide-react'
-import { COLOR_SYMBOL_MAP, WUBRG_ORDER } from '../../../shared/mana'
-import type { CardFiltersState, CardFiltersHandlers, LayoutFilter, ColorMode } from '../../../shared/search'
+import { COLOR_SYMBOL_MAP, WUBRG_ORDER } from '../../../models/mana'
+import type { CardFiltersState, CardFiltersHandlers, LayoutFilter, ColorMode } from '../../../models/search'
 
 export const RARITY_OPTIONS = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
 export const RARITY_LABELS: Record<string, string> = {

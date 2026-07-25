@@ -1,4 +1,4 @@
-import type { CollectionCard } from '../../../shared/cards'
+import type { CollectionCard } from '../../../models/cards'
 import { CardImageCell } from './CardImageCell'
 
 interface CollectionImageGridProps {

@@ -8,7 +8,7 @@
  * something the compiler enforces.
  */
 import { vi } from 'vitest'
-import type { AppSettings } from '../../src/shared/app'
+import type { AppSettings } from '../../src/models/app'
 
 export type ElectronAPI = Window['api']
 

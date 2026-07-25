@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import type {
     CardFiltersState, CardFiltersHandlers, LayoutFilter, ColorMode, UseCardFiltersReturn,
-} from '../../../shared/search'
+} from '../../../models/search'
 
 const MIN_SEARCH_CARD_NAME = 3
 const MIN_SEARCH_SET_CODE = 2

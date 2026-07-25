@@ -9,8 +9,8 @@ import { RemoveAllDuplicatesDialog } from '@/components/RemoveAllDuplicatesDialo
 import { DeleteDuplicateRowsDialog } from '@/components/DeleteDuplicateRowsDialog'
 import { CardQuickDialog } from '@/components/CardQuickDialog'
 import { DeleteCardDialog } from '@/components/DeleteCardDialog'
-import type { DuplicateCard, MissingCard, CollectionCard } from '../../../shared/cards'
-import { missingCardToCollectionCard } from '../../../shared/cards'
+import type { DuplicateCard, MissingCard, CollectionCard } from '../../../models/cards'
+import { missingCardToCollectionCard } from '../../../models/cards'
 import { Pencil, RefreshCw, Trash2, X } from 'lucide-react'
 
 interface DuplicateTableProps {

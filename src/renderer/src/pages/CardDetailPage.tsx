@@ -6,9 +6,9 @@ import { Separator } from '@/components/ui/separator'
 import { ArrowLeft } from 'lucide-react'
 import { ManaSymbols } from '@/components/ManaSymbols'
 import { parseJsonArray, parseOracleText } from '@/lib/utils'
-import { getManaSymbolUrl } from '../../../shared/mana'
+import { getManaSymbolUrl } from '../../../models/mana'
 import { CardDetailsSkeleton, TableSkeleton } from '@/components/skeletons'
-import { CardDetail, CollectionCard } from '../../../shared/cards'
+import { CardDetail, CollectionCard } from '../../../models/cards'
 import { SetSymbol } from '@/components/SetSymbol'
 
 interface OtherPrintingProps {

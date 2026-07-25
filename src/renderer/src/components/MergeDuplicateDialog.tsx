@@ -5,7 +5,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import type { DuplicateCard } from '../../../shared/cards'
+import type { DuplicateCard } from '../../../models/cards'
 
 interface MergeDuplicateCardDialogProps {
   duplicate: DuplicateCard

@@ -1,4 +1,4 @@
-import type { CollectionAddParams } from '../../../shared/search'
+import type { CollectionAddParams } from '../../../models/search'
 
 function parseCSVRow(line: string): string[] {
   const result: string[] = []

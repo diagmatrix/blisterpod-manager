@@ -2,7 +2,7 @@ import Database from "better-sqlite3"
 import { createLogger } from "../logger"
 import { ipcMain } from "electron"
 import { readQueryFile } from "."
-import { DuplicateCard, DuplicateCardInstance, DuplicateCardRow } from "../../shared/cards"
+import { DuplicateCard, DuplicateCardInstance, DuplicateCardRow } from "../../models/cards"
 
 export const DUPLICATES_LIST_NAME = 'duplicates:list'
 export const DUPLICATES_IDS_NAME = 'duplicates:ids'

@@ -67,7 +67,7 @@ The runtime database lives at `<userData>/collection.db` (Electron's per-user da
 - [src/main/](src/main/) — Electron main process (DB, Scryfall refresh, IPC handlers).
 - [src/preload/](src/preload/) — Preload bridge exposing `window.api` to the renderer.
 - [src/renderer/](src/renderer/) — React UI.
-- [src/shared/](src/shared/) — Types shared across processes.
+- [src/models/](src/models/) — Types shared across processes.
 - [db/](db/) — SQL schema (`tables/`) and views (`views/`).
 - [resources/](resources/) — App icons and other bundled assets.
 
