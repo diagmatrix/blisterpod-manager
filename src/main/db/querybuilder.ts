@@ -1,25 +1,25 @@
-import { CardSearchParams } from "../../models/search"
-import { WUBRG_ORDER } from '../../models/mana'
-import { filterArrayContents } from "../utils"
+import { CardSearchParams, ColorMode, LayoutFilter, SortParams } from "../../models/search"
+import { getColorsComplement, WUBRG_ORDER } from '../../models/mana'
 
 const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
 const VALID_COLOR_MODES = ['atLeast', 'exactly', 'atMost']
 const VALID_SORT_COLUMNS = ['name', 'set_code', 'collector_number', 'rarity', 'color_identity', 'released_at', 'mana_value', 'value']
 const VALID_SORT_ORDERS = ['ASC', 'DESC']
 const VALID_LAYOUT_FILTERS = ['all', 'cards', 'tokens']
-const VALID_TABLE_NAMES = ['mapped_collection', 'scryfall_cards_formatted']
+export const VALID_TABLE_NAMES = ['mapped_collection', 'scryfall_cards_formatted']
+export const MAX_PAGE_SIZE = 120
 
 const DEFAULT_COLOR_MODE = 'atLeast'
-const DEFAULT_SORT_COLUMN = 'collector_number'
-const DEFAULT_SORT_ORDER = 'ASC'
-const DEFAULT_LAYOUT_FILTER = 'cards'
+const DEFAULT_SORT_COLUMN = 'collector_number_normalised'
+const DEFAULT_SORT_DIRECTION = 'ASC'
 
-const NAME_SEARCH_CONDITION = 'name LIKE ?'
-const SET_CODE_SEARCH_CONDITION = 'set_code LIKE ?'
-const COLOR_IDENTITY_SEARCH_CONDITION = 'instr(color_identity, ?) > 0'
-const COLOR_IDENTITY_MISSING_SEARCH_CONDITION = 'instr(color_identity, ?) = 0'
-const COLOR_IDENTITY_TOTAL_SEARCH_CONDITION = 'json_array_length(color_identity) = ?'
-const LAYOUT_FILTER_CONDITION = 'is_token = ?'
+export const BASE_QUERY = 'SELECT *, count(*) OVER () AS total_count FROM'
+export const NAME_SEARCH_CONDITION = 'name LIKE ?'
+export const SET_CODE_SEARCH_CONDITION = 'set_code LIKE ?'
+export const COLOR_IDENTITY_SEARCH_CONDITION = 'instr(color_identity, ?) > 0'
+export const COLOR_IDENTITY_MISSING_SEARCH_CONDITION = 'instr(color_identity, ?) = 0'
+export const COLOR_IDENTITY_TOTAL_SEARCH_CONDITION = 'json_array_length(color_identity) = ?'
+export const LAYOUT_FILTER_CONDITION = 'is_token = ?'
 
 interface Query {
     sql: string
@@ -71,7 +71,7 @@ function buildColorIdentityCondition(colors: string[], colorMode: string): Query
             sqlConditions.push(COLOR_IDENTITY_TOTAL_SEARCH_CONDITION)
             values.push(nonColorlessArray.length)
             if (nonColorlessArray.length > 0) {
-                const colorsToRemove = WUBRG_ORDER.filter((validColor) => !nonColorlessArray.includes(validColor) && validColor !== 'C')
+                const colorsToRemove = getColorsComplement(nonColorlessArray)
                 colorsToRemove.forEach((c) => {
                     sqlConditions.push(COLOR_IDENTITY_MISSING_SEARCH_CONDITION)
                     values.push(c)
@@ -97,24 +97,62 @@ function buildLayoutCondition(layoutFilter: string): Query {
     }
 }
 
-function validateSearchParams(params: CardSearchParams): CardSearchParams {
-    const rarities = filterArrayContents(params.rarities ?? [], VALID_RARITIES)
-    const colorIdentity = filterArrayContents(params.colorIdentity ?? [], WUBRG_ORDER)    
-    const page = params.page ?? 1
-    const pageSize = Math.min(params.pageSize ?? 60, 120)
-    const setCode = params.setCode ? params.setCode.toUpperCase() : params.setCode
-    
-    const colorModeRaw = params.colorMode ?? DEFAULT_COLOR_MODE
-    const colorMode = VALID_COLOR_MODES.includes(colorModeRaw) ? colorModeRaw : DEFAULT_COLOR_MODE
-    
-    const sortColumnRaw = params.sortColumn ?? DEFAULT_SORT_COLUMN
-    const sortColumn = VALID_SORT_COLUMNS.includes(sortColumnRaw) ? sortColumnRaw : DEFAULT_SORT_COLUMN
-    
-    const sortOrderRaw = params.sortOrder ?? DEFAULT_SORT_ORDER
-    const sortOrder = VALID_SORT_ORDERS.includes(sortOrderRaw) ? sortOrderRaw : DEFAULT_SORT_ORDER
+function buildQuerySortCondition(sortParams: SortParams[]): string {
+    if (sortParams.length === 0) {
+        return ''
+    }
 
-    const layoutFilterRaw = params.layoutFilter ?? DEFAULT_LAYOUT_FILTER
-    const layoutFilter = VALID_LAYOUT_FILTERS.includes(layoutFilterRaw) ? layoutFilterRaw : DEFAULT_LAYOUT_FILTER
+    let sortCondition = ''
+    for (const { sortColumn, sortDirection } of sortParams.sort((a, b) => a.sortOrder - b.sortOrder)) {
+        sortCondition = sortCondition === '' ? `ORDER BY ${sortColumn} ${sortDirection}` : `${sortCondition}, ${sortColumn} ${sortDirection}`
+    }
+
+    return sortCondition
+}
+
+function validateSearchParams(params: CardSearchParams): CardSearchParams {
+    const rarities: string[] = []
+    for (const rarity of params.rarities ?? []) {
+        if (VALID_RARITIES.includes(rarity) && !rarities.includes(rarity)) {
+            rarities.push(rarity)
+        }
+    }
+
+    const colorIdentity: string[] = []
+    for (const color of params.colorIdentity ?? []) {
+        if (WUBRG_ORDER.includes(color) && !colorIdentity.includes(color)) {
+            colorIdentity.push(color)
+        }
+    }
+    let colorMode: ColorMode | undefined
+    if (colorIdentity.length > 0) {
+        const colorModeRaw = params.colorMode ?? DEFAULT_COLOR_MODE
+        colorMode = VALID_COLOR_MODES.includes(colorModeRaw) ? colorModeRaw : DEFAULT_COLOR_MODE
+    }
+
+    const page = params.page ?? 1
+    const pageSize = Math.min(params.pageSize ?? 60, MAX_PAGE_SIZE)
+    const setCode = params.setCode ? params.setCode.toUpperCase() : params.setCode
+
+    const sortParamsRaw = params.sort?.sort((a, b) => a.sortOrder - b.sortOrder) ?? []
+    const sort: SortParams[] = []
+    const sortedColumns: string[] = []
+    let sortOrder = 1
+    for (const sortParams of sortParamsRaw) {
+        const sortColumn = sortParams.sortColumn ?? DEFAULT_SORT_COLUMN
+        const sortDirection = VALID_SORT_ORDERS.includes(sortParams.sortDirection) ? sortParams.sortDirection : DEFAULT_SORT_DIRECTION
+        if ((VALID_SORT_COLUMNS.includes(sortColumn) || sortColumn === DEFAULT_SORT_COLUMN) && !sortedColumns.includes(sortColumn)) {
+            const finalSortColumn = sortColumn === 'collector_number' ? 'collector_number_normalised' : sortColumn
+            sort.push({ sortColumn: finalSortColumn, sortDirection: sortDirection, sortOrder: sortOrder })
+            sortOrder++
+            sortedColumns.push(sortColumn)
+        }
+    }
+
+    let layoutFilter: LayoutFilter | undefined
+    if (params.layoutFilter && VALID_LAYOUT_FILTERS.includes(params.layoutFilter)) {
+        layoutFilter = params.layoutFilter
+    }
 
     return {
         cardName: params.cardName,
@@ -122,9 +160,8 @@ function validateSearchParams(params: CardSearchParams): CardSearchParams {
         rarities: rarities,
         colorIdentity: colorIdentity,
         colorMode: colorMode,
-        sortColumn: sortColumn === 'collector_number' ? 'collector_number_normalised' : sortColumn,
-        sortOrder: sortOrder,
         layoutFilter: layoutFilter,
+        sort: sort,
         page: page,
         pageSize: pageSize
     }
@@ -166,22 +203,25 @@ export function buildFullQuery(params: CardSearchParams, tableName: string, addi
     }
     
     const { sql, values } = buildQueryConditions(params)
+    let whereSQL = sql !== '' ? ` WHERE ${sql}` : ''
+    if (additional_conditions && additional_conditions.length > 0) {
+        const start = whereSQL === '' ? ' WHERE ' : ' AND '
+        const conditions = additional_conditions.join(' AND ')
+        whereSQL = `${whereSQL}${start}${conditions}`
+    }
+    const orderSQL = buildQuerySortCondition(params.sort ?? [])
+    const paramsSpace = whereSQL === '' && orderSQL === '' ? '' : ' '
+    const queryParamsSQL = `${whereSQL}${paramsSpace}${orderSQL}`
+
     // Maybe refactor as it is validated before that is not null
     const pageSize = params.pageSize ?? 1
     const page = params.page ?? 1
     const offset = (page - 1) * pageSize
     values.push(pageSize, offset)
 
-    let whereSQL = sql !== '' ? `WHERE ${sql}` : ''
-    if (additional_conditions && additional_conditions.length > 0) {
-        const start = whereSQL === '' ? 'WHERE ' : ' AND '
-        const conditions = additional_conditions.join(' AND ')
-        whereSQL = `${whereSQL}${start}${conditions}`
-    }
-
-    const baseSQL = `SELECT *, COUNT(*) OVER () AS total_count FROM ${tableName}`
-    const orderSQL = `ORDER BY ${params.sortColumn} ${params.sortOrder}`
-    const finalSQL = `${baseSQL} ${whereSQL} ${orderSQL} LIMIT ? OFFSET ?`
+    const baseSQL = `${BASE_QUERY} ${tableName}`
+    const space = queryParamsSQL.endsWith(' ') ? '' : ' '
+    const finalSQL = `${baseSQL}${queryParamsSQL}${space}LIMIT ? OFFSET ?`
 
     return { sql: finalSQL, values: values }
 }
