@@ -12,9 +12,8 @@ import { registerDuplicateCardsHandlers } from "./duplicates";
 import { registerCollectionHandlers } from "./collection";
 import { DIALOG_SHOW_SAVE_NAME } from "../../models/channels";
 
-// For testing, the database name is overwritten
-// const DB_NAME = 'test_collection.db'
-const DB_NAME = 'collection.db'
+// Separate database there so development work never touches the real collection.
+const DB_NAME = process.env.NODE_ENV === 'development' ? 'test_collection.db' : 'collection.db'
 const DB_PATH = join(app.getPath('userData'), DB_NAME)
 const SQL_DIR = join(app.getAppPath(), 'db')
 const TABLES_DIR = join(SQL_DIR, 'tables')

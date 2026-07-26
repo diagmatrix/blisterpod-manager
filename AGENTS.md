@@ -57,3 +57,4 @@ Each fix lets the corresponding stub get thinner. Tests written against the stub
 - Minimum safe pass after code changes: `npm run lint` -> `npx tsc -b` -> `npm test` -> `npm run build`.
 - After schema/query edits, verify dependent views still match table columns and join keys.
 - Runtime DB path defaults to Electron `app.getPath('userData')/collection.db` (not repo-local `db/collection.db`), so validate against the app-run database unless you intentionally change path logic.
+- Under `npm run dev` the file name switches to `test_collection.db` (`NODE_ENV=development`, set by electron-vite), so dev runs get their own database. `npm run build`/`preview`/E2E and packaged builds all use `collection.db`. A dev run therefore starts empty on first launch and will enter the Scryfall download path.
