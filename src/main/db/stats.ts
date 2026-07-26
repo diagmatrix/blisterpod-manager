@@ -4,12 +4,13 @@ import { ipcMain } from "electron";
 import { readQueryFile } from ".";
 import { CollectionCard } from "../../models/cards";
 import { StatsColors, StatsRarityEntry, StatsSetEntry, StatsSummary } from "../../models/stats";
-
-export const STATS_SUMMARY_NAME = 'stats:summary'
-export const STATS_COLOR_DISTRIBUTION_NAME = 'stats:colors'
-export const STATS_RARITY_BREAKDOWN_NAME = 'stats:rarity'
-export const STATS_TOP_VALUE_NAME = 'stats:top-value'
-export const STATS_BY_SET_NAME = 'stats:by-set'
+import {
+    STATS_SUMMARY_NAME,
+    STATS_COLOR_DISTRIBUTION_NAME,
+    STATS_RARITY_BREAKDOWN_NAME,
+    STATS_TOP_VALUE_NAME,
+    STATS_BY_SET_NAME,
+} from "../../models/channels";
 
 const STATS_SUMMARY_QUERY = 'stats_summary.sql'
 const STATS_COLOR_DISTRIBUTION_QUERY = 'stats_colors.sql'

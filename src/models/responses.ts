@@ -34,6 +34,7 @@ export interface MergeResult {
 
 export interface ExportResult {
     exported: number
+    error?: string
 }
 
 export interface FileParsingResult {

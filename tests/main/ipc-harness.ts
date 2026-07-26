@@ -5,8 +5,8 @@
  * the actual query bodies are anonymous callbacks with no other entry point.
  * The electron stub records those callbacks, and this harness replays them.
  *
- * Channel names are re-exported from the domain modules themselves, so renaming
- * a channel in product code breaks the tests at compile time rather than at run time.
+ * Channel names are re-exported from the product code that defines them, so renaming
+ * a channel breaks the tests at compile time rather than at run time.
  */
 import type Database from 'better-sqlite3'
 import { ipcHandlers, resetIpcHandlers } from './electron-stub'
@@ -21,25 +21,15 @@ import { registerStatsHandlers } from '../../src/main/db/stats'
 
 export {
     CARDS_SEARCH_NAME, CARDS_DETAIL_NAME, CARDS_OTHERS_NAME,
-} from '../../src/main/db/cards'
-export {
     COLLECTION_LIST_NAME, COLLECTION_ADD_NAME, COLLECTION_ADD_BATCH_NAME,
     COLLECTION_UPDATE_NAME, COLLECTION_DELETE_NAME, COLLECTION_DELETE_MANY_NAME,
-} from '../../src/main/db/collection'
-export {
     DUPLICATES_LIST_NAME, DUPLICATES_IDS_NAME, DUPLICATES_MERGE_NAME,
     DUPLICATES_FULL_MERGE_NAME, DUPLICATES_DELETE_NAME,
-} from '../../src/main/db/duplicates'
-export {
-    COLLECTION_EXPORT_NAME, COLLECTION_EXPORT_MOXFIELD_NAME,
-} from '../../src/main/db/export'
-export {
+    COLLECTION_EXPORT_NAME, COLLECTION_EXPORT_MOXFIELD_NAME, COLLECTION_EXPORT_MANABOX_NAME,
     MISSING_LIST_NAME, MISSING_FETCH_SET_NAME, MISSING_FETCH_SET_CARDS_NAME, MISSING_FETCH_CARD_NAME,
-} from '../../src/main/db/missing'
-export {
     STATS_SUMMARY_NAME, STATS_COLOR_DISTRIBUTION_NAME, STATS_RARITY_BREAKDOWN_NAME,
     STATS_TOP_VALUE_NAME, STATS_BY_SET_NAME,
-} from '../../src/main/db/stats'
+} from '../../src/models/channels'
 
 export interface IpcHarness {
     /**

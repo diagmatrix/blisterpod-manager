@@ -60,6 +60,7 @@ export interface ElectronAPI {
   showSaveDialog: (defaultName: string) => Promise<string | null>
   exportCollection: (filePath: string) => Promise<ExportResult>
   exportCollectionMoxfield: (filePath: string) => Promise<ExportResult>
+  exportCollectionManabox: (filePath: string) => Promise<ExportResult>
 }
 
 declare global {

@@ -10,6 +10,7 @@ import { registerCardsHandlers } from "./cards";
 import { registerMissingCardsHandlers } from "./missing";
 import { registerDuplicateCardsHandlers } from "./duplicates";
 import { registerCollectionHandlers } from "./collection";
+import { DIALOG_SHOW_SAVE_NAME } from "../../models/channels";
 
 // For testing, the database name is overwritten
 // const DB_NAME = 'test_collection.db'
@@ -63,7 +64,7 @@ export function getDb(): Database.Database {
 function setUpIPCHandlers(): void {
     // Show native save dialog and return chosen path (or null if cancelled)
     // TODO: Maybe this should be moved to a separate file as it does not have anything to do with databases
-    ipcMain.handle('dialog:showSaveDialog', async (event, defaultName: string) => {
+    ipcMain.handle(DIALOG_SHOW_SAVE_NAME, async (event, defaultName: string) => {
     const win = BrowserWindow.fromWebContents(event.sender)!
     const result = await dialog.showSaveDialog(win, {
         defaultPath: defaultName,

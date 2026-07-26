@@ -3,12 +3,13 @@ import { createLogger } from "../logger"
 import { ipcMain } from "electron"
 import { readQueryFile } from "."
 import { DuplicateCard, DuplicateCardInstance, DuplicateCardRow } from "../../models/cards"
-
-export const DUPLICATES_LIST_NAME = 'duplicates:list'
-export const DUPLICATES_IDS_NAME = 'duplicates:ids'
-export const DUPLICATES_MERGE_NAME = 'duplicates:merge'
-export const DUPLICATES_FULL_MERGE_NAME = 'duplicates:merge-all'
-export const DUPLICATES_DELETE_NAME = 'duplicates:remove-all'
+import {
+    DUPLICATES_LIST_NAME,
+    DUPLICATES_IDS_NAME,
+    DUPLICATES_MERGE_NAME,
+    DUPLICATES_FULL_MERGE_NAME,
+    DUPLICATES_DELETE_NAME,
+} from "../../models/channels"
 
 const DUPLICATES_LIST_QUERY = 'all_duplicates.sql'
 const DUPLICATES_MERGE_QUERY = 'duplicates_set_number.sql'
