@@ -29,7 +29,7 @@ const SORT_OPTIONS = [
     { value: 'value', label: 'Value' },
 ]
 
-const DEFAULT_SORT: SortParams[] = [
+export const DEFAULT_SORT: SortParams[] = [
     { sortColumn: 'value', sortOrder: 1, sortDirection: 'DESC' }
 ]
 

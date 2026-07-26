@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
+import { RotateCcw } from 'lucide-react'
 import type { ScryfallCard } from '../../../models/cards'
 import type { BatchItem, CardSearchParams, SortParams, UseCardFiltersReturn } from '../../../models/search'
 import { CardFilters } from '@/components/CardFilters'
@@ -25,9 +26,9 @@ const SORT_OPTIONS = [
     { value: 'released_at', label: 'Release date' },
 ]
 
-const DEFAULT_SORT: SortParams[] = [
-    { sortColumn: 'set_code', sortOrder: 1, sortDirection: 'ASC' },
-    { sortColumn: 'collector_number_normalised', sortOrder: 2, sortDirection: 'ASC' }
+export const DEFAULT_SORT: SortParams[] = [
+    { sortColumn: 'name', sortOrder: 1, sortDirection: 'ASC' },
+    { sortColumn: 'released_at', sortOrder: 2, sortDirection: 'DESC' }
 ]
 
 interface CardTableProps {
@@ -116,10 +117,11 @@ function CardTable(props: CardTableProps) {
 export default function AddCardPage() {
     /** Page rendering */
     const { view, setView, isFilterExpanded, toggleFilter, isSortExpanded, toggleSort } = usePageViewState()
-    const { page, setPage, pageSize, pageSizes, handlePageSizeChange } = usePagination()
+    const { page, setPage, pageSize, pageSizes, handlePageSizeChange, reset: resetPagination } = usePagination()
 
     /** Sorting */
     const sortState = useCardSort(DEFAULT_SORT)
+    const { reset: resetSort } = sortState
     const [sort, setSort] = useState<SortParams[]>(DEFAULT_SORT)
     const commitSort = useCallback((sortParams: SortParams[]) => {
         setSort(sortParams)
@@ -131,6 +133,7 @@ export default function AddCardPage() {
     const {
         filtersState, filtersHandlers,
         searchCardName, searchSet, layoutFilter, rarities, colorIdentity, colorMode,
+        reset: resetFilters,
     }: UseCardFiltersReturn = useCardFilters({ isFilteringCollection: false, onCommit: onFilterCommit })
 
     /** Card retrieval */
@@ -148,6 +151,14 @@ export default function AddCardPage() {
     }
     const hasFilter = !!(searchParams.cardName || searchParams.setCode)
     const { rows, total, isLoading } = useCardSearch(searchParams)
+
+    /** Reset button */
+    const handleReset = useCallback(() => {
+        resetFilters()
+        resetSort()
+        setSort(DEFAULT_SORT)
+        resetPagination()
+    }, [resetFilters, resetSort, resetPagination])
 
     /** Batch */
     const [batch, setBatch] = useState<BatchItem[]>([])
@@ -222,7 +233,17 @@ export default function AddCardPage() {
                                 : 'Search to find cards'}
                         </p>
                     </div>
-                    <ViewToggle view={view} onChange={setView} />
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleReset}
+                            title="Reset filters and sort"
+                            className="h-9 px-2 rounded-md border border-input text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1.5 text-sm"
+                        >
+                            <RotateCcw className="w-4 h-4" />
+                            <span>Reset</span>
+                        </button>
+                        <ViewToggle view={view} onChange={setView} />
+                    </div>
                 </div>
 
                 <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">

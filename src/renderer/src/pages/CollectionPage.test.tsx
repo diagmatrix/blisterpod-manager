@@ -3,9 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders, screen, waitFor } from '../../../../tests/renderer/render'
 import { mockWindowApi, type ElectronAPI } from '../../../../tests/renderer/window-api'
 import type { SortParams } from '../../../models/search'
-import CollectionPage from './CollectionPage'
+import CollectionPage, { DEFAULT_SORT } from './CollectionPage'
 
-const DEFAULT_SORT: SortParams[] = [{ sortColumn: 'value', sortOrder: 1, sortDirection: 'DESC' }]
 const TOTAL_ASC: SortParams = { sortColumn: 'total', sortOrder: 2, sortDirection: 'ASC' }
 
 /** The page-level button, told apart from the one `CardSort` renders by its tooltip. */
