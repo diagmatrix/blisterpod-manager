@@ -6,13 +6,14 @@ import { buildFullQuery } from "./querybuilder";
 import { CollectionCard } from "../../models/cards";
 import { readQueryFile } from ".";
 import { AddResult, DeleteResult, InsertResult, MutationResult, PaginatedResult } from "../../models/responses";
-
-export const COLLECTION_LIST_NAME = 'collection:list'
-export const COLLECTION_ADD_NAME = 'collection:add'
-export const COLLECTION_ADD_BATCH_NAME = 'collection:add-batch'
-export const COLLECTION_UPDATE_NAME = 'collection:update'
-export const COLLECTION_DELETE_NAME = 'collection:delete'
-export const COLLECTION_DELETE_MANY_NAME = 'collection:delete-many'
+import {
+    COLLECTION_LIST_NAME,
+    COLLECTION_ADD_NAME,
+    COLLECTION_ADD_BATCH_NAME,
+    COLLECTION_UPDATE_NAME,
+    COLLECTION_DELETE_NAME,
+    COLLECTION_DELETE_MANY_NAME,
+} from "../../models/channels";
 
 const COLLECTION_ADD_QUERY = 'card_exists.sql'
 const COLLECTION_INSERT_CARD_QUERY = 'add_card.sql'

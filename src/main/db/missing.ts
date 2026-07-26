@@ -6,11 +6,12 @@ import { readQueryFile } from "."
 import { getCard, getSet, getSetCards } from "../scryfallRefresh"
 import { CardDetailParams, SetCodeParams } from "../../models/search"
 import { InsertResult, MutationResult } from "../../models/responses"
-
-export const MISSING_LIST_NAME = 'missing:list'
-export const MISSING_FETCH_SET_NAME = 'missing:fetch-set'
-export const MISSING_FETCH_SET_CARDS_NAME = 'missing:fetch-cards'
-export const MISSING_FETCH_CARD_NAME = 'missing:fetch-card'
+import {
+    MISSING_LIST_NAME,
+    MISSING_FETCH_SET_NAME,
+    MISSING_FETCH_SET_CARDS_NAME,
+    MISSING_FETCH_CARD_NAME,
+} from "../../models/channels"
 
 const MISSING_LIST_QUERY = 'missing.sql'
 const MISSING_FETCH_SET_CARDS_QUERY = 'search_uri.sql'

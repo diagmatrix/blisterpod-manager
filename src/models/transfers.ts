@@ -8,7 +8,7 @@ const PROVIDERS = {
     'blisterpod': { name: 'Blisterpod', import: true, export: true },
     'moxfield': { name: 'Moxfield', import: true, export: true },
     'googleDrive': { name: 'Google Drive', import: true, export: false },
-    'manabox': { name: 'Manabox', import: true, export: false },
+    'manabox': { name: 'Manabox', import: true, export: true },
     'invalid': { name: 'Invalid Provider', import: false, export: false }
 } as const satisfies Record<string, Provider>
 
