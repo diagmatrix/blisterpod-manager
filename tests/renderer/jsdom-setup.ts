@@ -23,6 +23,17 @@ beforeEach(() => {
         disconnect() {}
     }
 
+    // jsdom ships `FileReader` but not `Blob.text()`, which is how the import
+    // component reads a picked CSV.
+    Blob.prototype.text ??= function (this: Blob): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(String(reader.result))
+            reader.onerror = () => reject(reader.error)
+            reader.readAsText(this)
+        })
+    }
+
     // Every test starts from a fully stubbed bridge; individual tests override
     // the calls they care about with their own `mockWindowApi({ ... })`.
     mockWindowApi()
