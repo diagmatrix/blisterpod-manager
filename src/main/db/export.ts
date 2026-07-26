@@ -3,6 +3,7 @@ import { createLogger } from "../logger";
 import { ipcMain } from "electron";
 import { readQueryFile } from ".";
 import { writeFileSync } from "fs";
+import { csvQuote } from "../utils";
 import {
     COLLECTION_EXPORT_NAME,
     COLLECTION_EXPORT_MOXFIELD_NAME,
@@ -32,7 +33,7 @@ interface ManaboxRow extends CollectionRow {
     scryfall_id: string
     added_at: string | null
 }
-const MANABOX_HEADERS = 'Name,Set code,Collector number,Foil,Scryfall ID,Added'
+const MANABOX_HEADERS = 'Name,Set code,Collector number,Foil,Quantity,Scryfall ID,Added'
 
 const COLLECTION_EXPORT_QUERY = 'export_blisterpod.sql'
 const COLLECTION_EXPORT_MOXFIELD_QUERY = 'export_moxfield.sql'
@@ -87,10 +88,10 @@ export function registerExportHandlers(db: Database.Database): void {
         const lines: string[] = []
         for (const r of rows) {
             if (r.quantity_nonfoil > 0) {
-                lines.push(`"${r.name}",${r.quantity_nonfoil},${r.set_code},${r.collector_number},false`)
+                lines.push(`${csvQuote(r.name)},${r.quantity_nonfoil},${r.set_code},${r.collector_number},false`)
             }
             if (r.quantity_foil > 0) {
-                lines.push(`"${r.name}",${r.quantity_foil},${r.set_code},${r.collector_number},true`)
+                lines.push(`${csvQuote(r.name)},${r.quantity_foil},${r.set_code},${r.collector_number},true`)
             }
         }
 
@@ -123,10 +124,10 @@ export function registerExportHandlers(db: Database.Database): void {
         const lines: string[] = []
         for (const r of rows) {
             if (r.quantity_nonfoil > 0) {
-                lines.push(`"${r.name}",${r.set_code},${r.collector_number},normal,${r.scryfall_id},${r.added_at}`)
+                lines.push(`${csvQuote(r.name)},${r.set_code},${r.collector_number},normal,${r.quantity_nonfoil},${r.scryfall_id},${r.added_at}`)
             }
             if (r.quantity_foil > 0) {
-                lines.push(`"${r.name}",${r.set_code},${r.collector_number},foil,${r.scryfall_id},${r.added_at}`)
+                lines.push(`${csvQuote(r.name)},${r.set_code},${r.collector_number},foil,${r.quantity_foil},${r.scryfall_id},${r.added_at}`)
             }
         }
 

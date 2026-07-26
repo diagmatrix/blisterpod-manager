@@ -82,6 +82,7 @@ export function defaultWindowApi(): ElectronAPI {
         showSaveDialog: vi.fn(async () => null),
         exportCollection: vi.fn(async () => ({ exported: 0 })),
         exportCollectionMoxfield: vi.fn(async () => ({ exported: 0 })),
+        exportCollectionManabox: vi.fn(async () => ({ exported: 0 })),
     }
 }
 
