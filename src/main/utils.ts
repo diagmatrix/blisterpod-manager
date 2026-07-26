@@ -52,3 +52,7 @@ export function getTableColumns(db: Database.Database, tableName: string): strin
 export function isEmpty(record: Record<string, unknown>): boolean {
 	return Object.keys(record).length === 0
 }
+
+export function csvQuote(value: string): string {
+	return `"${value.replace(/"/g, '""')}"`
+}

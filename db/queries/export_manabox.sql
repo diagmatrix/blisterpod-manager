@@ -12,3 +12,4 @@ INNER JOIN cards c
     AND mc.collector_number = c.collector_number
 WHERE
     mc.scryfall_id IS NOT NULL
+ORDER BY c.set_code, c.collector_number
