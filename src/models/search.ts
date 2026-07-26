@@ -39,6 +39,19 @@ export interface CollectionUpdateParams {
 
 export type LayoutFilter = 'all' | 'cards' | 'tokens'
 export type ColorMode = 'atLeast' | 'exactly' | 'atMost'
+export type SortDirection = 'ASC' | 'DESC'
+
+export interface SortParams {
+    sortColumn: string
+    sortOrder: number
+    sortDirection: SortDirection
+}
+
+export interface SortRequest {
+    sortColumn: string
+    sortOrder?: number
+    sortDirection?: SortDirection
+}
 
 export interface CardSearchParams {
     cardName?: string
@@ -47,8 +60,7 @@ export interface CardSearchParams {
     colorIdentity?: string[]
     colorMode?: ColorMode
     layoutFilter?: LayoutFilter
-    sortColumn?: string
-    sortOrder?: 'ASC' | 'DESC'
+    sort?: SortParams[]
     page?: number
     pageSize?: number
 }

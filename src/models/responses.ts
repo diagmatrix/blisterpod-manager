@@ -1,4 +1,4 @@
-import { CollectionAddParams } from "./search"
+import { CollectionAddParams, SortParams, SortRequest } from "./search"
 
 export interface PaginatedResult<T> {
     rows: T[]
@@ -40,4 +40,12 @@ export interface ExportResult {
 export interface FileParsingResult {
     cards: CollectionAddParams[]
     error?: string
+}
+
+export interface UseCardSortReturn {
+    /** Active sort chain, ordered by priority with a contiguous 1..n `sortOrder` */
+    sortParams: SortParams[]
+    handleSort: (params: SortRequest) => void
+    removeSort: (sortColumn: string) => void
+    reset: () => void
 }

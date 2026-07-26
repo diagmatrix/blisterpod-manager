@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ScryfallCard } from '../../../models/cards'
-import type { BatchItem, CardSearchParams, UseCardFiltersReturn } from '../../../models/search'
+import type { BatchItem, CardSearchParams, SortParams, UseCardFiltersReturn } from '../../../models/search'
 import { CardFilters } from '@/components/CardFilters'
 import { useCardFilters } from '@/hooks/useCardFilters'
 import { useCardSort } from '@/hooks/useCardSort'
@@ -23,6 +23,11 @@ import { usePageViewState } from '@/hooks/usePageViewState'
 const SORT_OPTIONS = [
     { value: 'rarity', label: 'Rarity' },
     { value: 'released_at', label: 'Release date' },
+]
+
+const DEFAULT_SORT: SortParams[] = [
+    { sortColumn: 'set_code', sortOrder: 1, sortDirection: 'ASC' },
+    { sortColumn: 'collector_number_normalised', sortOrder: 2, sortDirection: 'ASC' }
 ]
 
 interface CardTableProps {
@@ -114,7 +119,12 @@ export default function AddCardPage() {
     const { page, setPage, pageSize, pageSizes, handlePageSizeChange } = usePagination()
 
     /** Sorting */
-    const { sortColumn, sortOrder, handleSort, toggleOrder } = useCardSort({ defaultColumn: 'collector_number', defaultOrder: 'ASC' })
+    const sortState = useCardSort(DEFAULT_SORT)
+    const [sort, setSort] = useState<SortParams[]>(DEFAULT_SORT)
+    const commitSort = useCallback((sortParams: SortParams[]) => {
+        setSort(sortParams)
+        setPage(1)
+    }, [setPage])
 
     /** Filtering */
     const onFilterCommit = useCallback(() => setPage(1), [setPage])
@@ -126,16 +136,13 @@ export default function AddCardPage() {
     /** Card retrieval */
     const queryClient = useQueryClient()
     const searchParams: CardSearchParams = {
-
-
         cardName: searchCardName || undefined,
         setCode: searchSet || undefined,
         rarities: rarities.length > 0 ? rarities : undefined,
         colorIdentity: colorIdentity.length > 0 ? colorIdentity : undefined,
         colorMode: colorIdentity.length > 0 ? colorMode : undefined,
         layoutFilter: layoutFilter || 'all',
-        sortColumn,
-        sortOrder,
+        sort,
         page,
         pageSize,
     }
@@ -226,13 +233,7 @@ export default function AddCardPage() {
                 <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
                     <SectionHeader label="Sort by" expanded={isSortExpanded} onToggle={toggleSort} />
                     {isSortExpanded && (
-                        <CardSort
-                            options={SORT_OPTIONS}
-                            sortColumn={sortColumn}
-                            sortOrder={sortOrder}
-                            onSort={(col) => { handleSort(col); setPage(1) }}
-                            onToggleOrder={() => { toggleOrder(); setPage(1) }}
-                        />
+                        <CardSort options={SORT_OPTIONS} sort={sortState} onCommit={commitSort} />
                     )}
                 </div>
 

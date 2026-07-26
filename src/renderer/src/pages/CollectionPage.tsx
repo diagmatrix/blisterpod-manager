@@ -3,7 +3,7 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
 import { Eye, RotateCcw, Trash2 } from 'lucide-react'
 import type { CollectionCard } from '../../../models/cards'
-import type { UseCardFiltersReturn } from '../../../models/search'
+import type { SortParams, UseCardFiltersReturn } from '../../../models/search'
 import { ManaSymbols } from '@/components/ManaSymbols'
 import { SetSymbol } from '@/components/SetSymbol'
 import { CollectionImageGrid } from '@/components/CollectionImageGrid'
@@ -27,6 +27,10 @@ import { useCardImagePreview } from '@/components/CardImagePreview'
 const SORT_OPTIONS = [
     { value: 'total', label: 'Total' },
     { value: 'value', label: 'Value' },
+]
+
+const DEFAULT_SORT: SortParams[] = [
+    { sortColumn: 'value', sortOrder: 1, sortDirection: 'DESC' }
 ]
 
 interface CollectionTableProps {
@@ -143,7 +147,13 @@ export default function CollectionPage() {
     const { page, setPage, pageSize, pageSizes, handlePageSizeChange, reset: resetPagination } = usePagination()
 
     /** Sorting */
-    const { sortColumn, sortOrder, handleSort, toggleOrder, reset: resetSort } = useCardSort({ defaultColumn: 'value', defaultOrder: 'DESC' })
+    const sortState = useCardSort(DEFAULT_SORT)
+    const { reset: resetSort } = sortState
+    const [sort, setSort] = useState<SortParams[]>(DEFAULT_SORT)
+    const commitSort = useCallback((sortParams: SortParams[]) => {
+        setSort(sortParams)
+        setPage(1)
+    }, [setPage])
 
     /** Filtering */
     const onFilterCommit = useCallback(() => setPage(1), [setPage])
@@ -155,10 +165,10 @@ export default function CollectionPage() {
 
     /** Card retrieval */
     const { data, isLoading, isError, error } = useQuery({
-        queryKey: ['collection', page, pageSize, sortColumn, sortOrder, searchCardName, searchSet, layoutFilter, rarities, colorIdentity, colorMode],
+        queryKey: ['collection', page, pageSize, sort, searchCardName, searchSet, layoutFilter, rarities, colorIdentity, colorMode],
         queryFn: () =>
             window.api.collectionList({
-                page, pageSize, sortColumn, sortOrder, cardName: searchCardName, setCode: searchSet, layoutFilter, rarities, colorIdentity, colorMode,
+                page, pageSize, sort, cardName: searchCardName, setCode: searchSet, layoutFilter, rarities, colorIdentity, colorMode,
             }),
         placeholderData: keepPreviousData,
     })
@@ -167,6 +177,7 @@ export default function CollectionPage() {
     const handleReset = useCallback(() => {
         resetFilters()
         resetSort()
+        setSort(DEFAULT_SORT)
         resetPagination()
     }, [resetFilters, resetSort, resetPagination])
 
@@ -224,13 +235,7 @@ export default function CollectionPage() {
             <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
                 <SectionHeader label="Sort by" expanded={isSortExpanded} onToggle={toggleSort} />
                 {isSortExpanded && (
-                    <CardSort
-                        options={SORT_OPTIONS}
-                        sortColumn={sortColumn as string}
-                        sortOrder={sortOrder}
-                        onSort={(col) => { handleSort(col); setPage(1) }}
-                        onToggleOrder={() => { toggleOrder(); setPage(1) }}
-                    />
+                    <CardSort options={SORT_OPTIONS} sort={sortState} onCommit={commitSort} />
                 )}
             </div>
 
