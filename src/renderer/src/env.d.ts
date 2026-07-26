@@ -47,6 +47,7 @@ export interface ElectronAPI {
   missingFetchCard: (params: CardDetailParams) => Promise<MutationResult>
   logMessage: (entry: LogEntry) => void
   logPath: () => Promise<string>
+  dbPath: () => Promise<string>
   refreshSetSymbols: () => Promise<string>
   keyruneVersion: () => Promise<KeyruneVersion>
   refreshManaSymbols: () => Promise<void>
