@@ -10,7 +10,7 @@ import { registerCardsHandlers } from "./cards";
 import { registerMissingCardsHandlers } from "./missing";
 import { registerDuplicateCardsHandlers } from "./duplicates";
 import { registerCollectionHandlers } from "./collection";
-import { DIALOG_SHOW_SAVE_NAME } from "../../models/channels";
+import { DB_PATH_NAME, DIALOG_SHOW_SAVE_NAME } from "../../models/channels";
 
 // Separate database there so development work never touches the real collection.
 const DB_NAME = process.env.NODE_ENV === 'development' ? 'test_collection.db' : 'collection.db'
@@ -70,6 +70,10 @@ function setUpIPCHandlers(): void {
         filters: [{ name: 'CSV', extensions: ['csv'] }],
     })
     return result.canceled ? null : result.filePath
+    })
+
+    ipcMain.handle(DB_PATH_NAME, () => {
+        return DB_PATH
     })
 
     // Collection handlers

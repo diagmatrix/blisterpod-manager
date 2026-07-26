@@ -22,6 +22,7 @@
 - DB code lives in `src/main/db/`, split by domain (`cards`, `collection`, `duplicates`, `missing`, `stats`, `export`), each exporting a `register*Handlers(db)` wired together in `src/main/db/index.ts`; `querybuilder.ts` composes dynamic queries.
 - `src/main/db/index.ts` `initDatabase()` walks `db/tables/` then `db/views/` and `exec`s every `.sql` file, so a new schema file is applied automatically (no array to update). Files in `db/queries/` are NOT auto-run — load them on demand with `readQueryFile('name.sql')`.
 - Path alias is target-specific: main/preload (`electron.vite.config.ts`) map `@` to `src`, renderer maps `@` to `src/renderer/src`.
+- About page copy is Markdown, not JSX: `src/renderer/src/content/*.md` plus the root `CHANGELOG.md`, all pulled in as strings by `src/renderer/src/content/index.ts` (`?raw`) and rendered by `@/components/Markdown`. The changelog is imported from the repo root on purpose — moving or renaming `CHANGELOG.md` breaks the renderer build. `Markdown.tsx` handles only headings, unordered lists, paragraphs and inline bold/code/links; anything else falls through as literal text, so add `react-markdown` rather than growing it if the copy ever needs tables or images.
 - Router uses `HashRouter` (`src/renderer/src/App.tsx`); do not switch to browser-history routing without Electron packaging changes.
 
 ## Data rules that break features if missed

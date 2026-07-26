@@ -50,6 +50,7 @@ import {
     COLLECTION_EXPORT_NAME,
     COLLECTION_EXPORT_MOXFIELD_NAME,
     COLLECTION_EXPORT_MANABOX_NAME,
+    DB_PATH_NAME,
 } from '../models/channels'
 
 contextBridge.exposeInMainWorld('api', {
@@ -60,6 +61,8 @@ contextBridge.exposeInMainWorld('api', {
         ipcRenderer.invoke('settings:set', key, value),
     logPath: (): Promise<string> => 
         ipcRenderer.invoke('settings:logPath'),
+    dbPath: (): Promise<string> =>
+        ipcRenderer.invoke(DB_PATH_NAME),
 
     // Collection
     collectionList: (params: CardSearchParams): Promise<PaginatedResult<CollectionCard>> =>

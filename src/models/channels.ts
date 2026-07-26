@@ -7,6 +7,7 @@
 
 // Database
 export const DIALOG_SHOW_SAVE_NAME = 'dialog:showSaveDialog'
+export const DB_PATH_NAME = 'db:path'
 
 // Collection
 export const COLLECTION_LIST_NAME = 'collection:list'

@@ -53,6 +53,7 @@ export default function SettingsPage() {
     const { theme, setTheme } = useTheme()
 
     const [logPath, setLogPath] = useState<string>('')
+    const [dbPath, setDBPath] = useState<string>('')
     const [keyruneVersion, setKeyruneVersion] = useState<KeyruneVersion | null>(null)
     const [setsLastRefreshed, setSetsLastRefreshed] = useState<string | null>(null)
     const [cardsLastRefreshed, setCardsLastRefreshed] = useState<string | null>(null)
@@ -77,6 +78,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
         window.api.logPath().then(setLogPath)
+        window.api.dbPath().then(setDBPath)
         window.api.keyruneVersion().then(setKeyruneVersion)
         window.api.settingsGet('setsLastRefreshed').then((v) => setSetsLastRefreshed(v ?? null))
         window.api.settingsGet('cardsLastRefreshed').then((v) => setCardsLastRefreshed(v ?? null))
@@ -436,6 +438,11 @@ export default function SettingsPage() {
                             <SettingsRow label="Log files" description="Location of the app logs.">
                                 <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded select-all">
                                     {logPath || '—'}
+                                </code>
+                            </SettingsRow>
+                            <SettingsRow label="Database" description="Location of the application's database.">
+                                <code className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded select-all">
+                                    {dbPath || '—'}
                                 </code>
                             </SettingsRow>
                         </SettingsSection>
