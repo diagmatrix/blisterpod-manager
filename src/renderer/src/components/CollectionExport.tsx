@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { exportCollection, getDefaultFilename } from '@/lib/collectionExport'
-import { getProviderByName, ProviderInfo, TransferStatus } from '../../../models/transfers'
+import { getProviderByID, ProviderInfo, TransferStatus } from '../../../models/transfers'
 import { TransferProviderSelector } from './TransferProviderSelector'
 import { ExportResult } from '../../../models/responses'
-import { Dialog, DialogContent, DialogTitle } from '@radix-ui/react-dialog'
-import { DialogHeader } from './ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
-const DEFAULT_IMPORT_PROVIDER = getProviderByName('blisterpod')
+const DEFAULT_IMPORT_PROVIDER = getProviderByID('blisterpod')
 
 export function CollectionExport() {
     const [provider, setProvider] = useState<ProviderInfo>(DEFAULT_IMPORT_PROVIDER)
@@ -62,13 +61,13 @@ export function CollectionExport() {
                                 className="underline underline-offset-2 hover:text-foreground"
                                 onClick={() => setDialogOpen(true)}
                             >
-                                show errors
+                                show export issues
                             </button>
                         </>
                     )}
                 </span>
             )}
-            <TransferProviderSelector transferType='export' initialValue={provider} onProviderChange={changeProvider} />
+            <TransferProviderSelector transferType='export' provider={provider} onProviderChange={changeProvider} />
             <Input
                 value={savePath}
                 onChange={(e) => { setSavePath(e.target.value); setState('idle') }}

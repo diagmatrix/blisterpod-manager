@@ -1,17 +1,17 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { getProviderByName, getProviders, ProviderID, ProviderInfo, TransferType } from '../../../models/transfers'
+import { getProviderByID, getProviders, ProviderID, ProviderInfo, TransferType } from '../../../models/transfers'
 
 interface TransferProviderSelectorProps {
     transferType: TransferType
-    initialValue: ProviderInfo
+    provider: ProviderInfo
     onProviderChange: (provider: ProviderInfo) => void
 }
 
-export function TransferProviderSelector({ transferType, initialValue, onProviderChange }: TransferProviderSelectorProps) {
+export function TransferProviderSelector({ transferType, provider, onProviderChange }: TransferProviderSelectorProps) {
     const providers = getProviders(transferType)
 
     return (
-        <Select value={initialValue.providerID} onValueChange={(v) => onProviderChange(getProviderByName(v as ProviderID))}>
+        <Select value={provider.providerID} onValueChange={(v) => onProviderChange(getProviderByID(v as ProviderID))}>
             <SelectTrigger className="w-36">
                 <SelectValue />
             </SelectTrigger>

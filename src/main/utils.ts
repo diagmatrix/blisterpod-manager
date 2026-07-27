@@ -6,6 +6,9 @@ import Database from 'better-sqlite3'
 
 export const USER_AGENT = `blisterpod-manager/${app.getVersion()}`
 
+// Set by electron-vite when running `npm run dev`; unset for both packaged builds and `npm run preview`.
+export const IS_DEV = process.env.NODE_ENV === 'development'
+
 export function getIconPath(theme: AppSettings['theme']): string {
 	const name = theme === 'dark' ? 'icon_w' : 'icon_b'
 	return join(__dirname, `../../resources/${name}.png`)

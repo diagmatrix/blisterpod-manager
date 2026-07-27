@@ -3,7 +3,7 @@ import { getColorsComplement, WUBRG_ORDER } from '../../models/mana'
 
 const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
 const VALID_COLOR_MODES = ['atLeast', 'exactly', 'atMost']
-const VALID_SORT_COLUMNS = ['name', 'set_code', 'collector_number', 'rarity', 'color_identity', 'released_at', 'mana_value', 'value']
+const VALID_SORT_COLUMNS = ['name', 'set_code', 'collector_number_normalised', 'rarity', 'color_identity', 'released_at', 'mana_value', 'value']
 const VALID_SORT_ORDERS = ['ASC', 'DESC']
 const VALID_LAYOUT_FILTERS = ['all', 'cards', 'tokens']
 export const VALID_TABLE_NAMES = ['mapped_collection', 'scryfall_cards_formatted']
@@ -134,7 +134,7 @@ function validateSearchParams(params: CardSearchParams): CardSearchParams {
     const pageSize = Math.min(params.pageSize ?? 60, MAX_PAGE_SIZE)
     const setCode = params.setCode ? params.setCode.toUpperCase() : params.setCode
 
-    const sortParamsRaw = params.sort?.sort((a, b) => a.sortOrder - b.sortOrder) ?? []
+    const sortParamsRaw = [...params.sort ?? []].sort((a, b) => a.sortOrder - b.sortOrder) ?? []
     const sort: SortParams[] = []
     const sortedColumns: string[] = []
     let sortOrder = 1
@@ -142,8 +142,7 @@ function validateSearchParams(params: CardSearchParams): CardSearchParams {
         const sortColumn = sortParams.sortColumn ?? DEFAULT_SORT_COLUMN
         const sortDirection = VALID_SORT_ORDERS.includes(sortParams.sortDirection) ? sortParams.sortDirection : DEFAULT_SORT_DIRECTION
         if ((VALID_SORT_COLUMNS.includes(sortColumn) || sortColumn === DEFAULT_SORT_COLUMN) && !sortedColumns.includes(sortColumn)) {
-            const finalSortColumn = sortColumn === 'collector_number' ? 'collector_number_normalised' : sortColumn
-            sort.push({ sortColumn: finalSortColumn, sortDirection: sortDirection, sortOrder: sortOrder })
+            sort.push({ sortColumn: sortColumn, sortDirection: sortDirection, sortOrder: sortOrder })
             sortOrder++
             sortedColumns.push(sortColumn)
         }

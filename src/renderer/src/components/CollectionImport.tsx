@@ -2,10 +2,10 @@ import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { parseCSVFile } from '@/lib/collectionImport'
-import { getProviderByName, ProviderInfo, TransferStatus } from '../../../models/transfers'
+import { getProviderByID, ProviderInfo, TransferStatus } from '../../../models/transfers'
 import { TransferProviderSelector } from './TransferProviderSelector'
 
-const DEFAULT_IMPORT_PROVIDER = getProviderByName('blisterpod')
+const DEFAULT_IMPORT_PROVIDER = getProviderByID('blisterpod')
 
 export function CollectionImport() {
     const [provider, setProvider] = useState<ProviderInfo>(DEFAULT_IMPORT_PROVIDER)
@@ -66,13 +66,13 @@ export function CollectionImport() {
                                 className="underline underline-offset-2 hover:text-foreground"
                                 onClick={() => setDialogOpen(true)}
                             >
-                                show errors
+                                show import issues
                             </button>
                         </>
                     )}
                 </span>
             )}
-            <TransferProviderSelector transferType='import' initialValue={provider} onProviderChange={changeProvider} />
+            <TransferProviderSelector transferType='import' provider={provider} onProviderChange={changeProvider} />
             <label>
                 <Button variant="outline" size="sm" asChild disabled={state === 'transfering'}>
                     <span className="cursor-pointer">

@@ -104,7 +104,7 @@ export function registerExportHandlers(db: Database.Database): void {
             return { exported: 0, error: errorMessage }
         }
 
-        logger.info(`${rows.length} rows exported to ${filePath}`)
+        logger.info(`${lines.length} rows exported to ${filePath}`)
         return { exported: lines.length }
     })
 
@@ -124,10 +124,10 @@ export function registerExportHandlers(db: Database.Database): void {
         const lines: string[] = []
         for (const r of rows) {
             if (r.quantity_nonfoil > 0) {
-                lines.push(`${csvQuote(r.name)},${r.set_code},${r.collector_number},normal,${r.quantity_nonfoil},${r.scryfall_id},${r.added_at}`)
+                lines.push(`${csvQuote(r.name)},${r.set_code},${r.collector_number},normal,${r.quantity_nonfoil},${r.scryfall_id},${r.added_at ?? ''}`)
             }
             if (r.quantity_foil > 0) {
-                lines.push(`${csvQuote(r.name)},${r.set_code},${r.collector_number},foil,${r.quantity_foil},${r.scryfall_id},${r.added_at}`)
+                lines.push(`${csvQuote(r.name)},${r.set_code},${r.collector_number},foil,${r.quantity_foil},${r.scryfall_id},${r.added_at ?? ''}`)
             }
         }
 
@@ -140,7 +140,7 @@ export function registerExportHandlers(db: Database.Database): void {
             return { exported: 0, error: errorMessage }
         }
 
-        logger.info(`${rows.length} rows exported to ${filePath}`)
+        logger.info(`${lines.length} rows exported to ${filePath}`)
         return { exported: lines.length }
     })
 }

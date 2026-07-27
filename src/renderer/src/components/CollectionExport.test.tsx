@@ -90,10 +90,10 @@ describe('<CollectionExport />', () => {
         await user.type(pathInput(), SAVE_PATH)
         await user.click(screen.getByRole('button', { name: 'Export' }))
 
-        // A regex, because the count sits in the same span as the ' - show errors' link.
+        // A regex, because the count sits in the same span as the ' - show export issues' link.
         expect(await screen.findByText(/0 rows exported/)).toBeInTheDocument()
 
-        await user.click(screen.getByRole('button', { name: 'show errors' }))
+        await user.click(screen.getByRole('button', { name: 'show export issues' }))
 
         expect(screen.getByText('Export errors')).toBeInTheDocument()
         expect(screen.getByText('Error exporting collection: ENOENT')).toBeInTheDocument()

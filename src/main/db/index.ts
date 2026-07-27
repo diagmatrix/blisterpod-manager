@@ -2,7 +2,7 @@ import { createLogger } from "../logger";
 import { join } from 'path'
 import Database from 'better-sqlite3'
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
-import { walkDir } from "../utils";
+import { IS_DEV, walkDir } from "../utils";
 import { readFileSync } from "fs";
 import { registerExportHandlers } from "./export";
 import { registerStatsHandlers } from "./stats";
@@ -13,7 +13,7 @@ import { registerCollectionHandlers } from "./collection";
 import { DB_PATH_NAME, DIALOG_SHOW_SAVE_NAME } from "../../models/channels";
 
 // Separate database there so development work never touches the real collection.
-const DB_NAME = process.env.NODE_ENV === 'development' ? 'test_collection.db' : 'collection.db'
+const DB_NAME = IS_DEV ? 'test_collection.db' : 'collection.db'
 const DB_PATH = join(app.getPath('userData'), DB_NAME)
 const SQL_DIR = join(app.getAppPath(), 'db')
 const TABLES_DIR = join(SQL_DIR, 'tables')

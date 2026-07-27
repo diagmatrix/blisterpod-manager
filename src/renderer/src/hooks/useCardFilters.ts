@@ -1,7 +1,19 @@
 import { useState, useEffect } from 'react'
 import type {
-    CardFiltersState, CardFiltersHandlers, LayoutFilter, ColorMode, UseCardFiltersReturn,
+    CardFiltersState, CardFiltersHandlers, LayoutFilter, ColorMode,
 } from '../../../models/search'
+
+export interface UseCardFiltersReturn {
+    filtersState: CardFiltersState
+    filtersHandlers: CardFiltersHandlers
+    searchCardName: string
+    searchSet: string
+    layoutFilter: LayoutFilter
+    rarities: string[]
+    colorIdentity: string[]
+    colorMode: ColorMode
+    reset: () => void
+}
 
 const MIN_SEARCH_CARD_NAME = 3
 const MIN_SEARCH_SET_CODE = 2

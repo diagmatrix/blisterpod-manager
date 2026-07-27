@@ -10,7 +10,7 @@ export const COLOR_SYMBOL_MAP: Record<string, string> = {
 export const WUBRG_ORDER: string[] = ['W', 'U', 'B', 'R', 'G', 'C']
 
 export function getColorsComplement(colors: string[], removeColorless: boolean = true): string[] {
-    return WUBRG_ORDER.filter((c) => !colors.includes(c) && (c !== 'C' && removeColorless))
+    return WUBRG_ORDER.filter((c) => !colors.includes(c) && (c !== 'C' || !removeColorless))
 }
 
 const COLOR_PAIRS: Record<string, string> = {
@@ -42,15 +42,9 @@ const COLOR_TRIADS: Record<string, string> = {
 const COLOR_QUARTETS: Record<string, string> = {
     'WUBR': 'WUBR', // Yore-Tiller
     'UBRG': 'UBRG', // Glint-Eye
-    'WRGB': 'BRGW', // Dune-Brood
+    'WBRG': 'BRGW', // Dune-Brood
     'WURG': 'RGWU', // Ink-Treader
     'WUBG': 'GWUB'  // Witch-Maw
-}
-
-export function getManaSymbolUrl(symbol: string): string {
-    const cost = symbol.toUpperCase().replace(/[{}]/g, '') // Remove curly braces if present
-    const parsedCost = cost.replace(/\//g, '') // Remove slashes if present
-    return `mana-symbol://app/${parsedCost}.svg`
 }
 
 /**
@@ -66,7 +60,7 @@ export function setStandardColorOrder(colors: string[], isOrdered: boolean = tru
 
     let colorsToOrder = colors
     if (!isOrdered) {
-        colorsToOrder = colors.sort((a, b) => WUBRG_ORDER.indexOf(a) - WUBRG_ORDER.indexOf(b))
+        colorsToOrder = [...colors].sort((a, b) => WUBRG_ORDER.indexOf(a) - WUBRG_ORDER.indexOf(b))
     }
     const colorString = colorsToOrder.join('')
 
@@ -85,12 +79,20 @@ export function setStandardColorOrder(colors: string[], isOrdered: boolean = tru
     return colorsToOrder
 }
 
+export const MANA_SYMBOL_BASE_URL = 'mana-symbol://app/'
+
+export function getManaSymbolUrl(symbol: string): string {
+    const cost = symbol.toUpperCase().replace(/[{}]/g, '') // Remove curly braces if present
+    const parsedCost = cost.replace(/\//g, '') // Remove slashes if present
+    return `${MANA_SYMBOL_BASE_URL}${parsedCost}.svg`
+}
+
 /**
  * 
  * @param manaCost Mana cost of a card
  * @returns The mana cost symbols array
  */
-export function setManaCostSymbols(manaCost: string[]): (string)[] {
+export function setManaCostSymbols(manaCost: string[]): string[] {
     const symbols: string[] = []
     manaCost.forEach(cost => {
         const url = getManaSymbolUrl(cost)

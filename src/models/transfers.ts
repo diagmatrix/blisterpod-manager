@@ -26,7 +26,7 @@ export function getProviders(transferType: TransferType): ProviderInfo[] {
         .map(([id, provider]) => ({providerID: id, ...provider}))
 }
 
-export function getProviderByName(providerID: ProviderID): ProviderInfo {
+export function getProviderByID(providerID: ProviderID): ProviderInfo {
     const provider = PROVIDERS[providerID]
     if (provider) {
         return {providerID, ...provider}

@@ -82,15 +82,3 @@ export interface CardFiltersHandlers {
     toggleColorIdentity: (c: string) => void
     setColorMode: (m: ColorMode) => void
 }
-
-export interface UseCardFiltersReturn {
-    filtersState: CardFiltersState
-    filtersHandlers: CardFiltersHandlers
-    searchCardName: string
-    searchSet: string
-    layoutFilter: LayoutFilter
-    rarities: string[]
-    colorIdentity: string[]
-    colorMode: ColorMode
-    reset: () => void
-}

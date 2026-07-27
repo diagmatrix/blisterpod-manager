@@ -64,11 +64,21 @@ describe('<CollectionPage />', () => {
     it('commits a chain a column was removed from', async () => {
         await renderPage()
 
+        await user.click(screen.getByRole('button', { name: 'Total' }))
         await user.click(screen.getByRole('button', { name: 'Remove Value from sorting' }))
         await user.click(screen.getByRole('button', { name: 'Sort' }))
 
         await waitFor(() => expect(api.collectionList).toHaveBeenCalledTimes(2))
-        expect(lastSort(api)).toEqual([])
+        expect(lastSort(api)).toEqual([{ sortColumn: 'total', sortOrder: 1, sortDirection: 'ASC' }])
+    })
+
+    it('cannot commit an empty chain', async () => {
+        await renderPage()
+
+        await user.click(screen.getByRole('button', { name: 'Remove Value from sorting' }))
+
+        expect(screen.getByRole('button', { name: 'Sort' })).toBeDisabled()
+        expect(api.collectionList).toHaveBeenCalledTimes(1)
     })
 
     it('restores the pending chain without requerying when the sort section is reset', async () => {

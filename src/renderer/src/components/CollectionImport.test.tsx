@@ -80,7 +80,7 @@ describe('<CollectionImport />', () => {
         expect(api.collectionAddBatch).toHaveBeenCalledWith([BFZ])
         expect(await screen.findByText(/1 imported/)).toBeInTheDocument()
 
-        await user.click(screen.getByRole('button', { name: 'show errors' }))
+        await user.click(screen.getByRole('button', { name: 'show import issues' }))
 
         expect(screen.getByText('Import errors')).toBeInTheDocument()
         expect(screen.getByText('1 rows were not imported due to missing the set code')).toBeInTheDocument()
@@ -97,7 +97,7 @@ describe('<CollectionImport />', () => {
 
         expect(await screen.findByText(/0 imported/)).toBeInTheDocument()
 
-        await user.click(screen.getByRole('button', { name: 'show errors' }))
+        await user.click(screen.getByRole('button', { name: 'show import issues' }))
 
         expect(screen.getByText('Missing set_code and/or collector_number columns')).toBeInTheDocument()
         expect(screen.getByText('Error adding cards to collection')).toBeInTheDocument()

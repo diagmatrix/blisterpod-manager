@@ -9,7 +9,7 @@ import { initKeyruneProtocol, downloadKeyruneAssets, getKeyruneVersion } from '.
 import { initFontProtocol, downloadCCMGFont, getCCMGFontStatus } from './ccmgFont'
 import { initManaSymbolProtocol, downloadManaSymbols } from './manaSymbols'
 import { refreshSets, refreshCards } from './scryfallRefresh'
-import { getIconPath } from './utils'
+import { getIconPath, IS_DEV } from './utils'
 import type { WindowBounds, AppSettings, LogEntry } from '../models/app'
 
 const DEFAULT_WINDOW_BOUNDS: WindowBounds = {
@@ -47,7 +47,6 @@ protocol.registerSchemesAsPrivileged([
     },
 ])
 
-const IS_DEV = process.env.NODE_ENV === 'development'
 if (!IS_DEV) {
     Menu.setApplicationMenu(null)
 }

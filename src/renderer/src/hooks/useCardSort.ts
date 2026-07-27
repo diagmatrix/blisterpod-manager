@@ -1,6 +1,13 @@
 import { useState, useCallback } from 'react'
 import type { SortDirection, SortParams, SortRequest } from '../../../models/search'
-import type { UseCardSortReturn } from '../../../models/responses'
+
+export interface UseCardSortReturn {
+    /** Active sort chain, ordered by priority with a contiguous 1..n `sortOrder` */
+    sortParams: SortParams[]
+    handleSort: (params: SortRequest) => void
+    removeSort: (sortColumn: string) => void
+    reset: () => void
+}
 
 const DEFAULT_SORT_DIRECTION: SortDirection = 'ASC'
 
