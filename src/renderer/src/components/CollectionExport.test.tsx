@@ -96,7 +96,23 @@ describe('<CollectionExport />', () => {
         await user.click(screen.getByRole('button', { name: 'show export issues' }))
 
         expect(screen.getByText('Export errors')).toBeInTheDocument()
-        expect(screen.getByText('Error exporting collection: ENOENT')).toBeInTheDocument()
-        expect(screen.getByText('Nothing was written')).toBeInTheDocument()
+        // The dialog shows the message as-is, rather than splitting it into bullets.
+        expect(screen.getByText('Error exporting collection: ENOENT. Nothing was written')).toBeInTheDocument()
+    })
+
+    it('recovers from a rejected export instead of staying on "Exporting..."', async () => {
+        api = mockWindowApi({
+            exportCollection: vi.fn(async () => { throw new Error('IPC channel closed') }),
+        })
+        renderWithProviders(<CollectionExport />)
+
+        await user.type(pathInput(), SAVE_PATH)
+        await user.click(screen.getByRole('button', { name: 'Export' }))
+
+        expect(await screen.findByText(/0 rows exported/)).toBeInTheDocument()
+
+        await user.click(screen.getByRole('button', { name: 'show export issues' }))
+
+        expect(screen.getByText(/Export failed: Error: IPC channel closed/)).toBeInTheDocument()
     })
 })

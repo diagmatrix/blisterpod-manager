@@ -2,6 +2,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderWithProviders, screen } from '../../../../tests/renderer/render'
 import { mockWindowApi, type ElectronAPI } from '../../../../tests/renderer/window-api'
+import type { InsertResult } from '../../../models/responses'
 import { CollectionImport } from './CollectionImport'
 
 const BLISTERPOD_CSV = [
@@ -37,6 +38,11 @@ describe('<CollectionImport />', () => {
 
     function fileInput(): HTMLInputElement {
         return screen.getByLabelText('Choose file...')
+    }
+
+    /** The label doubles as the button, so its text changes while an import is in flight. */
+    function fileInputInFlight(): HTMLInputElement {
+        return screen.getByLabelText('Importing...')
     }
 
     it('sends the parsed rows to the collection and reports how many landed', async () => {
@@ -83,8 +89,10 @@ describe('<CollectionImport />', () => {
         await user.click(screen.getByRole('button', { name: 'show import issues' }))
 
         expect(screen.getByText('Import errors')).toBeInTheDocument()
-        expect(screen.getByText('1 rows were not imported due to missing the set code')).toBeInTheDocument()
-        expect(screen.getByText('1 rows were not imported due to invalid quantity values')).toBeInTheDocument()
+        // The dialog shows the message as-is, so every reason has to be in the one string.
+        expect(screen.getByText(
+            '1 rows were not imported due to missing the set code. 1 rows were not imported due to invalid quantity values'
+        )).toBeInTheDocument()
     })
 
     it('joins a parsing error and an insert error into the same dialog', async () => {
@@ -99,8 +107,9 @@ describe('<CollectionImport />', () => {
 
         await user.click(screen.getByRole('button', { name: 'show import issues' }))
 
-        expect(screen.getByText('Missing set_code and/or collector_number columns')).toBeInTheDocument()
-        expect(screen.getByText('Error adding cards to collection')).toBeInTheDocument()
+        expect(screen.getByText(
+            'Missing set_code and/or collector_number columns. Error adding cards to collection'
+        )).toBeInTheDocument()
     })
 
     it('clears the picker so the same file can be imported twice', async () => {
@@ -114,5 +123,56 @@ describe('<CollectionImport />', () => {
         await user.upload(fileInput(), csvFile(BLISTERPOD_CSV))
 
         expect(api.collectionAddBatch).toHaveBeenCalledTimes(2)
+    })
+
+    it('recovers from a rejected insert instead of staying on "Importing..."', async () => {
+        api = mockWindowApi({ collectionAddBatch: vi.fn(async () => { throw new Error('IPC channel closed') }) })
+        renderWithProviders(<CollectionImport />)
+
+        await user.upload(fileInput(), csvFile(BLISTERPOD_CSV))
+
+        expect(await screen.findByText(/0 imported/)).toBeInTheDocument()
+        expect(screen.getByText('Choose file...')).toBeInTheDocument()
+
+        await user.click(screen.getByRole('button', { name: 'show import issues' }))
+
+        expect(screen.getByText(/Import failed: Error: IPC channel closed/)).toBeInTheDocument()
+    })
+
+    it('lets the same file be retried after a failure', async () => {
+        const collectionAddBatch = vi.fn()
+            .mockRejectedValueOnce(new Error('IPC channel closed'))
+            .mockResolvedValueOnce({ inserted: 3 })
+        api = mockWindowApi({ collectionAddBatch })
+        renderWithProviders(<CollectionImport />)
+
+        await user.upload(fileInput(), csvFile(BLISTERPOD_CSV))
+
+        expect(await screen.findByText(/0 imported/)).toBeInTheDocument()
+        expect(fileInput().value).toBe('')
+
+        await user.upload(fileInput(), csvFile(BLISTERPOD_CSV))
+
+        expect(await screen.findByText('3 imported')).toBeInTheDocument()
+        expect(collectionAddBatch).toHaveBeenCalledTimes(2)
+    })
+
+    it('blocks the picker while an import is in flight', async () => {
+        let release: (value: InsertResult) => void = () => {}
+        const collectionAddBatch = vi.fn(() => new Promise<InsertResult>((resolve) => { release = resolve }))
+        api = mockWindowApi({ collectionAddBatch })
+        renderWithProviders(<CollectionImport />)
+
+        await user.upload(fileInput(), csvFile(BLISTERPOD_CSV))
+
+        // `disabled` has to sit on the input: the label would otherwise forward
+        // clicks to it straight past the styled span.
+        expect(await screen.findByText('Importing...')).toBeInTheDocument()
+        expect(fileInputInFlight()).toBeDisabled()
+
+        release({ inserted: 3 })
+
+        expect(await screen.findByText('3 imported')).toBeInTheDocument()
+        expect(fileInput()).not.toBeDisabled()
     })
 })

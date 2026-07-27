@@ -2,12 +2,15 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { exportCollection, getDefaultFilename } from '@/lib/collectionExport'
+import { createLogger } from '@/lib/logger'
 import { getProviderByID, ProviderInfo, TransferStatus } from '../../../models/transfers'
 import { TransferProviderSelector } from './TransferProviderSelector'
 import { ExportResult } from '../../../models/responses'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const DEFAULT_IMPORT_PROVIDER = getProviderByID('blisterpod')
+
+const logger = createLogger('collection:export')
 
 export function CollectionExport() {
     const [provider, setProvider] = useState<ProviderInfo>(DEFAULT_IMPORT_PROVIDER)
@@ -37,16 +40,23 @@ export function CollectionExport() {
         setState('transfering')
         setResult(null)
 
-        const result = await exportCollection(provider.providerID, savePath)
-        setResult(result)
+        try {
+            const result = await exportCollection(provider.providerID, savePath)
+            setResult(result)
 
-        if (result.error) {
+            if (result.error) {
+                setState('error')
+            } else {
+                setState('done')
+            }
+        } catch (err) {
+            const errorMessage = `Export failed: ${err}`
+            logger.error(errorMessage)
             setState('error')
-        } else {
-            setState('done')
+            setResult({ exported: 0, error: errorMessage })
+        } finally {
+            setSavePath('')
         }
-
-        setSavePath('')
     }
 
     return (
@@ -86,11 +96,9 @@ export function CollectionExport() {
                         <DialogHeader>
                             <DialogTitle>Export errors</DialogTitle>
                         </DialogHeader>
-                        <ul className="list-disc list-inside space-y-1 text-sm max-h-96 overflow-y-auto">
-                            {result.error?.split('. ').map((message, i) => (
-                                <li key={i}>{message}</li>
-                            ))}
-                        </ul>
+                        <p className="text-sm max-h-96 overflow-y-auto">
+                            {result.error}
+                        </p>
                     </DialogContent>
                 </Dialog>
             )}
