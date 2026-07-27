@@ -263,6 +263,24 @@ describe('collectionImport', () => {
             })
         })
 
+        // `csvQuote` escapes a quote as `""`, so a name carrying one has to survive the
+        // round trip without swallowing the delimiters that follow it.
+        it('decodes doubled quotes inside a quoted field', () => {
+            const csv = [
+                'NAME,SET,NUMBER,QUANTITY',
+                '"Kongming, ""Sleeping Dragon""",PTK,44,2',
+                '"Ach! Hans, Run! (F)",UNH,1,3',
+            ].join('\n')
+
+            expect(parseCSVFile(csv, 'googleDrive')).toEqual({
+                cards: [
+                    { setCode: 'PTK', collectorNumber: '44', quantityNonfoil: 2, quantityFoil: 0, createdAt: undefined, updatedAt: undefined },
+                    { setCode: 'UNH', collectorNumber: '1', quantityNonfoil: 0, quantityFoil: 3, createdAt: undefined, updatedAt: undefined },
+                ],
+                error: undefined,
+            })
+        })
+
         it('returns an error when the header row cannot be found', () => {
             const csv = [
                 'foo,bar,baz',
