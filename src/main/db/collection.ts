@@ -90,7 +90,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
             try {
                 const insertSQL = readQueryFile(COLLECTION_INSERT_CARD_QUERY)
                 logger.info(COLLECTION_ADD_NAME, insertSQL)
-                const result = db.prepare(insertSQL).run(params.setCode, params.collectorNumber, params.quantityNonfoil, params.quantityFoil)
+                const result = db.prepare(insertSQL).run(params.setCode, params.collectorNumber, params.quantityNonfoil, params.quantityFoil, params.createdAt, params.updatedAt)
                 return { cardID: result.lastInsertRowid }
             } catch (err) {
                 return { error: `Card could not be inserted: ${err}`}
@@ -132,7 +132,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
                     }
 
                     try {
-                        dbStatement.run(params.setCode, params.collectorNumber, params.quantityNonfoil, params.quantityFoil)
+                        dbStatement.run(params.setCode, params.collectorNumber, params.quantityNonfoil, params.quantityFoil, params.createdAt, params.updatedAt)
                         inserted++
                     } catch (err) {
                         errors.push(`Error inserting ${params.setCode} #${params.collectorNumber}: ${err}`)
