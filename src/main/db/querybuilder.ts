@@ -3,7 +3,7 @@ import { getColorsComplement, WUBRG_ORDER } from '../../models/mana'
 
 const VALID_RARITIES = ['common', 'uncommon', 'rare', 'mythic', 'special', 'bonus']
 const VALID_COLOR_MODES = ['atLeast', 'exactly', 'atMost']
-const VALID_SORT_COLUMNS = ['name', 'set_code', 'collector_number_normalised', 'rarity', 'color_identity', 'released_at', 'mana_value', 'value']
+const VALID_SORT_COLUMNS = ['name', 'set_code', 'collector_number_normalised', 'rarity', 'color_identity', 'released_at', 'mana_value', 'value', 'total']
 const VALID_SORT_ORDERS = ['ASC', 'DESC']
 const VALID_LAYOUT_FILTERS = ['all', 'cards', 'tokens']
 export const VALID_TABLE_NAMES = ['mapped_collection', 'scryfall_cards_formatted']
