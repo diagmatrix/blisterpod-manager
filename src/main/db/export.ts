@@ -56,7 +56,7 @@ export function registerExportHandlers(db: Database.Database): void {
         }
 
         const lines = rows.map(r =>
-        [r.set_code, r.collector_number, r.quantity_nonfoil, r.quantity_foil, r.created_at ?? '', r.updated_at ?? ''].join(',')
+            [r.set_code, r.collector_number, r.quantity_nonfoil, r.quantity_foil, r.created_at ?? '', r.updated_at ?? ''].join(',')
         )
 
         try {

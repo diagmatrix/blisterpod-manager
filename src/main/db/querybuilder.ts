@@ -90,7 +90,7 @@ function buildColorIdentityCondition(colors: string[], colorMode: string): Query
 
 function buildLayoutCondition(layoutFilter: string): Query {
     const layoutFilterValue = layoutFilter === 'cards' ? 0 : 1
-    
+
     return {
         sql: LAYOUT_FILTER_CONDITION,
         values: [layoutFilterValue]
@@ -200,7 +200,7 @@ export function buildFullQuery(params: CardSearchParams, tableName: string, addi
     if (!VALID_TABLE_NAMES.includes(tableName)) {
         return { sql: '', values: [] }
     }
-    
+
     const { sql, values } = buildQueryConditions(params)
     let whereSQL = sql !== '' ? ` WHERE ${sql}` : ''
     if (additional_conditions && additional_conditions.length > 0) {

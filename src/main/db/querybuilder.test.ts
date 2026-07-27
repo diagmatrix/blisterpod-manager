@@ -47,7 +47,7 @@ describe('query builder', () => {
         { sortOrder: 1, sortColumn: 'set_code', sortDirection: 'ASC' }
     ]
     const BASE_SORT_SQL = 'set_code ASC'
-    
+
     describe('simple conditions', () => {
         it('builds a query by name', () => {
             const params: CardSearchParams = {
@@ -55,12 +55,12 @@ describe('query builder', () => {
             }
             const expectedSQL = `${BASE_SQL} WHERE ${NAME_SEARCH_CONDITION} LIMIT ? OFFSET ?`
             const expectedValues = [`%${BASE_NAME_CONDITION}%`, ...BASE_VALUES]
-            
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: expectedValues, 
-                expectedSQL: expectedSQL 
+
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: expectedValues,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -71,11 +71,11 @@ describe('query builder', () => {
             const expectedSQL = `${BASE_SQL} WHERE ${SET_CODE_SEARCH_CONDITION} LIMIT ? OFFSET ?`
             const expectedValues = [`%${BASE_SET_CONDITION.toUpperCase()}%`, ...BASE_VALUES]
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: expectedValues, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: expectedValues,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -86,11 +86,11 @@ describe('query builder', () => {
             const expectedValues = [params.layoutFilter === 'cards' ? 0 : 1, ...BASE_VALUES]
             const expectedSQL = `${BASE_SQL} WHERE ${LAYOUT_FILTER_CONDITION} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: expectedValues, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: expectedValues,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -101,11 +101,11 @@ describe('query builder', () => {
             }
             const expectedSQL = `${BASE_SQL} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: BASE_VALUES, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: BASE_VALUES,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -117,11 +117,11 @@ describe('query builder', () => {
             const expectedValues = [BASE_PAGE_SIZE, (BASE_PAGE - 1) * BASE_PAGE_SIZE]
             const expectedSQL = `${BASE_SQL} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: expectedValues, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: expectedValues,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -133,15 +133,15 @@ describe('query builder', () => {
             const expectedValues = [MAX_PAGE_SIZE, (BASE_PAGE - 1) * MAX_PAGE_SIZE]
             const expectedSQL = `${BASE_SQL} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: expectedValues, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: expectedValues,
+                expectedSQL: expectedSQL
             })
         })
     })
-    
+
     describe('rarity conditions', () => {
         it.each([
             // Single rarity filter
@@ -157,11 +157,11 @@ describe('query builder', () => {
             const expectedValues = [...rarityValues, ...BASE_VALUES]
             const expectedSQL = `${BASE_SQL} WHERE ${raritySQL} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: expectedValues, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: expectedValues,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -171,11 +171,11 @@ describe('query builder', () => {
             }
             const expectedSQL = `${BASE_SQL} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: BASE_VALUES, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: BASE_VALUES,
+                expectedSQL: expectedSQL
             })
         })
     })
@@ -184,9 +184,9 @@ describe('query builder', () => {
         it.each<[string[], ColorMode, string, (string|number)[]]>([
             // Color identity filter with 'atLeast'
             [
-                BASE_COLOR_IDENTITY, 
-                BASE_COLOR_MODE, 
-                colorIdentitySQL(COLOR_IDENTITY_SEARCH_CONDITION, BASE_COLOR_IDENTITY.length), 
+                BASE_COLOR_IDENTITY,
+                BASE_COLOR_MODE,
+                colorIdentitySQL(COLOR_IDENTITY_SEARCH_CONDITION, BASE_COLOR_IDENTITY.length),
                 BASE_COLOR_IDENTITY
             ],
             // Color identity filter with 'exactly'
@@ -205,9 +205,9 @@ describe('query builder', () => {
             ],
             // Color identity filter with 'atLeast' and duplicated colors
             [
-                [...BASE_COLOR_IDENTITY, ...BASE_COLOR_IDENTITY], 
-                BASE_COLOR_MODE, 
-                colorIdentitySQL(COLOR_IDENTITY_SEARCH_CONDITION, BASE_COLOR_IDENTITY.length), 
+                [...BASE_COLOR_IDENTITY, ...BASE_COLOR_IDENTITY],
+                BASE_COLOR_MODE,
+                colorIdentitySQL(COLOR_IDENTITY_SEARCH_CONDITION, BASE_COLOR_IDENTITY.length),
                 BASE_COLOR_IDENTITY
             ],
         ])('builds a query with color identity conditions', (colorIdenitity: string[], colorMode: ColorMode, sql: string, values: (string|number)[]) => {
@@ -218,20 +218,20 @@ describe('query builder', () => {
             const expectedValues = [...values, ...BASE_VALUES]
             const expectedSQL = `${BASE_SQL} WHERE ${sql} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: expectedValues, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: expectedValues,
+                expectedSQL: expectedSQL
             })
         })
 
         it.each<[string[], ColorMode, string, (string|number)[]]>([
             // Color identity filter with 'atLeast' and colorless
             [
-                [...BASE_COLOR_IDENTITY, 'C'], 
-                BASE_COLOR_MODE, 
-                colorIdentitySQL(COLOR_IDENTITY_SEARCH_CONDITION, BASE_COLOR_IDENTITY.length), 
+                [...BASE_COLOR_IDENTITY, 'C'],
+                BASE_COLOR_MODE,
+                colorIdentitySQL(COLOR_IDENTITY_SEARCH_CONDITION, BASE_COLOR_IDENTITY.length),
                 BASE_COLOR_IDENTITY
             ],
             // Color identity filter with 'exactly' and colorless
@@ -270,11 +270,11 @@ describe('query builder', () => {
             const expectedValues = [...vales, ...BASE_VALUES]
             const expectedSQL = `${BASE_SQL} WHERE ${sql} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: expectedValues, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: expectedValues,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -285,11 +285,11 @@ describe('query builder', () => {
             }
             const expectedSQL = `${BASE_SQL} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: BASE_VALUES, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: BASE_VALUES,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -299,11 +299,11 @@ describe('query builder', () => {
             }
             const expectedSQL = `${BASE_SQL} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: BASE_VALUES, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: BASE_VALUES,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -322,11 +322,11 @@ describe('query builder', () => {
             const expectedValues = [...BASE_COLOR_IDENTITY, ...BASE_VALUES]
             const expectedSQL = `${BASE_SQL} WHERE ${colorIdentitySQL(COLOR_IDENTITY_SEARCH_CONDITION, BASE_COLOR_IDENTITY.length)} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: expectedValues, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: expectedValues,
+                expectedSQL: expectedSQL
             })
         })
     })
@@ -352,11 +352,11 @@ describe('query builder', () => {
             }
             const expectedSQL = `${BASE_SQL} ORDER BY ${sortSQL} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: BASE_VALUES, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: BASE_VALUES,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -368,11 +368,11 @@ describe('query builder', () => {
             }
             const expectedSQL = `${BASE_SQL} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: BASE_VALUES, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: BASE_VALUES,
+                expectedSQL: expectedSQL
             })
         })
 
@@ -382,11 +382,11 @@ describe('query builder', () => {
             }
             const expectedSQL = `${BASE_SQL} ORDER BY ${BASE_SORT_SQL} LIMIT ? OFFSET ?`
 
-            validateQuery({ 
-                params: params, 
-                tableName: TABLE_NAME, 
-                expectedValues: BASE_VALUES, 
-                expectedSQL: expectedSQL 
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: BASE_VALUES,
+                expectedSQL: expectedSQL
             })
         })
     })
@@ -457,11 +457,11 @@ describe('query builder', () => {
         const params: CardSearchParams = {}
         const expectedSQL = `${BASE_SQL} LIMIT ? OFFSET ?`
 
-        validateQuery({ 
-            params: params, 
-            tableName: TABLE_NAME, 
-            expectedValues: BASE_VALUES, 
-            expectedSQL: expectedSQL 
+        validateQuery({
+            params: params,
+            tableName: TABLE_NAME,
+            expectedValues: BASE_VALUES,
+            expectedSQL: expectedSQL
         })
     })
 
@@ -469,11 +469,11 @@ describe('query builder', () => {
         const params: CardSearchParams = {}
         const tableName = 'invalid_table'
 
-        validateQuery({ 
-            params: params, 
-            tableName: tableName, 
-            expectedValues: [], 
-            expectedSQL: '' 
+        validateQuery({
+            params: params,
+            tableName: tableName,
+            expectedValues: [],
+            expectedSQL: ''
         })
     })
 
@@ -503,11 +503,11 @@ describe('query builder', () => {
         const whereSQL = `WHERE ${NAME_SEARCH_CONDITION} AND ${SET_CODE_SEARCH_CONDITION} AND ${rSQL} AND ${ciSQL} AND ${LAYOUT_FILTER_CONDITION}`
         const expectedSQL = `${BASE_QUERY} ${TABLE_NAME} ${whereSQL} ORDER BY ${BASE_SORT_SQL} LIMIT ? OFFSET ?`
 
-        validateQuery({ 
-            params: params, 
-            tableName: TABLE_NAME, 
-            expectedValues: expectedValues, 
-            expectedSQL: expectedSQL 
+        validateQuery({
+            params: params,
+            tableName: TABLE_NAME,
+            expectedValues: expectedValues,
+            expectedSQL: expectedSQL
         })
     })
 })

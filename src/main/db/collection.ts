@@ -83,7 +83,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
             return { error: paramErrors }
         }
 
-        // TODO: Consider if maybe it should fail? 
+        // TODO: Consider if maybe it should fail?
         const notFoundError = checkCardExists(db, params.setCode, params.collectorNumber)
 
         const insertTransaction = db.transaction(() => {
@@ -112,7 +112,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
             logger.warn(warningMessage)
             return { inserted: 0, warning: warningMessage }
         }
-        
+
         const sql = readQueryFile(COLLECTION_INSERT_CARD_QUERY)
         logger.info(COLLECTION_ADD_BATCH_NAME, sql)
         const dbStatement = db.prepare(sql)

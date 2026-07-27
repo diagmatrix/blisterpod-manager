@@ -30,9 +30,9 @@ let lastRequestAt = 0
 
 async function scryfallGet(url: string): Promise<unknown> {
     const fullUrl = url.startsWith('http') ? url : `${SCRYFALL_BASE}${url}`
-    
+
     const wait = WAIT_MS - (Date.now() - lastRequestAt)
-    if (wait > 0) { 
+    if (wait > 0) {
         await new Promise<void>((r) => setTimeout(r, wait))
     }
     lastRequestAt = Date.now()
@@ -60,7 +60,7 @@ function buildSetRow(setJson: Record<string, unknown>, columns: string[]): Recor
             if (col === 'parent_set_code' && val != null) {
                 val = String(val).toUpperCase()
             }
-            
+
             row[col] = serializeVal(val ?? null)
         }
     }
@@ -178,7 +178,7 @@ export async function refreshCards(db: Database.Database): Promise<Inserted> {
 export async function getSet(db: Database.Database, setCode: string): Promise<boolean> {
     log.info('Starting set retrieval from Scryfall')
     const url = `/sets/${setCode.toLowerCase()}`
-    
+
     let setToInsert: Record<string, unknown> = {}
     let dbColumns: string[] = []
     try {
@@ -207,7 +207,7 @@ export async function getSet(db: Database.Database, setCode: string): Promise<bo
 
 export async function getSetCards(db: Database.Database, searchURI: string): Promise<Inserted> {
     log.info('Starting card retrieval from Scryfall')
-    
+
     const dbColumns = getTableColumns(db, CARD_TABLE_NAME)
     const stmt = db.prepare(`INSERT OR REPLACE INTO scryfall_cards (${dbColumns.join(', ')}) VALUES (${dbColumns.map(() => '?').join(', ')})`)
     const insertTransaction = db.transaction((rows: Record<string, unknown>[]) => {
@@ -215,7 +215,7 @@ export async function getSetCards(db: Database.Database, searchURI: string): Pro
             stmt.run(dbColumns.map(c => r[c]))
         }
     })
-    
+
     let inserted = 0
     let scryfallURL: string | undefined = searchURI
     let errors: string | undefined
@@ -224,7 +224,7 @@ export async function getSetCards(db: Database.Database, searchURI: string): Pro
             const page = await scryfallGet(scryfallURL) as { data: Record<string, unknown>[]; has_more: boolean; next_page?: string }
             const cards = (page.data ?? []).map(card => buildCardRow(card, dbColumns))
             insertTransaction(cards)
-            
+
             inserted += cards.length
             if (page.has_more) {
                 scryfallURL = page.next_page
@@ -248,7 +248,7 @@ export async function getSetCards(db: Database.Database, searchURI: string): Pro
 export async function getCard(db: Database.Database, setCode: string, collectorNumber: string): Promise<boolean> {
     log.info('Starting card retrieval from Scryfall')
     const url = `/cards/${setCode.toLowerCase()}/${collectorNumber}`
-    
+
     let cardToInsert: Record<string, unknown> = {}
     let dbColumns: string[] = []
     try {

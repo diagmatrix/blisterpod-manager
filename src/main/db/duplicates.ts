@@ -70,7 +70,7 @@ export function registerDuplicateCardsHandlers(db: Database.Database): void {
         try {
             const placeholders = cardIDs.map(() => '?').join(', ')
             const sql = `SELECT id, quantity_nonfoil, quantity_foil, created_at, updated_at FROM cards WHERE id IN (${placeholders}) ORDER BY id ASC`
-            logger.info(DUPLICATES_IDS_NAME, sql) 
+            logger.info(DUPLICATES_IDS_NAME, sql)
             rows = db.prepare(sql).all(...cardIDs) as DuplicateCardInstance[]
         } catch (err) {
             logger.error(`Error fetching duplicate cards from list of IDs: ${err}`)
@@ -97,7 +97,7 @@ export function registerDuplicateCardsHandlers(db: Database.Database): void {
             } catch (err) {
                 return { error: (err as Error).message }
             }
-            
+
             const deleteIDs = duplicates.slice(1).map((row) => row.id)
             try {
                 const deleteSQL = `DELETE FROM cards WHERE id IN (${deleteIDs.map(() => '?').join(', ')})`
