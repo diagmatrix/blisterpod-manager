@@ -48,7 +48,7 @@ const COLOR_QUARTETS: Record<string, string> = {
 }
 
 /**
- * 
+ *
  * @param colors Color array to order
  * @param isOrdered Whether the color array is already ordered (WUBRG order)
  * @returns Ordered color array symbols
@@ -88,7 +88,7 @@ export function getManaSymbolUrl(symbol: string): string {
 }
 
 /**
- * 
+ *
  * @param manaCost Mana cost of a card
  * @returns The mana cost symbols array
  */

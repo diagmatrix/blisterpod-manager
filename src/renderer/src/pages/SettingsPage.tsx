@@ -228,18 +228,18 @@ export default function SettingsPage() {
                                     <button
                                         onClick={() => setTheme('light')}
                                         className={`px-3 py-1.5 text-sm transition-colors ${theme === 'light'
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-background text-muted-foreground hover:text-foreground'
-                                            }`}
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-background text-muted-foreground hover:text-foreground'
+                                        }`}
                                     >
                                         Light
                                     </button>
                                     <button
                                         onClick={() => setTheme('dark')}
                                         className={`px-3 py-1.5 text-sm transition-colors ${theme === 'dark'
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-background text-muted-foreground hover:text-foreground'
-                                            }`}
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-background text-muted-foreground hover:text-foreground'
+                                        }`}
                                     >
                                         Dark
                                     </button>
@@ -252,9 +252,9 @@ export default function SettingsPage() {
                                         onClick={() => handleSetFont('default')}
                                         disabled={downloadingFont}
                                         className={`px-3 py-1.5 text-sm transition-colors ${font === 'default'
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-background text-muted-foreground hover:text-foreground'
-                                            }`}
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-background text-muted-foreground hover:text-foreground'
+                                        }`}
                                     >
                                         Default
                                     </button>
@@ -262,9 +262,9 @@ export default function SettingsPage() {
                                         onClick={() => handleSetFont('ccmg')}
                                         disabled={downloadingFont}
                                         className={`px-3 py-1.5 text-sm transition-colors ${font === 'ccmg'
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-background text-muted-foreground hover:text-foreground'
-                                            }`}
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-background text-muted-foreground hover:text-foreground'
+                                        }`}
                                     >
                                         {downloadingFont ? 'Downloading…' : 'CCMG'}
                                     </button>
@@ -281,9 +281,9 @@ export default function SettingsPage() {
                                             key={scale.join('-')}
                                             onClick={() => handleSetPageSizeScale(scale)}
                                             className={`px-3 py-1.5 text-sm transition-colors ${scale === pageSizeScale
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-background text-muted-foreground hover:text-foreground'
-                                                }`}
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-background text-muted-foreground hover:text-foreground'
+                                            }`}
                                         >
                                             {scale[0]}x
                                         </button>
@@ -301,9 +301,9 @@ export default function SettingsPage() {
                                             key={size}
                                             onClick={() => handleSetDefaultPageSize(size)}
                                             className={`px-3 py-1.5 text-sm transition-colors ${defaultPageSize === size
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-background text-muted-foreground hover:text-foreground'
-                                                }`}
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-background text-muted-foreground hover:text-foreground'
+                                            }`}
                                         >
                                             {size}
                                         </button>

@@ -33,7 +33,7 @@ export function CollectionExport() {
         if (!savePath) {
             return
         }
-        
+
         setState('transfering')
         setResult(null)
 

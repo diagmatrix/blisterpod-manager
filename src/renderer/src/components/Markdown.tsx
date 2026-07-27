@@ -81,7 +81,7 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
         cursor = match.index + raw.length
     }
 
-    if (cursor < text.length) { 
+    if (cursor < text.length) {
         nodes.push(text.slice(cursor))
     }
 

@@ -19,7 +19,7 @@ interface ScryfallCardWithTotal extends ScryfallCard {
 export function registerCardsHandlers(db: Database.Database): void {
     // Search available cards
     ipcMain.handle(CARDS_SEARCH_NAME, (_, params: CardSearchParams) => {
-        const { sql, values } = buildFullQuery(params, 'scryfall_cards_formatted') 
+        const { sql, values } = buildFullQuery(params, 'scryfall_cards_formatted')
 
         let rows: ScryfallCard[] = []
         let total = 0
@@ -52,7 +52,7 @@ export function registerCardsHandlers(db: Database.Database): void {
     })
 
     // Get other printings of the same card
-      ipcMain.handle(CARDS_OTHERS_NAME, (_, params: { oracleID: string, scryfallID: string }) => {
+    ipcMain.handle(CARDS_OTHERS_NAME, (_, params: { oracleID: string, scryfallID: string }) => {
         let rows: CollectionCard[] = []
         try {
             const sql = readQueryFile(CARDS_OTHERS_QUERY)
@@ -63,5 +63,5 @@ export function registerCardsHandlers(db: Database.Database): void {
         }
         const total = rows.reduce((sum, row) => sum + (row.total as number), 0)
         return { rows, total }
-      })
+    })
 }

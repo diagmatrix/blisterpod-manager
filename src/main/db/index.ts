@@ -57,19 +57,19 @@ export async function initDatabase(): Promise<void> {
 }
 
 export function getDb(): Database.Database {
-  return db
+    return db
 }
 
 function setUpIPCHandlers(): void {
     // Show native save dialog and return chosen path (or null if cancelled)
     // TODO: Maybe this should be moved to a separate file as it does not have anything to do with databases
     ipcMain.handle(DIALOG_SHOW_SAVE_NAME, async (event, defaultName: string) => {
-    const win = BrowserWindow.fromWebContents(event.sender)!
-    const result = await dialog.showSaveDialog(win, {
-        defaultPath: defaultName,
-        filters: [{ name: 'CSV', extensions: ['csv'] }],
-    })
-    return result.canceled ? null : result.filePath
+        const win = BrowserWindow.fromWebContents(event.sender)!
+        const result = await dialog.showSaveDialog(win, {
+            defaultPath: defaultName,
+            filters: [{ name: 'CSV', extensions: ['csv'] }],
+        })
+        return result.canceled ? null : result.filePath
     })
 
     ipcMain.handle(DB_PATH_NAME, () => {

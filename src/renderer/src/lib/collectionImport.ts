@@ -36,7 +36,7 @@ function parseDate(raw: string): string | undefined {
 
     const [day, month, year] = parts
     const d = new Date(Number(year), Number(month) - 1, Number(day))
-    
+
     return isNaN(d.getTime()) ? undefined : d.toISOString()
 }
 
@@ -48,7 +48,7 @@ function createParsingErrorMessage(rowsMissingSetCode: number, rowsMissingCollec
     if (rowsMissingCollectorNumber > 0) {
         const errorMessage = `${rowsMissingCollectorNumber} rows were not imported due to missing the collector number`
         error = error ? `${error}. ${errorMessage}` : errorMessage
-    } 
+    }
     if (rowsWithInvalidQuantities > 0) {
         const errorMessage = `${rowsWithInvalidQuantities} rows were not imported due to invalid quantity values`
         error = error ? `${error}. ${errorMessage}` : errorMessage
@@ -96,13 +96,13 @@ function parseBlisterpodCSV(text: string): FileParsingResult {
             missingSetCode++
             continue
         }
-        
+
         const collectorNumber = cols[numberIdx]?.trim()
         if (!collectorNumber) {
             missingCollectorNumber++
             continue
         }
-        
+
         const quantityNonfoil = parseInt(cols[nonfoilIdx] ?? '0', 10) || 0
         const quantityFoil = parseInt(cols[foilIdx] ?? '0', 10) || 0
         if (quantityFoil < 0 || quantityNonfoil < 0 || quantityFoil + quantityNonfoil === 0) {
@@ -150,13 +150,13 @@ function parseMoxfieldCSV(text: string): FileParsingResult {
     let invalidQuantities = 0
     for (const line of lines.slice(1)) {
         const cols = parseCSVRow(line)
-        
+
         const setCode = cols[editionIdx]?.trim().toUpperCase()
         if (!setCode) {
             missingSetCode++
             continue
         }
-        
+
         const collectorNumber = cols[numberIdx]?.trim()
         if (!collectorNumber) {
             missingCollectorNumber++
@@ -171,7 +171,7 @@ function parseMoxfieldCSV(text: string): FileParsingResult {
 
         const key = `${setCode}:${collectorNumber}`
         const existing = merged.get(key) ?? { setCode, collectorNumber, quantityNonfoil: 0, quantityFoil: 0 }
-        
+
         const isFoil = cols[foilIdx]?.trim().toLowerCase() === 'true'
         if (isFoil) {
             existing.quantityFoil += count
@@ -223,19 +223,19 @@ function parseGoogleDriveCSV(text: string): FileParsingResult {
             missingSetCode++
             continue
         }
-        
+
         const collectorNumber = cols[numberIdx]?.trim()
         if (!collectorNumber) {
             missingCollectorNumber++
             continue
         }
-        
+
         const quantity = parseInt(cols[quantityIdx] ?? '0', 10) || 0
         if (quantity <= 0) {
             invalidQuantities++
             continue
         }
-        
+
         const key = `${setCode}:${collectorNumber}`
         const existing = merged.get(key) ?? {
             setCode,
@@ -287,13 +287,13 @@ function parseManaboxCSV(text: string): FileParsingResult {
     let invalidQuantities = 0
     for (const line of lines.slice(1)) {
         const cols = parseCSVRow(line)
-        
+
         const setCode = cols[setCodeIdx]?.trim().toUpperCase()
         if (!setCode) {
             missingSetCode++
             continue
         }
-        
+
         const collectorNumber = cols[numberIdx]?.trim()
         if (!collectorNumber) {
             missingCollectorNumber++
@@ -308,7 +308,7 @@ function parseManaboxCSV(text: string): FileParsingResult {
 
         const key = `${setCode}:${collectorNumber}`
         const existing = merged.get(key) ?? { setCode, collectorNumber, quantityNonfoil: 0, quantityFoil: 0 }
-        
+
         const isFoil = cols[foilIdx] && !(cols[foilIdx].trim().toLowerCase() === 'normal')
         if (isFoil) {
             existing.quantityFoil += count

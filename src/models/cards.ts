@@ -36,10 +36,10 @@ export interface MissingCard extends Card {
 }
 
 export interface DuplicateCard extends Card {
-  row_count: number
-  total_nonfoil: number
-  total_foil: number
-  row_ids: string
+    row_count: number
+    total_nonfoil: number
+    total_foil: number
+    row_ids: string
 }
 
 export interface DuplicateCardRow {
@@ -50,17 +50,17 @@ export interface DuplicateCardRow {
 
 export interface DuplicateCardInstance extends DuplicateCardRow {
     created_at: string
-    updated_at?: string | null 
+    updated_at?: string | null
 }
 
 export interface CardDetail extends CollectionCard {
-  type_line: string | null
-  mana_costs: string | null    // JSON array string, one entry per face
-  oracle_texts: string | null  // JSON array string, one entry per face
-  image_urls: string | null    // JSON array string, one entry per face
-  color_identity: string | null
-  rarity: string | null
-  meld_scryfall_id: string | null
+    type_line: string | null
+    mana_costs: string | null    // JSON array string, one entry per face
+    oracle_texts: string | null  // JSON array string, one entry per face
+    image_urls: string | null    // JSON array string, one entry per face
+    color_identity: string | null
+    rarity: string | null
+    meld_scryfall_id: string | null
 }
 
 export function missingCardToCollectionCard(missing: MissingCard): CollectionCard {

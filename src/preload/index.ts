@@ -55,11 +55,11 @@ import {
 
 contextBridge.exposeInMainWorld('api', {
     // Settings
-    settingsGet: (key: keyof AppSettings) => 
+    settingsGet: (key: keyof AppSettings) =>
         ipcRenderer.invoke('settings:get', key),
     settingsSet: (key: keyof AppSettings, value: AppSettings[keyof AppSettings]) =>
         ipcRenderer.invoke('settings:set', key, value),
-    logPath: (): Promise<string> => 
+    logPath: (): Promise<string> =>
         ipcRenderer.invoke('settings:logPath'),
     dbPath: (): Promise<string> =>
         ipcRenderer.invoke(DB_PATH_NAME),

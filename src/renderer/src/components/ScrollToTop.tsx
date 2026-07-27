@@ -6,11 +6,11 @@ import { useLocation } from 'react-router-dom'
  * Must be rendered inside a Router context.
  */
 export default function ScrollToTop() {
-  const { pathname } = useLocation()
+    const { pathname } = useLocation()
 
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [pathname])
+    useEffect(() => {
+        window.scrollTo(0, 0)
+    }, [pathname])
 
-  return null
+    return null
 }

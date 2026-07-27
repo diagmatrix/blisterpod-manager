@@ -2,111 +2,111 @@ import { Home, AlertTriangle, Archive, ArchiveRestore, Settings, PanelLeftClose,
 import { NavLink, useLocation } from 'react-router-dom'
 import { useTheme } from '@/components/ThemeProvider'
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
-  useSidebar,
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarRail,
+    useSidebar,
 } from '@/components/ui/sidebar'
 
 interface NavItemProps {
-  label: string
-  icon: React.ElementType
-  route: string
+    label: string
+    icon: React.ElementType
+    route: string
 }
 
 const navItems: NavItemProps[] = [
-  { label: 'Home', icon: Home, route: '/statistics' },
-  { label: 'Collection', icon: Archive, route: '/collection' },
-  { label: 'Add Cards', icon: ArchiveRestore, route: '/add-card' },
-  { label: 'Collection errors', icon: AlertTriangle, route: '/collection-errors' },
+    { label: 'Home', icon: Home, route: '/statistics' },
+    { label: 'Collection', icon: Archive, route: '/collection' },
+    { label: 'Add Cards', icon: ArchiveRestore, route: '/add-card' },
+    { label: 'Collection errors', icon: AlertTriangle, route: '/collection-errors' },
 ] as const
 
 const bottomNavItems: NavItemProps[] = [
-  { label: 'Settings', icon: Settings, route: '/settings' },
-  { label: 'About', icon: Info, route: '/about' },
+    { label: 'Settings', icon: Settings, route: '/settings' },
+    { label: 'About', icon: Info, route: '/about' },
 ] as const
 
 function NavItem({ label, icon: Icon, route }: NavItemProps) {
-  const { pathname } = useLocation()
-  const isActive = pathname === route || pathname.startsWith(route + '/')
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
-        <NavLink to={route} aria-label={label} aria-current={isActive ? 'page' : undefined}>
-          <Icon />
-          <span>{label}</span>
-        </NavLink>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  )
+    const { pathname } = useLocation()
+    const isActive = pathname === route || pathname.startsWith(route + '/')
+    return (
+        <SidebarMenuItem>
+            <SidebarMenuButton asChild isActive={isActive} tooltip={label}>
+                <NavLink to={route} aria-label={label} aria-current={isActive ? 'page' : undefined}>
+                    <Icon />
+                    <span>{label}</span>
+                </NavLink>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
+    )
 }
 
 function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
-  const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
-  
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton
-        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        tooltip={label}
-        aria-label={label}
-      >
-        {theme === 'dark' ? <Sun /> : <Moon />}
-        <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  )
+    const { theme, setTheme } = useTheme()
+    const label = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'
+
+    return (
+        <SidebarMenuItem>
+            <SidebarMenuButton
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                tooltip={label}
+                aria-label={label}
+            >
+                {theme === 'dark' ? <Sun /> : <Moon />}
+                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
+    )
 }
 
 function SidebarCollapseButton() {
-  const { open, toggleSidebar } = useSidebar()
-  return (
-    <SidebarMenuItem>
-      <SidebarMenuButton
-        onClick={toggleSidebar}
-        tooltip={open ? 'Collapse sidebar' : 'Expand sidebar'}
-        aria-label={open ? 'Collapse sidebar' : 'Expand sidebar'}
-      >
-        {open ? <PanelLeftClose /> : <PanelLeftOpen />}
-        <span>{ open? 'Collapse' : 'Expand'}</span>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  )
+    const { open, toggleSidebar } = useSidebar()
+    return (
+        <SidebarMenuItem>
+            <SidebarMenuButton
+                onClick={toggleSidebar}
+                tooltip={open ? 'Collapse sidebar' : 'Expand sidebar'}
+                aria-label={open ? 'Collapse sidebar' : 'Expand sidebar'}
+            >
+                {open ? <PanelLeftClose /> : <PanelLeftOpen />}
+                <span>{ open? 'Collapse' : 'Expand'}</span>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
+    )
 }
 
 export function AppSidebar() {
-  return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <NavItem key={item.route} {...item} />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+    return (
+        <Sidebar collapsible="icon">
+            <SidebarContent>
+                <SidebarGroup>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {navItems.map((item) => (
+                                <NavItem key={item.route} {...item} />
+                            ))}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+            </SidebarContent>
 
-      <SidebarFooter>
-        <SidebarMenu>
-          {bottomNavItems.map((item) => (
-            <NavItem key={item.route} {...item} />
-          ))}
-          <ThemeToggle />
-          <SidebarCollapseButton />
-        </SidebarMenu>
-      </SidebarFooter>
+            <SidebarFooter>
+                <SidebarMenu>
+                    {bottomNavItems.map((item) => (
+                        <NavItem key={item.route} {...item} />
+                    ))}
+                    <ThemeToggle />
+                    <SidebarCollapseButton />
+                </SidebarMenu>
+            </SidebarFooter>
 
-      <SidebarRail />
-    </Sidebar>
-  )
+            <SidebarRail />
+        </Sidebar>
+    )
 }

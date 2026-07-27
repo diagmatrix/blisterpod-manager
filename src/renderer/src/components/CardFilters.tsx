@@ -82,9 +82,9 @@ export function CardFilters({ state, handlers, showLayoutFilter = true }: CardFi
                     key={r}
                     onClick={() => toggleRarity(r)}
                     className={`h-8 px-2.5 rounded-md text-xs font-medium border transition-colors ${raritiesInput.includes(r)
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'border-input text-muted-foreground hover:bg-muted hover:text-foreground'
-                        }`}
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-input text-muted-foreground hover:bg-muted hover:text-foreground'
+                    }`}
                 >
                     {RARITY_LABELS[r]}
                 </button>
@@ -99,9 +99,9 @@ export function CardFilters({ state, handlers, showLayoutFilter = true }: CardFi
                     onClick={() => toggleColorIdentity(c)}
                     title={c}
                     className={`w-8 h-8 rounded-md border flex items-center justify-center transition-all ${colorIdentityInput.includes(c)
-                            ? 'ring-2 ring-primary border-primary'
-                            : 'border-input opacity-60 grayscale hover:opacity-100 hover:grayscale-0'
-                        }`}
+                        ? 'ring-2 ring-primary border-primary'
+                        : 'border-input opacity-60 grayscale hover:opacity-100 hover:grayscale-0'
+                    }`}
                 >
                     <img src={COLOR_SYMBOL_MAP[c]} alt={c} width={20} height={20} />
                 </button>
@@ -114,9 +114,9 @@ export function CardFilters({ state, handlers, showLayoutFilter = true }: CardFi
                         key={value}
                         onClick={() => setColorMode(value)}
                         className={`h-8 px-2.5 text-xs font-medium ${colorMode === value
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            }`}
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
                     >
                         {label}
                     </button>
