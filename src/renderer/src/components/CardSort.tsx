@@ -1,6 +1,6 @@
 import { ChevronUp, ChevronDown, Minus, X, ArrowDownUp, RotateCcw } from 'lucide-react'
 import type { SortParams } from '../../../models/search'
-import type { UseCardSortReturn } from '../../../models/responses'
+import type { UseCardSortReturn } from '../hooks/useCardSort'
 
 interface SortOption {
     value: string
@@ -74,18 +74,24 @@ function SortOptionButton({ option, params, onSort, onRemove }: SortOptionButton
 export function CardSort({ options, sort, onCommit }: CardSortProps) {
     const { sortParams, handleSort, removeSort, reset } = sort
     const allOptions = options.length > 0 ? DEFAULT_SORT_OPTIONS.concat(options) : DEFAULT_SORT_OPTIONS
+    const canSort = sortParams.length > 0
 
     return (
         <div className="flex flex-wrap items-center gap-2">
-            <button
-                type="button"
-                onClick={() => onCommit(sortParams)}
-                title="Apply this sorting"
-                className="h-8 px-3 rounded-md border border-primary bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
+            <span
+                className="inline-flex"
+                title={canSort ? 'Apply this sorting' : 'Select at least one column to sort by'}
             >
-                <ArrowDownUp className="w-3.5 h-3.5" />
-                <span>Sort</span>
-            </button>
+                <button
+                    type="button"
+                    onClick={() => onCommit(sortParams)}
+                    disabled={!canSort}
+                    className="h-8 px-3 rounded-md border border-primary bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center gap-1.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                >
+                    <ArrowDownUp className="w-3.5 h-3.5" />
+                    <span>Sort</span>
+                </button>
+            </span>
             <button
                 type="button"
                 onClick={reset}

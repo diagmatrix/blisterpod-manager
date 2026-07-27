@@ -66,6 +66,7 @@ export function defaultWindowApi(): ElectronAPI {
 
         logMessage: vi.fn(),
         logPath: vi.fn(async () => 'C:/tmp/test.log'),
+        dbPath: vi.fn(async () => 'C:/tmp/db.db'),
 
         refreshSetSymbols: vi.fn(async () => '1.0.0'),
         keyruneVersion: vi.fn(async () => ({ downloaded: '1.0.0' })),

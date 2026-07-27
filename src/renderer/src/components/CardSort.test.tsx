@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { renderWithProviders, screen } from '../../../../tests/renderer/render'
-import type { UseCardSortReturn } from '../../../models/responses'
+import type { UseCardSortReturn } from '../hooks/useCardSort'
 import type { SortParams } from '../../../models/search'
 import { CardSort } from './CardSort'
 

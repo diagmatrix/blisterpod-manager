@@ -309,7 +309,7 @@ function parseManaboxCSV(text: string): FileParsingResult {
         const key = `${setCode}:${collectorNumber}`
         const existing = merged.get(key) ?? { setCode, collectorNumber, quantityNonfoil: 0, quantityFoil: 0 }
         
-        const isFoil = !(cols[foilIdx]?.trim().toLowerCase() === 'normal')
+        const isFoil = cols[foilIdx] && !(cols[foilIdx].trim().toLowerCase() === 'normal')
         if (isFoil) {
             existing.quantityFoil += count
         } else {

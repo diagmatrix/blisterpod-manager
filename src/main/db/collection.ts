@@ -142,7 +142,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
         })
 
         batchInsertTransaction()
-        return { inserted: inserted, error: errors.join(', '), warning: warnings.join(', ') }
+        return { inserted: inserted, error: errors.join('. '), warning: warnings.join('. ') }
     })
 
     // Update a card in the collection

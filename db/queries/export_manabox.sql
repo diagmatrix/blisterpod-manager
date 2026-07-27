@@ -8,8 +8,7 @@ SELECT
     coalesce(c.updated_at, c.created_at) AS added_at
 FROM mapped_collection mc
 INNER JOIN cards c
-    ON mc.set_code = c.set_code
-    AND mc.collector_number = c.collector_number
+    ON mc.collection_id = c.id
 WHERE
     mc.scryfall_id IS NOT NULL
 ORDER BY c.set_code, c.collector_number
