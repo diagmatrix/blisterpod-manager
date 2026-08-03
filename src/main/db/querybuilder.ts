@@ -10,7 +10,6 @@ export const VALID_TABLE_NAMES = ['mapped_collection', 'scryfall_cards_formatted
 export const MAX_PAGE_SIZE = 120
 
 const DEFAULT_COLOR_MODE = 'atLeast'
-const DEFAULT_SORT_COLUMN = 'collector_number_normalised'
 const DEFAULT_SORT_DIRECTION = 'ASC'
 
 export const BASE_QUERY = 'SELECT *, count(*) OVER () AS total_count FROM'
@@ -103,7 +102,8 @@ function buildQuerySortCondition(sortParams: SortParams[]): string {
     }
 
     let sortCondition = ''
-    for (const { sortColumn, sortDirection } of sortParams.sort((a, b) => a.sortOrder - b.sortOrder)) {
+    const sortedParams = [...sortParams].sort((a, b) => a.sortOrder - b.sortOrder)
+    for (const { sortColumn, sortDirection } of sortedParams) {
         sortCondition = sortCondition === '' ? `ORDER BY ${sortColumn} ${sortDirection}` : `${sortCondition}, ${sortColumn} ${sortDirection}`
     }
 
@@ -134,17 +134,16 @@ function validateSearchParams(params: CardSearchParams): CardSearchParams {
     const pageSize = Math.min(params.pageSize ?? 60, MAX_PAGE_SIZE)
     const setCode = params.setCode ? params.setCode.toUpperCase() : params.setCode
 
-    const sortParamsRaw = [...params.sort ?? []].sort((a, b) => a.sortOrder - b.sortOrder) ?? []
+    const sortParamsRaw = [...params.sort ?? []].sort((a, b) => a.sortOrder - b.sortOrder)
     const sort: SortParams[] = []
     const sortedColumns: string[] = []
     let sortOrder = 1
     for (const sortParams of sortParamsRaw) {
-        const sortColumn = sortParams.sortColumn ?? DEFAULT_SORT_COLUMN
         const sortDirection = VALID_SORT_ORDERS.includes(sortParams.sortDirection) ? sortParams.sortDirection : DEFAULT_SORT_DIRECTION
-        if ((VALID_SORT_COLUMNS.includes(sortColumn) || sortColumn === DEFAULT_SORT_COLUMN) && !sortedColumns.includes(sortColumn)) {
-            sort.push({ sortColumn: sortColumn, sortDirection: sortDirection, sortOrder: sortOrder })
+        if (VALID_SORT_COLUMNS.includes(sortParams.sortColumn) && !sortedColumns.includes(sortParams.sortColumn)) {
+            sort.push({ sortColumn: sortParams.sortColumn, sortDirection: sortDirection, sortOrder: sortOrder })
             sortOrder++
-            sortedColumns.push(sortColumn)
+            sortedColumns.push(sortParams.sortColumn)
         }
     }
 
