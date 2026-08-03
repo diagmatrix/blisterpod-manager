@@ -1,6 +1,6 @@
 # Blisterpod Manager
 
-A desktop app to track and manage your Magic: The Gathering card collection. Built as a personal way to sort my MTG collection (and to try the AI psychosis going on worldwide).
+A desktop app to track and manage your Magic: The Gathering card collection. Built as a personal way to sort my MTG collection.
 
 Card data is sourced from [Scryfall](https://scryfall.com/) and stored locally in a SQLite database, so the app works fully offline once cards have been imported.
 
@@ -49,7 +49,7 @@ Start the app in development mode (hot reload for the renderer):
 npm run dev
 ```
 
-The runtime database lives at `<userData>/collection.db` (Electron's per-user data directory), not in the repo. The SQL files under [db/](db/) are the source of truth for schema and views and are applied on first run.
+The runtime database lives at `<userData>/collection.db` for production purposes or `<userData>/test_collection.db` for development purposes (Electron's per-user data directory), not in the repo. The SQL files under [db/](db/) are the source of truth for schema and views and are applied on first run.
 
 ## Other scripts
 
@@ -57,22 +57,42 @@ The runtime database lives at `<userData>/collection.db` (Electron's per-user da
 | --- | --- |
 | `npm run build` | Build main, preload, and renderer bundles into `out/`. |
 | `npm run preview` | Preview the built app. |
-| `npm run package` | Build and create a distributable installer via `electron-builder` (output in `dist/`). |
-| `npm run lint` | ESLint over `.ts`/`.tsx` sources. |
+| `npm run release` | Full production build: bundles, then a distributable installer via `electron-builder` (output in `dist/`). |
+| `npm run lint` | ESLint over the repo. |
 | `npm run lint:fix` | ESLint with `--fix`. |
-| `npx tsc -b` | Type-check all TS projects (main, preload, renderer). |
+| `npm run test` | Unit and integration tests (Vitest). |
+| `npm run test:watch` | The same tests, in watch mode. |
+| `npm run test:coverage` | The same tests, with a coverage report. |
+| `npm run test:e2e` | End-to-end tests (Playwright) against a freshly built app. |
+| `npm run rebuild:node` | Rebuild `better-sqlite3` against the Node ABI. |
+| `npm run package:post` | Rebuild `better-sqlite3` against the Electron ABI. |
+
+`npm run release` takes flags after `--`: `--check` runs lint, type-check and both test
+suites first, `--skip-package` builds the bundles without producing an installer, and
+`--abi=node` leaves the native module test-ready rather than dev-ready.
+
+### A note on `better-sqlite3` and ABIs
+
+`better-sqlite3` is a native module, so it has to be compiled against whichever runtime
+loads it — Electron for `dev`, `test:e2e` and the packaged app, plain Node for Vitest.
+Only one can be in place at a time, which is why the two rebuild scripts exist.
+
+The test scripts already run `rebuild:node` for you, and `dev` runs `package:post`, so
+you rarely need them by hand. When something fails with a `NODE_MODULE_VERSION`
+mismatch, it means the module is built for the other runtime: run `npm run rebuild:node`
+before testing, or `npm run package:post` before `npm run dev`.
 
 ## Project layout
 
-- [src/main/](src/main/) — Electron main process (DB, Scryfall refresh, IPC handlers).
-- [src/preload/](src/preload/) — Preload bridge exposing `window.api` to the renderer.
-- [src/renderer/](src/renderer/) — React UI.
-- [src/models/](src/models/) — Types shared across processes.
-- [db/](db/) — SQL schema (`tables/`) and views (`views/`).
-- [resources/](resources/) — App icons and other bundled assets.
-
-See [AGENTS.md](AGENTS.md) for deeper architecture notes and gotchas.
+- [src/main/](src/main/): Electron main process (DB, Scryfall refresh, IPC handlers).
+- [src/preload/](src/preload/): Preload bridge exposing `window.api` to the renderer.
+- [src/renderer/](src/renderer/): React UI.
+- [src/models/](src/models/): Types shared across processes.
+- [db/](db/): SQL schema (`tables/`), views (`views/`) and queries (`queries/`).
+- [resources/](resources/): App icons and other bundled assets.
+- [AGENTS.md](AGENTS.md): AI agents file.
+- [CHANGELOG.md](CHANGELOG.md): Application changelog.
 
 ## License
 
-GNU AGPL-3.0-only — see [LICENSE](LICENSE).
+GNU AGPL-3.0-only. See [LICENSE](LICENSE).

@@ -88,6 +88,12 @@ if (runChecks) {
 step('Build main, preload and renderer bundles', 'npm run build')
 
 if (!skipPackage) {
+    // electron-builder rebuilds native deps itself, but @electron/rebuild skips any
+    // module whose build/Release/.forge-meta already names the target ABI -- and a
+    // plain `npm rebuild` replaces the binary without updating that marker. Forcing
+    // the Electron build here is what keeps a Node-ABI better_sqlite3.node out of
+    // the installer.
+    step('Rebuild better-sqlite3 for the Electron ABI (packaging input)', 'npm run package:post')
     step('Package installers with electron-builder', 'npx electron-builder')
 }
 

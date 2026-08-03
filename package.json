@@ -1,6 +1,6 @@
 {
   "name": "blisterpod-manager",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Track and manage your Magic: The Gathering card collection",
   "main": "out/main/index.js",
   "type": "module",
@@ -8,14 +8,14 @@
     "dev": "npm run package:post && electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "release": "node scripts/release.mjs && npm run package:post && npm run rebuild:node",
+    "release": "node scripts/release.mjs",
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
     "test": "npm run rebuild:node && vitest run",
     "test:watch": "npm run rebuild:node && vitest",
     "test:coverage": "npm run rebuild:node && vitest run --coverage",
     "test:e2e": "npm run build && npm run package:post && playwright test",
-    "rebuild:node": "npm rebuild better-sqlite3",
+    "rebuild:node": "npm rebuild better-sqlite3 && node -e \"require('fs').rmSync('node_modules/better-sqlite3/build/Release/.forge-meta', { force: true })\"",
     "package:post": "electron-rebuild -f -w better-sqlite3"
   },
   "build": {
