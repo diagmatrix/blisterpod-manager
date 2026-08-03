@@ -86,19 +86,3 @@ export function getManaSymbolUrl(symbol: string): string {
     const parsedCost = cost.replace(/\//g, '') // Remove slashes if present
     return `${MANA_SYMBOL_BASE_URL}${parsedCost}.svg`
 }
-
-/**
- *
- * @param manaCost Mana cost of a card
- * @returns The mana cost symbols array
- */
-export function setManaCostSymbols(manaCost: string[]): string[] {
-    const symbols: string[] = []
-    manaCost.forEach(cost => {
-        const url = getManaSymbolUrl(cost)
-        if (url) {
-            symbols.push(cost)
-        }
-    })
-    return symbols
-}
