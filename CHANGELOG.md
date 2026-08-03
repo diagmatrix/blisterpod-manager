@@ -1,5 +1,31 @@
 # Changelog
 
+## v1.0.5
+
+### New Features
+- **Sort by several columns at once** — Card lists can now be sorted by more than one column. Click a column to add it to the sort, click it again to flip its direction, and the badge shows its position in the order. Remove a column with its badge, then press **Sort** to apply the whole chain.
+- **Manabox import and export** — Manabox joins Blisterpod, Moxfield and Google Drive as an import format, and Blisterpod and Moxfield as an export format.
+- **Reset filters on Add Cards** — A reset button clears the search, filters and sorting in one go, matching the one already on the Collection page.
+- **Database location in Settings** — **Settings/Diagnostics** now shows where the collection database lives, next to the log file path.
+- **Rebuilt About page** — Attributions and disclaimers are easier to read, the full changelog is now visible inside the app, and there is a direct link to the project on GitHub.
+
+### Bug Fixes
+- **Card names with quotation marks import correctly** — Names such as `Kongming, "Sleeping Dragon"` lost their quotes when a CSV was read back in. Doubled quotes are now decoded the same way they are written out, so a card exported from the app re-imports unchanged.
+- **Imported cards keep their original dates** — The `created_at` and `updated_at` values in a Blisterpod CSV were parsed and then discarded, so every imported card was stamped with the time of the import. They are now stored as given, and only fall back to the current time when the file does not supply them.
+- **Imports no longer fail silently** — A file that could not be read, or a card that could not be inserted, produced no visible result. Both now report how many cards landed and list the reasons behind a **show import issues** dialog.
+
+### Improvements
+- **Clearer import and export feedback** — Both show a running state while they work, report the number of rows handled, and put any problems behind a dialog rather than discarding them. A failure no longer leaves the button stuck mid-transfer, and the same file can be retried straight away.
+- **Consistent import and export controls** — Picking a format now works the same way on both sides, from a single provider selector.
+- **No menu bar in packaged builds** — The developer menu bar is no longer shown in released versions of the app.
+
+### Development
+These changes do not affect how the app behaves, but they are groundwork for keeping it stable.
+- **Separate development database** — Running in development mode now automatically uses `test_collection.db`, so day-to-day work can never touch a real collection.
+- **Wider test coverage** — Added tests for the three export handlers against the real schema and real files on disk, for CSV parsing across all four import formats, and for the sorting, import, export and About page components.
+- **Shared types renamed** — `src/shared` is now `src/models`, which better describes what it holds.
+- **Enforced code style** — Indentation and trailing whitespace are now checked by ESLint and described in an `.editorconfig`, so formatting stays consistent instead of drifting per file.
+
 ## v1.0.4
 
 ### New Features

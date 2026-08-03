@@ -13,7 +13,7 @@
 - Type-check all TS projects: `npx tsc -b`
 - Unit + integration tests: `npm test` (watch: `npm run test:watch`, coverage: `npm run test:coverage`)
 - End-to-end tests: `npm run test:e2e` (builds, rebuilds native deps for Electron, then runs Playwright)
-- Package installer/app bundle: `npm run package`
+- Package installer/app bundle: `npm run release` (add `-- --check` to gate on lint/tsc/tests, `-- --abi=node` to end Node-ABI/test-ready)
 
 ## Wiring and architecture gotchas
 
@@ -40,6 +40,7 @@
 - `tests/main/sqlite.ts` builds a real in-memory DB from `db/tables/` then `db/views/`; `tests/fixtures/collection.sql` is the shared seed (also used by the E2E launcher). Do not mock better-sqlite3 — running the real schema is the point.
 - `tests/renderer/window-api.ts` is typed as the real `ElectronAPI`, so `npx tsc -b` fails if the preload bridge gains a method the mock lacks. That is intentional: it makes the "IPC changes require synchronized edits in all layers" rule compiler-enforced. Extend the mock when you extend the bridge.
 - **better-sqlite3 ABI**: it is native, and the two test tiers need opposite builds. Vitest runs under plain Node (`npm run rebuild:node`); E2E and packaging need the Electron build (`npm run package:post`). A `NODE_MODULE_VERSION` error from either means you are on the wrong build — rebuild, do not debug the test.
+- **The ABI marker can lie, and it used to ship broken installers.** `@electron/rebuild` records what it built in `node_modules/better-sqlite3/build/Release/.forge-meta` (e.g. `x64--128`) and skips any module whose marker already names the target ABI. `npm rebuild` replaces the `.node` without touching that marker, so a Node-ABI binary behind an Electron-ABI marker makes electron-builder's automatic rebuild a silent no-op — the installer then dies on launch with `NODE_MODULE_VERSION 137 ... requires 128`. Two guards now exist: `rebuild:node` deletes the marker after building, and `scripts/release.mjs` forces `package:post` immediately before `electron-builder`. Keep both; either alone leaves a hole for anyone running `npx electron-builder` by hand.
 - E2E isolation uses Electron's `--user-data-dir` switch, which relocates both the database and the electron-store settings to a temp profile. The launcher pre-seeds it so the app never enters the Scryfall download path.
 
 ### Deliberate shortcuts, and the fix each one defers
