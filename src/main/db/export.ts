@@ -41,6 +41,16 @@ const COLLECTION_EXPORT_MANABOX_QUERY = 'export_manabox.sql'
 
 const logger = createLogger('db:export')
 
+function runExport(filePath: string, headers: string, lines: string[], format?: string): string | undefined {
+    try {
+        writeFileSync(filePath, [headers, ...lines].join('\n'), 'utf8')
+    } catch (err) {
+        const errorMessage = `Error exporting collection${format ? ` to ${format}` : ''}: ${err}`
+        logger.error(errorMessage)
+        return errorMessage
+    }
+}
+
 export function registerExportHandlers(db: Database.Database): void {
     // Export collection to CSV
     ipcMain.handle(COLLECTION_EXPORT_NAME, (_, filePath: string) => {
@@ -59,12 +69,8 @@ export function registerExportHandlers(db: Database.Database): void {
             [r.set_code, r.collector_number, r.quantity_nonfoil, r.quantity_foil, r.created_at ?? '', r.updated_at ?? ''].join(',')
         )
 
-        try {
-            writeFileSync(filePath, [COLLECTION_HEADERS, ...lines].join('\n'), 'utf8')
-
-        } catch (err) {
-            const errorMessage = `Error exporting collection: ${err}`
-            logger.error(errorMessage)
+        const errorMessage = runExport(filePath, COLLECTION_HEADERS, lines)
+        if (errorMessage) {
             return { exported: 0, error: errorMessage }
         }
 
@@ -95,12 +101,8 @@ export function registerExportHandlers(db: Database.Database): void {
             }
         }
 
-        try {
-            writeFileSync(filePath, [MOXFIELD_HEADERS, ...lines].join('\n'), 'utf8')
-
-        } catch (err) {
-            const errorMessage = `Error exporting collection to Moxfield: ${err}`
-            logger.error(errorMessage)
+        const errorMessage = runExport(filePath, MOXFIELD_HEADERS, lines, 'Moxfield')
+        if (errorMessage) {
             return { exported: 0, error: errorMessage }
         }
 
@@ -131,12 +133,8 @@ export function registerExportHandlers(db: Database.Database): void {
             }
         }
 
-        try {
-            writeFileSync(filePath, [MANABOX_HEADERS, ...lines].join('\n'), 'utf8')
-
-        } catch (err) {
-            const errorMessage = `Error exporting collection to Manabox: ${err}`
-            logger.error(errorMessage)
+        const errorMessage = runExport(filePath, MANABOX_HEADERS, lines, 'Manabox')
+        if (errorMessage) {
             return { exported: 0, error: errorMessage }
         }
 

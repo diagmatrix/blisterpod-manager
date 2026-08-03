@@ -3,6 +3,12 @@ import type { CollectionAddParams } from '../../../models/search'
 import { ProviderID } from '../../../models/transfers'
 import { createLogger } from './logger'
 
+interface CSVContents {
+    rows: string[][]
+    headerIndex: (column: string) => number
+    error?: string
+}
+
 const logger = createLogger('file:parsing')
 
 function parseCSVRow(line: string): string[] {
@@ -47,6 +53,41 @@ function parseDate(raw: string): string | undefined {
     return isNaN(d.getTime()) ? undefined : d.toISOString()
 }
 
+function readCSV(text: string, searchColumns?: (columns: string[]) => boolean): CSVContents {
+    const defaultHeaderIndex = () => -1
+
+    const lines = text.split('\n').map(l => l.trimEnd()).filter(l => l)
+    if (lines.length < 2) {
+        const errorMessage = 'File contains no rows'
+        logger.warn(errorMessage)
+        return { headerIndex: defaultHeaderIndex, rows: [], error: errorMessage }
+    }
+
+    let headers: string[] = []
+    let rowsStart = 1
+    if (searchColumns) {
+        const headerIdx = lines.findIndex(l => {
+            const cols = parseCSVRow(l).map(h => h.trim().toUpperCase())
+            return searchColumns(cols)
+        })
+        if (headerIdx === -1) {
+            const errorMessage = 'Could not find column headers'
+            logger.warn(errorMessage)
+            return { headerIndex: defaultHeaderIndex, rows: [], error: errorMessage }
+        }
+
+        rowsStart = headerIdx + 1
+        headers = parseCSVRow(lines[headerIdx]).map(h => h.trim().toUpperCase())
+    } else {
+        headers = parseCSVRow(lines[0])
+    }
+
+    return {
+        headerIndex: (name: string) => headers.indexOf(name),
+        rows: lines.slice(rowsStart).map((line) => parseCSVRow(line))
+    }
+}
+
 function createParsingErrorMessage(rowsMissingSetCode: number, rowsMissingCollectorNumber: number, rowsWithInvalidQuantities: number): string | undefined {
     let error: string | undefined
     if (rowsMissingSetCode > 0) {
@@ -69,21 +110,17 @@ function createParsingErrorMessage(rowsMissingSetCode: number, rowsMissingCollec
 }
 
 function parseBlisterpodCSV(text: string): FileParsingResult {
-    const lines = text.split('\n').map(l => l.trimEnd()).filter(l => l)
-    if (lines.length < 2) {
-        const errorMessage = 'File contains no rows'
-        logger.warn(errorMessage)
-        return { cards: [], error: errorMessage }
+    const { headerIndex, rows, error } = readCSV(text)
+    if (error) {
+        return { cards: [], error: error }
     }
 
-    const headers = parseCSVRow(lines[0])
-    const col = (name: string) => headers.indexOf(name)
-    const setIdx = col('set_code')
-    const numberIdx = col('collector_number')
-    const nonfoilIdx = col('quantity_nonfoil')
-    const foilIdx = col('quantity_foil')
-    const createdIdx = col('created_at')
-    const updatedIdx = col('updated_at')
+    const setIdx = headerIndex('set_code')
+    const numberIdx = headerIndex('collector_number')
+    const nonfoilIdx = headerIndex('quantity_nonfoil')
+    const foilIdx = headerIndex('quantity_foil')
+    const createdIdx = headerIndex('created_at')
+    const updatedIdx = headerIndex('updated_at')
 
     if (setIdx === -1 || numberIdx === -1) {
         const errorMessage = 'Missing set_code and/or collector_number columns'
@@ -95,9 +132,7 @@ function parseBlisterpodCSV(text: string): FileParsingResult {
     let missingSetCode = 0
     let missingCollectorNumber = 0
     let invalidQuantities = 0
-    for (const line of lines.slice(1)) {
-        const cols = parseCSVRow(line)
-
+    for (const cols of rows) {
         const setCode = cols[setIdx]?.trim()
         if (!setCode) {
             missingSetCode++
@@ -131,19 +166,15 @@ function parseBlisterpodCSV(text: string): FileParsingResult {
 }
 
 function parseMoxfieldCSV(text: string): FileParsingResult {
-    const lines = text.split('\n').map(l => l.trimEnd()).filter(l => l)
-    if (lines.length < 2) {
-        const errorMessage = 'File contains no rows'
-        logger.warn(errorMessage)
-        return { cards: [], error: errorMessage }
+    const { headerIndex, rows, error } = readCSV(text)
+    if (error) {
+        return { cards: [], error: error }
     }
 
-    const headers = parseCSVRow(lines[0])
-    const col = (name: string) => headers.indexOf(name)
-    const countIdx = col('Count')
-    const editionIdx = col('Edition')
-    const numberIdx = col('Collector Number')
-    const foilIdx = col('Foil')
+    const countIdx = headerIndex('Count')
+    const editionIdx = headerIndex('Edition')
+    const numberIdx = headerIndex('Collector Number')
+    const foilIdx = headerIndex('Foil')
 
     if (editionIdx === -1 || numberIdx === -1) {
         const errorMessage = 'Missing Edition and/or Collector Number columns'
@@ -155,9 +186,7 @@ function parseMoxfieldCSV(text: string): FileParsingResult {
     let missingSetCode = 0
     let missingCollectorNumber = 0
     let invalidQuantities = 0
-    for (const line of lines.slice(1)) {
-        const cols = parseCSVRow(line)
-
+    for (const cols of rows) {
         const setCode = cols[editionIdx]?.trim().toUpperCase()
         if (!setCode) {
             missingSetCode++
@@ -193,38 +222,26 @@ function parseMoxfieldCSV(text: string): FileParsingResult {
 }
 
 function parseGoogleDriveCSV(text: string): FileParsingResult {
-    const lines = text.split('\n').map(l => l.trimEnd()).filter(l => l)
-    if (lines.length < 2) {
-        const errorMessage = 'File contains no rows'
-        logger.warn(errorMessage)
-        return { cards: [], error: errorMessage }
-    }
-
-    const headerIdx = lines.findIndex(l => {
-        const cols = parseCSVRow(l).map(h => h.trim().toUpperCase())
+    const headerChecker = (cols: string[]) => {
         return (cols.includes('NAME') || cols.includes('TYPE')) && cols.includes('SET') && cols.includes('NUMBER')
-    })
-    if (headerIdx === -1) {
-        const errorMessage = 'Could not find column headers'
-        logger.warn(errorMessage)
-        return { cards: [], error: errorMessage }
+    }
+    const { headerIndex, rows, error } = readCSV(text, headerChecker)
+    if (error) {
+        return { cards: [], error: error }
     }
 
-    const headers = parseCSVRow(lines[headerIdx]).map(h => h.trim().toUpperCase())
-    const col = (name: string) => headers.indexOf(name)
-    const nameIdx = col('NAME') !== -1 ? col('NAME') : col('TYPE')
-    const setIdx = col('SET')
-    const numberIdx = col('NUMBER')
-    const quantityIdx = col('QUANTITY')
-    const addedIdx = col('ADDED')
-    const modifiedIdx = col('LAST MODIFIED')
+    const nameIdx = headerIndex('NAME') !== -1 ? headerIndex('NAME') : headerIndex('TYPE')
+    const setIdx = headerIndex('SET')
+    const numberIdx = headerIndex('NUMBER')
+    const quantityIdx = headerIndex('QUANTITY')
+    const addedIdx = headerIndex('ADDED')
+    const modifiedIdx = headerIndex('LAST MODIFIED')
 
     const merged = new Map<string, CollectionAddParams>()
     let missingSetCode = 0
     let missingCollectorNumber = 0
     let invalidQuantities = 0
-    for (const line of lines.slice(headerIdx + 1)) {
-        const cols = parseCSVRow(line)
+    for (const cols of rows) {
         const setCode = cols[setIdx]?.trim()
         if (!setCode) {
             missingSetCode++
@@ -268,19 +285,15 @@ function parseGoogleDriveCSV(text: string): FileParsingResult {
 }
 
 function parseManaboxCSV(text: string): FileParsingResult {
-    const lines = text.split('\n').map(l => l.trimEnd()).filter(l => l)
-    if (lines.length < 2) {
-        const errorMessage = 'File contains no rows'
-        logger.warn(errorMessage)
-        return { cards: [], error: errorMessage }
+    const { headerIndex, rows, error } = readCSV(text)
+    if (error) {
+        return { cards: [], error: error }
     }
 
-    const headers = parseCSVRow(lines[0])
-    const col = (name: string) => headers.indexOf(name)
-    const quantityIdx = col('Quantity')
-    const setCodeIdx = col('Set code')
-    const numberIdx = col('Collector number')
-    const foilIdx = col('Foil')
+    const quantityIdx = headerIndex('Quantity')
+    const setCodeIdx = headerIndex('Set code')
+    const numberIdx = headerIndex('Collector number')
+    const foilIdx = headerIndex('Foil')
 
     if (setCodeIdx === -1 || numberIdx === -1) {
         const errorMessage = 'Missing Set code and/or Collector number columns'
@@ -292,9 +305,7 @@ function parseManaboxCSV(text: string): FileParsingResult {
     let missingSetCode = 0
     let missingCollectorNumber = 0
     let invalidQuantities = 0
-    for (const line of lines.slice(1)) {
-        const cols = parseCSVRow(line)
-
+    for (const cols of rows) {
         const setCode = cols[setCodeIdx]?.trim().toUpperCase()
         if (!setCode) {
             missingSetCode++
