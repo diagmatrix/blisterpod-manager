@@ -9,6 +9,19 @@ interface CSVContents {
     error?: string
 }
 
+type CSVParsedRow = CollectionAddParams | { skipped: 'setCode' | 'collectorNumber' | 'invalidQuantities' }
+
+interface CSVSkippedRows {
+    setCode: number
+    collectorNumber: number
+    invalidQuantities: number
+}
+
+interface CSVParsingResult {
+    cards: CollectionAddParams[]
+    skipped: CSVSkippedRows
+}
+
 const logger = createLogger('file:parsing')
 
 function parseCSVRow(line: string): string[] {
@@ -88,17 +101,41 @@ function readCSV(text: string, searchColumns?: (columns: string[]) => boolean): 
     }
 }
 
-function createParsingErrorMessage(rowsMissingSetCode: number, rowsMissingCollectorNumber: number, rowsWithInvalidQuantities: number): string | undefined {
-    let error: string | undefined
-    if (rowsMissingSetCode > 0) {
-        error = `${rowsMissingSetCode} rows were not imported due to missing the set code`
+function parseCSVRows(rows: string[][], rowParser: (cols: string[]) => CSVParsedRow): CSVParsingResult {
+    const cards = new Map<string, CollectionAddParams>()
+    const skipped: CSVSkippedRows = { setCode: 0, collectorNumber: 0, invalidQuantities: 0 }
+
+    for (const row of rows) {
+        const parsedRow = rowParser(row)
+        if ('skipped' in parsedRow) {
+            skipped[parsedRow.skipped]++
+            continue
+        }
+
+        const key = `${parsedRow.setCode}:${parsedRow.collectorNumber}`
+        const existing = cards.get(key)
+        if (existing) {
+            existing.quantityNonfoil += parsedRow.quantityNonfoil
+            existing.quantityFoil += parsedRow.quantityFoil
+        } else {
+            cards.set(key, parsedRow)
+        }
     }
-    if (rowsMissingCollectorNumber > 0) {
-        const errorMessage = `${rowsMissingCollectorNumber} rows were not imported due to missing the collector number`
+
+    return { cards: Array.from(cards.values()), skipped }
+}
+
+function createParsingErrorMessage(skipped: CSVSkippedRows): string | undefined {
+    let error: string | undefined
+    if (skipped.setCode > 0) {
+        error = `${skipped.setCode} rows were not imported due to missing the set code`
+    }
+    if (skipped.collectorNumber > 0) {
+        const errorMessage = `${skipped.collectorNumber} rows were not imported due to missing the collector number`
         error = error ? `${error}. ${errorMessage}` : errorMessage
     }
-    if (rowsWithInvalidQuantities > 0) {
-        const errorMessage = `${rowsWithInvalidQuantities} rows were not imported due to invalid quantity values`
+    if (skipped.invalidQuantities > 0) {
+        const errorMessage = `${skipped.invalidQuantities} rows were not imported due to invalid quantity values`
         error = error ? `${error}. ${errorMessage}` : errorMessage
     }
 
@@ -128,41 +165,34 @@ function parseBlisterpodCSV(text: string): FileParsingResult {
         return { cards: [], error: errorMessage }
     }
 
-    const cards: CollectionAddParams[] = []
-    let missingSetCode = 0
-    let missingCollectorNumber = 0
-    let invalidQuantities = 0
-    for (const cols of rows) {
-        const setCode = cols[setIdx]?.trim()
+    const { cards, skipped } = parseCSVRows(rows, (row: string[]): CSVParsedRow => {
+        const setCode = row[setIdx]?.trim().toUpperCase()
         if (!setCode) {
-            missingSetCode++
-            continue
+            return { skipped: 'setCode' }
         }
 
-        const collectorNumber = cols[numberIdx]?.trim()
+        const collectorNumber = row[numberIdx]?.trim()
         if (!collectorNumber) {
-            missingCollectorNumber++
-            continue
+            return { skipped: 'collectorNumber' }
         }
 
-        const quantityNonfoil = parseInt(cols[nonfoilIdx] ?? '0', 10) || 0
-        const quantityFoil = parseInt(cols[foilIdx] ?? '0', 10) || 0
+        const quantityNonfoil = parseInt(row[nonfoilIdx] ?? '0', 10) || 0
+        const quantityFoil = parseInt(row[foilIdx] ?? '0', 10) || 0
         if (quantityFoil < 0 || quantityNonfoil < 0 || quantityFoil + quantityNonfoil === 0) {
-            invalidQuantities++
-            continue
+            return { skipped: 'invalidQuantities' }
         }
 
-        cards.push({
+        return {
             setCode,
             collectorNumber,
             quantityNonfoil,
             quantityFoil,
-            createdAt: cols[createdIdx]?.trim() || undefined,
-            updatedAt: cols[updatedIdx]?.trim() || undefined,
-        })
-    }
+            createdAt: row[createdIdx]?.trim() || undefined,
+            updatedAt: row[updatedIdx]?.trim() || undefined,
+        }
+    })
 
-    return { cards: cards, error: createParsingErrorMessage(missingSetCode, missingCollectorNumber, invalidQuantities) }
+    return { cards: cards, error: createParsingErrorMessage(skipped) }
 }
 
 function parseMoxfieldCSV(text: string): FileParsingResult {
@@ -182,50 +212,39 @@ function parseMoxfieldCSV(text: string): FileParsingResult {
         return { cards: [], error: errorMessage }
     }
 
-    const merged = new Map<string, CollectionAddParams>()
-    let missingSetCode = 0
-    let missingCollectorNumber = 0
-    let invalidQuantities = 0
-    for (const cols of rows) {
-        const setCode = cols[editionIdx]?.trim().toUpperCase()
+    const { cards, skipped } = parseCSVRows(rows, (row: string[]): CSVParsedRow => {
+        const setCode = row[editionIdx]?.trim().toUpperCase()
         if (!setCode) {
-            missingSetCode++
-            continue
+            return { skipped: 'setCode' }
         }
 
-        const collectorNumber = cols[numberIdx]?.trim()
+        const collectorNumber = row[numberIdx]?.trim()
         if (!collectorNumber) {
-            missingCollectorNumber++
-            continue
+            return { skipped: 'collectorNumber' }
         }
 
-        const count = parseInt(cols[countIdx] ?? '0', 10) || 0
+        const count = parseInt(row[countIdx] ?? '0', 10) || 0
         if (count <= 0) {
-            invalidQuantities++
-            continue
+            return { skipped: 'invalidQuantities' }
         }
 
-        const key = `${setCode}:${collectorNumber}`
-        const existing = merged.get(key) ?? { setCode, collectorNumber, quantityNonfoil: 0, quantityFoil: 0 }
+        const isFoil = row[foilIdx]?.trim().toLowerCase() === 'true'
 
-        const isFoil = cols[foilIdx]?.trim().toLowerCase() === 'true'
-        if (isFoil) {
-            existing.quantityFoil += count
-        } else {
-            existing.quantityNonfoil += count
+        return {
+            setCode,
+            collectorNumber,
+            quantityNonfoil: isFoil ? 0 : count,
+            quantityFoil: isFoil ? count : 0,
         }
+    })
 
-        merged.set(key, existing)
-    }
-
-    return { cards: Array.from(merged.values()), error: createParsingErrorMessage(missingSetCode, missingCollectorNumber, invalidQuantities) }
+    return { cards: cards, error: createParsingErrorMessage(skipped) }
 }
 
 function parseGoogleDriveCSV(text: string): FileParsingResult {
-    const headerChecker = (cols: string[]) => {
+    const { headerIndex, rows, error } = readCSV(text, (cols: string[]) => {
         return (cols.includes('NAME') || cols.includes('TYPE')) && cols.includes('SET') && cols.includes('NUMBER')
-    }
-    const { headerIndex, rows, error } = readCSV(text, headerChecker)
+    })
     if (error) {
         return { cards: [], error: error }
     }
@@ -237,51 +256,35 @@ function parseGoogleDriveCSV(text: string): FileParsingResult {
     const addedIdx = headerIndex('ADDED')
     const modifiedIdx = headerIndex('LAST MODIFIED')
 
-    const merged = new Map<string, CollectionAddParams>()
-    let missingSetCode = 0
-    let missingCollectorNumber = 0
-    let invalidQuantities = 0
-    for (const cols of rows) {
+    const { cards, skipped } = parseCSVRows(rows, (cols: string[]): CSVParsedRow => {
         const setCode = cols[setIdx]?.trim()
         if (!setCode) {
-            missingSetCode++
-            continue
+            return { skipped: 'setCode' }
         }
 
         const collectorNumber = cols[numberIdx]?.trim()
         if (!collectorNumber) {
-            missingCollectorNumber++
-            continue
+            return { skipped: 'collectorNumber' }
         }
 
         const quantity = parseInt(cols[quantityIdx] ?? '0', 10) || 0
         if (quantity <= 0) {
-            invalidQuantities++
-            continue
+            return { skipped: 'invalidQuantities' }
         }
 
-        const key = `${setCode}:${collectorNumber}`
-        const existing = merged.get(key) ?? {
+        const isFoil = (cols[nameIdx] ?? '').includes('(F)')
+
+        return {
             setCode,
             collectorNumber,
-            quantityNonfoil: 0,
-            quantityFoil: 0,
+            quantityNonfoil: isFoil ? 0 : quantity,
+            quantityFoil: isFoil ? quantity : 0,
             createdAt: parseDate(cols[addedIdx] ?? ''),
             updatedAt: parseDate(cols[modifiedIdx] ?? ''),
         }
+    })
 
-        const name = cols[nameIdx] ?? ''
-        const isFoil = name.includes('(F)')
-        if (isFoil) {
-            existing.quantityFoil += quantity
-        } else {
-            existing.quantityNonfoil += quantity
-        }
-
-        merged.set(key, existing)
-    }
-
-    return { cards: Array.from(merged.values()), error: createParsingErrorMessage(missingSetCode, missingCollectorNumber, invalidQuantities) }
+    return { cards: cards, error: createParsingErrorMessage(skipped) }
 }
 
 function parseManaboxCSV(text: string): FileParsingResult {
@@ -301,43 +304,33 @@ function parseManaboxCSV(text: string): FileParsingResult {
         return { cards: [], error: errorMessage }
     }
 
-    const merged = new Map<string, CollectionAddParams>()
-    let missingSetCode = 0
-    let missingCollectorNumber = 0
-    let invalidQuantities = 0
-    for (const cols of rows) {
+    const { cards, skipped } = parseCSVRows(rows, (cols: string[]): CSVParsedRow => {
         const setCode = cols[setCodeIdx]?.trim().toUpperCase()
         if (!setCode) {
-            missingSetCode++
-            continue
+            return { skipped: 'setCode' }
         }
 
         const collectorNumber = cols[numberIdx]?.trim()
         if (!collectorNumber) {
-            missingCollectorNumber++
-            continue
+            return { skipped: 'collectorNumber' }
         }
 
         const count = parseInt(cols[quantityIdx] ?? '0', 10) || 0
         if (count <= 0) {
-            invalidQuantities++
-            continue
+            return { skipped: 'invalidQuantities' }
         }
-
-        const key = `${setCode}:${collectorNumber}`
-        const existing = merged.get(key) ?? { setCode, collectorNumber, quantityNonfoil: 0, quantityFoil: 0 }
 
         const isFoil = cols[foilIdx] && !(cols[foilIdx].trim().toLowerCase() === 'normal')
-        if (isFoil) {
-            existing.quantityFoil += count
-        } else {
-            existing.quantityNonfoil += count
+
+        return {
+            setCode,
+            collectorNumber,
+            quantityNonfoil: isFoil ? 0 : count,
+            quantityFoil: isFoil ? count : 0,
         }
+    })
 
-        merged.set(key, existing)
-    }
-
-    return { cards: Array.from(merged.values()), error: createParsingErrorMessage(missingSetCode, missingCollectorNumber, invalidQuantities) }
+    return { cards: cards, error: createParsingErrorMessage(skipped) }
 }
 
 export function parseCSVFile(text: string, provider: ProviderID): FileParsingResult {
