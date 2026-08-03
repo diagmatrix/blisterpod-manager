@@ -18,6 +18,7 @@ export const SET_CODE_SEARCH_CONDITION = 'set_code LIKE ?'
 export const COLOR_IDENTITY_SEARCH_CONDITION = 'instr(color_identity, ?) > 0'
 export const COLOR_IDENTITY_MISSING_SEARCH_CONDITION = 'instr(color_identity, ?) = 0'
 export const COLOR_IDENTITY_TOTAL_SEARCH_CONDITION = 'json_array_length(color_identity) = ?'
+export const COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION = 'json_array_length(color_identity) <= ?'
 export const LAYOUT_FILTER_CONDITION = 'is_token = ?'
 
 interface Query {
@@ -67,7 +68,7 @@ function buildColorIdentityCondition(colors: string[], colorMode: string): Query
             break
         case 'atMost':
             // Total
-            sqlConditions.push(COLOR_IDENTITY_TOTAL_SEARCH_CONDITION)
+            sqlConditions.push(COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION)
             values.push(nonColorlessArray.length)
             if (nonColorlessArray.length > 0) {
                 const colorsToRemove = getColorsComplement(nonColorlessArray)

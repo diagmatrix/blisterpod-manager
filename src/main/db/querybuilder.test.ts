@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CardSearchParams, ColorMode, SortParams } from '../../models/search'
-import { BASE_QUERY, buildFullQuery, COLOR_IDENTITY_MISSING_SEARCH_CONDITION, COLOR_IDENTITY_SEARCH_CONDITION, COLOR_IDENTITY_TOTAL_SEARCH_CONDITION, LAYOUT_FILTER_CONDITION, MAX_PAGE_SIZE, NAME_SEARCH_CONDITION, SET_CODE_SEARCH_CONDITION, VALID_TABLE_NAMES } from './querybuilder'
+import { BASE_QUERY, buildFullQuery, COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION, COLOR_IDENTITY_MISSING_SEARCH_CONDITION, COLOR_IDENTITY_SEARCH_CONDITION, COLOR_IDENTITY_TOTAL_SEARCH_CONDITION, LAYOUT_FILTER_CONDITION, MAX_PAGE_SIZE, NAME_SEARCH_CONDITION, SET_CODE_SEARCH_CONDITION, VALID_TABLE_NAMES } from './querybuilder'
 import { getColorsComplement } from '../../models/mana'
 
 interface TestValidationParams {
@@ -200,7 +200,7 @@ describe('query builder', () => {
             [
                 BASE_COLOR_IDENTITY,
                 'atMost',
-                `${COLOR_IDENTITY_TOTAL_SEARCH_CONDITION} AND ${colorIdentitySQL(COLOR_IDENTITY_MISSING_SEARCH_CONDITION, BASE_COLOR_IDENTITY_COMPLEMENT.length)}`,
+                `${COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION} AND ${colorIdentitySQL(COLOR_IDENTITY_MISSING_SEARCH_CONDITION, BASE_COLOR_IDENTITY_COMPLEMENT.length)}`,
                 [BASE_COLOR_IDENTITY.length, ...BASE_COLOR_IDENTITY_COMPLEMENT]
             ],
             // Color identity filter with 'atLeast' and duplicated colors
@@ -245,7 +245,7 @@ describe('query builder', () => {
             [
                 [...BASE_COLOR_IDENTITY, 'C'],
                 'atMost',
-                `${COLOR_IDENTITY_TOTAL_SEARCH_CONDITION} AND ${colorIdentitySQL(COLOR_IDENTITY_MISSING_SEARCH_CONDITION, BASE_COLOR_IDENTITY_COMPLEMENT.length)}`,
+                `${COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION} AND ${colorIdentitySQL(COLOR_IDENTITY_MISSING_SEARCH_CONDITION, BASE_COLOR_IDENTITY_COMPLEMENT.length)}`,
                 [BASE_COLOR_IDENTITY.length, ...BASE_COLOR_IDENTITY_COMPLEMENT]
             ],
             // Colorless color identity filter with 'exactly'
@@ -255,11 +255,11 @@ describe('query builder', () => {
                 `${COLOR_IDENTITY_TOTAL_SEARCH_CONDITION}`,
                 [0]
             ],
-            // Colorless color identity filter with 'atMost'
+            // Colorless color identity filter with 'atMost'.
             [
                 ['C'],
                 'atMost',
-                `${COLOR_IDENTITY_TOTAL_SEARCH_CONDITION}`,
+                `${COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION}`,
                 [0]
             ],
         ])('builds a query with color identity conditions that include colorless', (colorIdenitity: string[], colorMode: ColorMode, sql: string, vales: (string|number)[]) => {
