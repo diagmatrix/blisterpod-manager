@@ -11,6 +11,7 @@ import { registerMissingCardsHandlers } from "./missing";
 import { registerDuplicateCardsHandlers } from "./duplicates";
 import { registerCollectionHandlers } from "./collection";
 import { DB_PATH_NAME, DIALOG_SHOW_SAVE_NAME } from "../../models/channels";
+import { registerDecksHandlers } from "./decks";
 
 // Separate database there so development work never touches the real collection.
 const DB_NAME = IS_DEV ? 'test_collection.db' : 'collection.db'
@@ -93,4 +94,7 @@ function setUpIPCHandlers(): void {
 
     // Duplicate cards handlers
     registerDuplicateCardsHandlers(db)
+
+    // Decks handlers
+    registerDecksHandlers(db)
 }

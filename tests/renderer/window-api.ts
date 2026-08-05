@@ -64,6 +64,9 @@ export function defaultWindowApi(): ElectronAPI {
         missingFetchCards: vi.fn(async () => ({ inserted: 0 })),
         missingFetchCard: vi.fn(async () => ({ success: true })),
 
+        decksList: vi.fn(async () => emptyPage),
+        decksCreate: vi.fn(async () => ({ success: true })),
+
         logMessage: vi.fn(),
         logPath: vi.fn(async () => 'C:/tmp/test.log'),
         dbPath: vi.fn(async () => 'C:/tmp/db.db'),

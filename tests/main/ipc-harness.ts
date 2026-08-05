@@ -14,6 +14,7 @@ import { resetLogRecords } from './electron-log-stub'
 
 import { registerCardsHandlers } from '../../src/main/db/cards'
 import { registerCollectionHandlers } from '../../src/main/db/collection'
+import { registerDecksHandlers } from '../../src/main/db/decks'
 import { registerDuplicateCardsHandlers } from '../../src/main/db/duplicates'
 import { registerExportHandlers } from '../../src/main/db/export'
 import { registerMissingCardsHandlers } from '../../src/main/db/missing'
@@ -29,6 +30,7 @@ export {
     MISSING_LIST_NAME, MISSING_FETCH_SET_NAME, MISSING_FETCH_SET_CARDS_NAME, MISSING_FETCH_CARD_NAME,
     STATS_SUMMARY_NAME, STATS_COLOR_DISTRIBUTION_NAME, STATS_RARITY_BREAKDOWN_NAME,
     STATS_TOP_VALUE_NAME, STATS_BY_SET_NAME,
+    DECKS_LIST_NAME, DECKS_CREATE_NAME,
 } from '../../src/models/channels'
 
 export interface IpcHarness {
@@ -43,7 +45,7 @@ export interface IpcHarness {
 }
 
 /**
- * Registers all six DB domains against `db` and returns a way to call them.
+ * Registers every DB domain against `db` and returns a way to call them.
  * Clears previously recorded handlers so registrations never leak between tests.
  */
 export function registerDbHandlers(db: Database.Database): IpcHarness {
@@ -56,6 +58,7 @@ export function registerDbHandlers(db: Database.Database): IpcHarness {
     registerCardsHandlers(db)
     registerMissingCardsHandlers(db)
     registerDuplicateCardsHandlers(db)
+    registerDecksHandlers(db)
 
     return {
         invoke: async <T = unknown>(channel: string, ...args: unknown[]): Promise<T> => {

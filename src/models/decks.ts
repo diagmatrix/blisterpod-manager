@@ -13,6 +13,13 @@ export interface DeckFolder {
     decks: Deck[]
 }
 
+export interface InsertDeckParams {
+    name: string
+    format?: string
+    folder?: string
+    in_use?: boolean
+}
+
 export const BASE_DECK_FOLDER = 'Uncategorized'
 
 export function groupByFolder(decks: Deck[]): DeckFolder[] {
@@ -38,4 +45,33 @@ export function groupByFolder(decks: Deck[]): DeckFolder[] {
             }
             return a.name.localeCompare(b.name)
         })
+}
+
+export function filterDeckFolders(folders: DeckFolder[], name?: string, format?: string, inUse?: boolean): DeckFolder[] {
+    if (!name && !format && inUse === undefined) {
+        return folders
+    }
+
+    const newFolders: DeckFolder[] = []
+    for (const folder of folders) {
+        const filteredDecks = folder.decks.filter((deck) => {
+            let matches = true
+            if (name && !deck.name.toLowerCase().includes(name.toLowerCase())) {
+                matches = false
+            }
+
+            if (format && deck.format !== format) {
+                matches = false
+            }
+
+            if (inUse !== undefined && deck.in_use !== inUse) {
+                matches = false
+            }
+
+            return matches
+        })
+        newFolders.push({ ...folder, decks: filteredDecks })
+    }
+
+    return newFolders.filter((folder) => folder.decks.length > 0)
 }

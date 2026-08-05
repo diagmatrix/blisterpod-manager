@@ -19,9 +19,6 @@ import type {
     MergeResult,
     ExportResult,
 } from '../models/responses'
-// Channel names only ever come from '../models/channels': importing them from the
-// main-process modules pulls those modules' node dependencies into this bundle,
-// which a preload script cannot require.
 import {
     DIALOG_SHOW_SAVE_NAME,
     COLLECTION_LIST_NAME,
@@ -51,7 +48,10 @@ import {
     COLLECTION_EXPORT_MOXFIELD_NAME,
     COLLECTION_EXPORT_MANABOX_NAME,
     DB_PATH_NAME,
+    DECKS_LIST_NAME,
+    DECKS_CREATE_NAME,
 } from '../models/channels'
+import { DeckFolder, InsertDeckParams } from '../models/decks'
 
 contextBridge.exposeInMainWorld('api', {
     // Settings
@@ -129,6 +129,12 @@ contextBridge.exposeInMainWorld('api', {
         ipcRenderer.invoke(COLLECTION_EXPORT_MOXFIELD_NAME, filePath),
     exportCollectionManabox: (filePath: string): Promise<ExportResult> =>
         ipcRenderer.invoke(COLLECTION_EXPORT_MANABOX_NAME, filePath),
+
+    // Decks
+    decksList: (): Promise<PaginatedResult<DeckFolder>> =>
+        ipcRenderer.invoke(DECKS_LIST_NAME),
+    decksCreate: (params: InsertDeckParams): Promise<MutationResult> =>
+        ipcRenderer.invoke(DECKS_CREATE_NAME, params),
 
     // Logging
     logMessage: (entry: LogEntry): void => ipcRenderer.send('log:message', entry),

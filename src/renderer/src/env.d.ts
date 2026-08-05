@@ -62,6 +62,8 @@ export interface ElectronAPI {
     exportCollection: (filePath: string) => Promise<ExportResult>
     exportCollectionMoxfield: (filePath: string) => Promise<ExportResult>
     exportCollectionManabox: (filePath: string) => Promise<ExportResult>
+    decksList: () => Promise<PaginatedResult<DeckFolder>>
+    decksCreate: (params: InsertDeckParams) => Promise<MutationResult>
 }
 
 declare global {

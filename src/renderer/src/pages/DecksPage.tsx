@@ -1,9 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronRight, Download, Folder, FolderOpen, Plus, Search } from 'lucide-react'
-import { groupByFolder, Deck, DeckFolder } from '../../../models/decks'
+import { BASE_DECK_FOLDER, Deck, DeckFolder, filterDeckFolders } from '../../../models/decks'
+import { CreateDeckDialog } from '@/components/CreateDeckDialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { SectionHeader } from '@/components/SectionHeader'
+import { useQuery } from '@tanstack/react-query'
+import { PaginatedResult } from '../../../models/responses'
+import { TableSkeleton } from '@/components/skeletons'
+
+const EMPTY_PAGE: PaginatedResult<DeckFolder> = { rows: [], total: 0 }
 
 interface DeckFolderSectionProps {
     folder: DeckFolder
@@ -18,20 +24,6 @@ const IN_USE_OPTIONS: { value: InUseFilter; label: string }[] = [
     { value: 'all', label: 'All' },
     { value: 'inUse', label: 'In use' },
     { value: 'notInUse', label: 'Not in use' },
-]
-
-// TODO: replace with window.api decks query once the IPC bridge exists.
-const MOCK_DECKS: Deck[] = [
-    { id: '1', name: 'Deck 1', format: 'Modern', in_use: false, created_at: '2024-01-01' },
-    { id: '2', name: 'Deck 2', format: 'Commander', folder: 'In paper', in_use: true, created_at: '2024-01-02' },
-    { id: '3', name: 'Cube 1', format: 'Cube', folder: 'In paper', in_use: true, created_at: '2024-01-03' },
-    { id: '4', name: 'Mono Red Aggro', format: 'Modern', folder: 'In paper', in_use: false, created_at: '2024-02-11' },
-    { id: '5', name: 'Atraxa Superfriends', format: 'Commander', folder: 'Brews', in_use: true, created_at: '2024-03-05' },
-    { id: '6', name: 'Dimir Mill', format: 'Pioneer', folder: 'Brews', in_use: false, created_at: '2024-03-19' },
-    { id: '7', name: 'Pauper Burn', format: 'Pauper', folder: 'Brews', in_use: true, created_at: '2024-04-02', updated_at: '2024-04-15' },
-    { id: '8', name: 'Draft Leftovers', in_use: false, created_at: '2024-04-21' },
-    { id: '9', name: 'Legacy Storm', format: 'Legacy', folder: 'Archive', in_use: false, created_at: '2023-11-30' },
-    { id: '10', name: 'Old Standard 2023', format: 'Standard', folder: 'Archive', in_use: false, created_at: '2023-09-14' },
 ]
 
 function DeckRow(deck: Deck, onSelect: (deck: Deck) => void) {
@@ -102,6 +94,12 @@ function DeckFolderSection({ folder, collapsed, toggleFolder, onSelectDeck }: De
 }
 
 export default function DecksPage() {
+    const decksQuery = useQuery<PaginatedResult<DeckFolder>>({
+        queryKey: ['decks', 'list'],
+        queryFn: () => window.api.decksList(),
+    })
+    const { rows: folderRows, total } = decksQuery.data ?? EMPTY_PAGE
+
     const [isFilterExpanded, setIsFilterExpanded] = useState(true)
     const toggleFilter = () => setIsFilterExpanded((prev) => !prev)
 
@@ -109,31 +107,44 @@ export default function DecksPage() {
     const [formatFilter, setFormatFilter] = useState('all')
     const [inUseFilter, setInUseFilter] = useState<InUseFilter>('all')
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+    const [createOpen, setCreateOpen] = useState(false)
     const navigate = useNavigate()
 
-    const formats = useMemo(
-        () => [...new Set(MOCK_DECKS.map((d) => d.format).filter((f): f is string => !!f))].sort(),
-        []
+    const folders = useMemo(
+        () => filterDeckFolders(
+            folderRows,
+            searchInput.trim() || undefined,
+            formatFilter === 'all' ? undefined : formatFilter,
+            inUseFilter === 'all' ? undefined : inUseFilter === 'inUse',
+        ),
+        [folderRows, searchInput, formatFilter, inUseFilter]
     )
+    const shownCount = useMemo(() => folders.reduce((n, f) => n + f.decks.length, 0), [folders])
 
-    const filtered = useMemo(() => {
-        const search = searchInput.trim().toLowerCase()
-        return MOCK_DECKS.filter((deck) => {
-            if (search && !deck.name.toLowerCase().includes(search)) return false
-            if (formatFilter !== 'all' && deck.format !== formatFilter) return false
-            if (inUseFilter === 'inUse' && !deck.in_use) return false
-            if (inUseFilter === 'notInUse' && deck.in_use) return false
-            return true
-        })
-    }, [searchInput, formatFilter, inUseFilter])
-
-    const folders = useMemo(() => groupByFolder(filtered), [filtered])
+    const formats = useMemo(
+        () => [
+            ...new Set(folderRows.flatMap((f) => f.decks).map((d) => d.format).filter((f): f is string => !!f)),
+        ].sort(),
+        [folderRows]
+    )
+    const folderNames = useMemo(
+        () => folderRows.map((f) => f.name).filter((n) => n !== BASE_DECK_FOLDER),
+        [folderRows]
+    )
+    const deckNames = useMemo(
+        () => folderRows.flatMap((f) => f.decks).map((d) => d.name),
+        [folderRows]
+    )
 
     const toggleFolder = (name: string) => {
         setCollapsed((prev) => {
             const next = new Set(prev)
-            if (next.has(name)) next.delete(name)
-            else next.add(name)
+            if (next.has(name)) {
+                next.delete(name)
+            } else {
+                next.add(name)
+            }
+
             return next
         })
     }
@@ -147,12 +158,14 @@ export default function DecksPage() {
                 <div>
                     <h1 className="text-3xl font-bold">Decks</h1>
                     <p className="text-sm text-muted-foreground">
-                        {filtered.length.toLocaleString()} of {MOCK_DECKS.length.toLocaleString()} decks
+                        {decksQuery.isLoading
+                            ? 'Loading ...'
+                            : `${shownCount.toLocaleString()} of ${total.toLocaleString()} decks`}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={() => {}}
+                        onClick={() => setCreateOpen(true)}
                         title="Add new deck"
                         className="h-9 px-2 rounded-md border border-input text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center gap-1.5 text-sm"
                     >
@@ -226,8 +239,14 @@ export default function DecksPage() {
             </div>
 
             {/* Folders */}
-            {folders.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-8 text-center">No decks match the current filters.</p>
+            {decksQuery.isLoading ? (
+                <TableSkeleton rows={5} />
+            ) : decksQuery.isError ? (
+                <p className="text-sm text-destructive py-8 text-center">Could not load decks.</p>
+            ) : folders.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                    {total === 0 ? 'No decks yet.' : 'No decks match the current filters.'}
+                </p>
             ) : (
                 <div className="flex flex-col gap-2">
                     {folders.map((folder) => (
@@ -241,6 +260,14 @@ export default function DecksPage() {
                     ))}
                 </div>
             )}
+
+            <CreateDeckDialog
+                open={createOpen}
+                onOpenChange={setCreateOpen}
+                folders={folderNames}
+                formats={formats}
+                existingNames={deckNames}
+            />
         </div>
     )
 }

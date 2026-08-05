@@ -46,3 +46,7 @@ export const MISSING_FETCH_CARD_NAME = 'missing:fetch-card'
 export const COLLECTION_EXPORT_NAME = 'collection:export'
 export const COLLECTION_EXPORT_MOXFIELD_NAME = 'collection:export-moxfield'
 export const COLLECTION_EXPORT_MANABOX_NAME = 'collection:export-manabox'
+
+// Decks
+export const DECKS_LIST_NAME = 'decks:list'
+export const DECKS_CREATE_NAME = 'decks:create'
