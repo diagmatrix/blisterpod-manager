@@ -47,7 +47,7 @@ function App() {
                         />
                         <Route path="/home" element={<DashboardPage />} />
                         <Route path="/decks" element={<DecksPage />} />
-                        <Route path="/decks/:name" element={<DeckDetailPage />} />
+                        <Route path="/decks/:id" element={<DeckDetailPage />} />
                         <Route path="/collection-errors" element={<CollectionErrorsPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
                         <Route path="/about" element={<AboutPage />} />

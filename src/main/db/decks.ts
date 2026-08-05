@@ -4,6 +4,7 @@ import { ipcMain } from "electron";
 import {
     DECKS_LIST_NAME,
     DECKS_CREATE_NAME,
+    DECKS_DETAIL_NAME,
 } from "../../models/channels";
 import { Deck, DeckFolder, groupByFolder, InsertDeckParams } from "../../models/decks";
 import { MutationResult, PaginatedResult } from "../../models/responses";
@@ -63,6 +64,26 @@ export function registerDecksHandlers(db: Database.Database): void {
         } catch (error) {
             logger.error(DECKS_CREATE_NAME, error)
             return { success: false, error: 'Error creating deck' }
+        }
+    })
+
+    // Get deck details
+    ipcMain.handle(DECKS_DETAIL_NAME, (_, deckId: string): Deck | null => {
+        const sql = 'SELECT * FROM decks WHERE id = ?'
+        try {
+            logger.info(DECKS_DETAIL_NAME, sql)
+            const deck = db.prepare(sql).get(deckId) as Deck | undefined
+            if (!deck) {
+                logger.warn(DECKS_DETAIL_NAME, `Deck with id ${deckId} not found`)
+                return null
+            }
+            return {
+                ...deck,
+                in_use: Boolean(deck.in_use),
+            }
+        } catch (error) {
+            logger.error(DECKS_DETAIL_NAME, error)
+            return null
         }
     })
 }

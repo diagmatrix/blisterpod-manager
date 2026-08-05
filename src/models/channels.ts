@@ -50,3 +50,4 @@ export const COLLECTION_EXPORT_MANABOX_NAME = 'collection:export-manabox'
 // Decks
 export const DECKS_LIST_NAME = 'decks:list'
 export const DECKS_CREATE_NAME = 'decks:create'
+export const DECKS_DETAIL_NAME = 'decks:detail'

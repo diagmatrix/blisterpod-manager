@@ -50,8 +50,9 @@ import {
     DB_PATH_NAME,
     DECKS_LIST_NAME,
     DECKS_CREATE_NAME,
+    DECKS_DETAIL_NAME,
 } from '../models/channels'
-import { DeckFolder, InsertDeckParams } from '../models/decks'
+import { Deck, DeckFolder, InsertDeckParams } from '../models/decks'
 
 contextBridge.exposeInMainWorld('api', {
     // Settings
@@ -135,7 +136,8 @@ contextBridge.exposeInMainWorld('api', {
         ipcRenderer.invoke(DECKS_LIST_NAME),
     decksCreate: (params: InsertDeckParams): Promise<MutationResult> =>
         ipcRenderer.invoke(DECKS_CREATE_NAME, params),
-
+    decksDetail: (deckId: string): Promise<Deck | null> =>
+        ipcRenderer.invoke(DECKS_DETAIL_NAME, deckId),
     // Logging
     logMessage: (entry: LogEntry): void => ipcRenderer.send('log:message', entry),
 

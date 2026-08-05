@@ -18,6 +18,7 @@ import type {
     MergeResult,
     ExportResult,
 } from '../../models/responses'
+import type { Deck, DeckFolder, InsertDeckParams } from '../../models/decks'
 
 export interface ElectronAPI {
     settingsGet: <K extends keyof AppSettings>(key: K) => Promise<AppSettings[K]>
@@ -64,6 +65,7 @@ export interface ElectronAPI {
     exportCollectionManabox: (filePath: string) => Promise<ExportResult>
     decksList: () => Promise<PaginatedResult<DeckFolder>>
     decksCreate: (params: InsertDeckParams) => Promise<MutationResult>
+    decksDetail: (deckId: string) => Promise<Deck | null>
 }
 
 declare global {

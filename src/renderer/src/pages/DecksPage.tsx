@@ -8,6 +8,7 @@ import { SectionHeader } from '@/components/SectionHeader'
 import { useQuery } from '@tanstack/react-query'
 import { PaginatedResult } from '../../../models/responses'
 import { TableSkeleton } from '@/components/skeletons'
+import { DeckUseIndicator } from '@/components/DeckUseIndicator'
 
 const EMPTY_PAGE: PaginatedResult<DeckFolder> = { rows: [], total: 0 }
 
@@ -27,9 +28,6 @@ const IN_USE_OPTIONS: { value: InUseFilter; label: string }[] = [
 ]
 
 function DeckRow(deck: Deck, onSelect: (deck: Deck) => void) {
-    const inUseClass = deck.in_use ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-    const inUseLabel = deck.in_use ? 'In use' : 'Idle'
-
     return (
         <tr
             key={deck.id}
@@ -41,11 +39,7 @@ function DeckRow(deck: Deck, onSelect: (deck: Deck) => void) {
                 {deck.format ?? '-'}
             </td>
             <td className="px-3 py-1.5 w-24 text-center">
-                <span
-                    className={`rounded-md px-2 py-0.5 text-xs font-medium ${inUseClass}`}
-                >
-                    {inUseLabel}
-                </span>
+                <DeckUseIndicator inUse={deck.in_use} />
             </td>
             <td className="px-3 py-1.5 w-28 text-center tabular-nums text-muted-foreground">
                 {deck.created_at}
@@ -149,7 +143,7 @@ export default function DecksPage() {
         })
     }
 
-    const openDeck = (deck: Deck) => navigate(`/decks/${encodeURIComponent(deck.name)}`)
+    const openDeck = (deck: Deck) => navigate(`/decks/${encodeURIComponent(deck.id)}`)
 
     return (
         <div className="flex flex-col p-3 gap-3">
