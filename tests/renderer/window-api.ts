@@ -66,6 +66,10 @@ export function defaultWindowApi(): ElectronAPI {
 
         decksList: vi.fn(async () => emptyPage),
         decksCreate: vi.fn(async () => ({ success: true })),
+        decksDetail: vi.fn(async () => null),
+        decksUpdate: vi.fn(async () => ({ success: true })),
+        decksDelete: vi.fn(async () => ({ success: true })),
+        decksListDetails: vi.fn(async () => []),
 
         logMessage: vi.fn(),
         logPath: vi.fn(async () => 'C:/tmp/test.log'),
