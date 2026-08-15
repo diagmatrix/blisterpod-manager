@@ -14,7 +14,7 @@ export interface DeckFolder {
 }
 
 export interface InsertDeckParams {
-    name: string
+    name?: string
     format?: string
     folder?: string
     in_use?: boolean

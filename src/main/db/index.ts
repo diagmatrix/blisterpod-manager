@@ -12,6 +12,7 @@ import { registerDuplicateCardsHandlers } from "./duplicates";
 import { registerCollectionHandlers } from "./collection";
 import { DB_PATH_NAME, DIALOG_SHOW_SAVE_NAME } from "../../models/channels";
 import { registerDecksHandlers } from "./decks";
+import { MutationResult } from "../../models/responses";
 
 // Separate database there so development work never touches the real collection.
 const DB_NAME = IS_DEV ? 'test_collection.db' : 'collection.db'
@@ -55,6 +56,20 @@ export async function initDatabase(): Promise<void> {
     await executeSQLFilesFromDir(db, VIEWS_DIR)
 
     setUpIPCHandlers()
+}
+
+export function createDeleteTransaction(db: Database.Database, sql: string, id: string | number, objectName?: string): () => MutationResult {
+    const transaction = db.transaction(() => {
+        try {
+            db.prepare(sql).run(id)
+            return { success: true }
+        } catch (err) {
+            logger.error(`Error deleting ${objectName ?? 'object'}: ${err}`)
+            return { success: false, error: (err as Error).message }
+        }
+    })
+
+    return transaction
 }
 
 export function getDb(): Database.Database {

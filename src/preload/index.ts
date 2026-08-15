@@ -51,6 +51,9 @@ import {
     DECKS_LIST_NAME,
     DECKS_CREATE_NAME,
     DECKS_DETAIL_NAME,
+    DECKS_DELETE_NAME,
+    DECKS_UPDATE_NAME,
+    DECKS_LIST_DETAILS_NAME,
 } from '../models/channels'
 import { Deck, DeckFolder, InsertDeckParams } from '../models/decks'
 
@@ -138,6 +141,13 @@ contextBridge.exposeInMainWorld('api', {
         ipcRenderer.invoke(DECKS_CREATE_NAME, params),
     decksDetail: (deckId: string): Promise<Deck | null> =>
         ipcRenderer.invoke(DECKS_DETAIL_NAME, deckId),
+    decksUpdate: (deckId: string, params: InsertDeckParams): Promise<MutationResult> =>
+        ipcRenderer.invoke(DECKS_UPDATE_NAME, deckId, params),
+    decksDelete: (deckId: string): Promise<MutationResult> =>
+        ipcRenderer.invoke(DECKS_DELETE_NAME, deckId),
+    decksListDetails: (detailColumn: string): Promise<string[]> =>
+        ipcRenderer.invoke(DECKS_LIST_DETAILS_NAME, detailColumn),
+
     // Logging
     logMessage: (entry: LogEntry): void => ipcRenderer.send('log:message', entry),
 

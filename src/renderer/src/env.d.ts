@@ -66,6 +66,9 @@ export interface ElectronAPI {
     decksList: () => Promise<PaginatedResult<DeckFolder>>
     decksCreate: (params: InsertDeckParams) => Promise<MutationResult>
     decksDetail: (deckId: string) => Promise<Deck | null>
+    decksUpdate: (deckId: string, params: InsertDeckParams) => Promise<MutationResult>
+    decksDelete: (deckId: string) => Promise<MutationResult>
+    decksListDetails: (detailColumn: string) => Promise<string[]>
 }
 
 declare global {

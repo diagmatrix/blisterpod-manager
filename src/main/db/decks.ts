@@ -5,16 +5,22 @@ import {
     DECKS_LIST_NAME,
     DECKS_CREATE_NAME,
     DECKS_DETAIL_NAME,
+    DECKS_UPDATE_NAME,
+    DECKS_DELETE_NAME,
+    DECKS_LIST_DETAILS_NAME,
 } from "../../models/channels";
 import { Deck, DeckFolder, groupByFolder, InsertDeckParams } from "../../models/decks";
 import { MutationResult, PaginatedResult } from "../../models/responses";
-import { readQueryFile } from ".";
+import { createDeleteTransaction, readQueryFile } from ".";
 
 const DECKS_CREATE_QUERY = 'create_deck.sql'
+const DECKS_UPDATE_QUERY = 'update_deck.sql'
+
+const VALID_DECK_DETAIL_COLUMNS = ['name', 'format', 'folder']
 
 const logger = createLogger('db:decks')
 
-function validateInsertDeckParams(params: InsertDeckParams): string | undefined {
+function validateDeckParams(params: InsertDeckParams): string | undefined {
     if (!params.name || params.name.trim() === '') {
         const errorMessage = 'Error creating deck: name is required'
         logger.error(errorMessage)
@@ -51,7 +57,7 @@ export function registerDecksHandlers(db: Database.Database): void {
 
     // Create deck
     ipcMain.handle(DECKS_CREATE_NAME, (_, params: InsertDeckParams): MutationResult => {
-        const errorMessage = validateInsertDeckParams(params)
+        const errorMessage = validateDeckParams(params)
         if (errorMessage) {
             return { success: false, error: errorMessage }
         }
@@ -85,5 +91,53 @@ export function registerDecksHandlers(db: Database.Database): void {
             logger.error(DECKS_DETAIL_NAME, error)
             return null
         }
+    })
+
+    // Update deck
+    ipcMain.handle(DECKS_UPDATE_NAME, (_, deckId: string, params: InsertDeckParams): MutationResult => {
+        const errorMessage = validateDeckParams(params)
+        if (errorMessage) {
+            return { success: false, error: errorMessage }
+        }
+
+        try {
+            const sql = readQueryFile(DECKS_UPDATE_QUERY)
+            logger.info(DECKS_UPDATE_NAME, sql)
+            db.prepare(sql).run(params.name, params.format ?? null, params.folder ?? null, params.in_use ? 1 : 0, deckId)
+        } catch (error) {
+            logger.error(DECKS_UPDATE_NAME, error)
+            return { success: false, error: `Error updating deck: ${(error as Error).message}` }
+        }
+
+        return { success: true }
+    })
+
+    // Delete deck
+    ipcMain.handle(DECKS_DELETE_NAME, (_, deckId: string): MutationResult => {
+        const sql = 'DELETE FROM decks WHERE id = ?'
+        logger.info(DECKS_DELETE_NAME, sql)
+        const deleteTransaction = createDeleteTransaction(db, sql, deckId, 'deck')
+
+        return deleteTransaction()
+    })
+
+    // List deck detail
+    ipcMain.handle(DECKS_LIST_DETAILS_NAME, (_, detailColumn: string): string[] => {
+        if (!VALID_DECK_DETAIL_COLUMNS.includes(detailColumn)) {
+            logger.warn(DECKS_LIST_DETAILS_NAME, 'Tried to get the details of an invalid column')
+            return []
+        }
+        const sql = `SELECT DISTINCT "${detailColumn}" AS value FROM decks WHERE "${detailColumn}" IS NOT NULL`
+
+        let values: string[] = []
+        try {
+            logger.info(DECKS_LIST_DETAILS_NAME, sql)
+            const rows = db.prepare(sql).all() as { value: string }[]
+            values = rows.map((row) => row.value)
+        } catch (error) {
+            logger.error(DECKS_LIST_DETAILS_NAME, error)
+        }
+
+        return values
     })
 }
