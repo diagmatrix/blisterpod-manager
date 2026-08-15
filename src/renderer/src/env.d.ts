@@ -18,6 +18,7 @@ import type {
     MergeResult,
     ExportResult,
 } from '../../models/responses'
+import type { Deck, DeckFolder, InsertDeckParams } from '../../models/decks'
 
 export interface ElectronAPI {
     settingsGet: <K extends keyof AppSettings>(key: K) => Promise<AppSettings[K]>
@@ -62,6 +63,12 @@ export interface ElectronAPI {
     exportCollection: (filePath: string) => Promise<ExportResult>
     exportCollectionMoxfield: (filePath: string) => Promise<ExportResult>
     exportCollectionManabox: (filePath: string) => Promise<ExportResult>
+    decksList: () => Promise<PaginatedResult<DeckFolder>>
+    decksCreate: (params: InsertDeckParams) => Promise<MutationResult>
+    decksDetail: (deckId: string) => Promise<Deck | null>
+    decksUpdate: (deckId: string, params: InsertDeckParams) => Promise<MutationResult>
+    decksDelete: (deckId: string) => Promise<MutationResult>
+    decksListDetails: (detailColumn: string) => Promise<string[]>
 }
 
 declare global {
