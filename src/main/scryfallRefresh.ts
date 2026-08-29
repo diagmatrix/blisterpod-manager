@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream'
-import { createRequire } from 'node:module'
+import { createGunzip } from 'node:zlib'
 import Database from 'better-sqlite3'
 import { createLogger } from './logger'
 import { getTableColumns, isEmpty, serializeVal, USER_AGENT } from './utils'
@@ -7,14 +7,6 @@ import { getTableColumns, isEmpty, serializeVal, USER_AGENT } from './utils'
 interface Inserted {
     inserted: number
     error?: string
-}
-
-// stream-json v2 is CJS-only with an "./*":"./src/*" exports wildcard that omits
-// the .js suffix, breaking ESM resolution. Use createRequire + explicit .js paths.
-const _require = createRequire(import.meta.url)
-// withParserAsStream() returns a single Duplex: raw bytes in → {key,value} objects out
-const { withParserAsStream } = _require('stream-json/streamers/stream-array.js') as {
-    withParserAsStream: () => NodeJS.ReadWriteStream
 }
 
 const log = createLogger('scryfall-refresh')
@@ -25,6 +17,7 @@ const BATCH_SIZE = 1000
 const EXCLUDED_CODES = new Set(['UNK'])
 const SET_TABLE_NAME = 'scryfall_sets'
 const CARD_TABLE_NAME = 'scryfall_cards'
+const TYPE_LINE_SEPARATOR = ' — '
 
 let lastRequestAt = 0
 
@@ -48,6 +41,29 @@ async function scryfallGet(url: string): Promise<unknown> {
     return res.json()
 }
 
+async function* readJsonLines(stream: NodeJS.ReadableStream): AsyncGenerator<Record<string, unknown>> {
+    stream.setEncoding('utf8')
+
+    let buffer = ''
+    for await (const chunk of stream) {
+        buffer += chunk as string
+
+        let newlineAt: number
+        while ((newlineAt = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, newlineAt).trim()
+            buffer = buffer.slice(newlineAt + 1)
+            if (line) {
+                yield JSON.parse(line) as Record<string, unknown>
+            }
+        }
+    }
+
+    const lastLine = buffer.trim()
+    if (lastLine) {
+        yield JSON.parse(lastLine) as Record<string, unknown>
+    }
+}
+
 function buildSetRow(setJson: Record<string, unknown>, columns: string[]): Record<string, unknown> {
     const row: Record<string, unknown> = {}
 
@@ -68,6 +84,30 @@ function buildSetRow(setJson: Record<string, unknown>, columns: string[]): Recor
     return row
 }
 
+function parseCardTypes(cardTypesToParse: string, isSubtypes: boolean = false): string[] {
+    const parseFace = (face: string): string[] => {
+        const faceParts = face.split(TYPE_LINE_SEPARATOR)
+
+        const idxToParse = !isSubtypes ? 0 : faceParts.length > 1 ? 1 : -1
+        if (idxToParse < 0) {
+            return []
+        }
+
+        return faceParts[idxToParse]
+            .split(' ')
+            .map((t) => t.trim())
+            .filter((t) => t.length > 0)
+    }
+
+    const cardTypeFaces = cardTypesToParse.split('//')
+    const cardTypes: string[] = []
+    for (const face of cardTypeFaces) {
+        cardTypes.push(...parseFace(face.trim()))
+    }
+
+    return [...new Set<string>(cardTypes)]
+}
+
 function buildCardRow(cardJson: Record<string, unknown>, columns: string[]): Record<string, unknown> {
     const row: Record<string, unknown> = {}
     for (const col of columns) {
@@ -79,6 +119,14 @@ function buildCardRow(cardJson: Record<string, unknown>, columns: string[]): Rec
                 ? cardJson.collector_number.replace(/\D/g, '')
                 : ''
             val = digits ? parseInt(digits, 10) : null
+        } else if (col === 'card_types') {
+            const rawCardTypes = typeof cardJson.type_line === 'string'
+                ? cardJson.type_line : ''
+            val = rawCardTypes ? parseCardTypes(rawCardTypes) : null
+        } else if (col === 'card_subtypes') {
+            const rawCardTypes = typeof cardJson.type_line === 'string'
+                ? cardJson.type_line : ''
+            val = rawCardTypes ? parseCardTypes(rawCardTypes, true) : null
         } else {
             val = cardJson[col]
         }
@@ -125,9 +173,11 @@ export async function refreshSets(db: Database.Database): Promise<Inserted> {
 export async function refreshCards(db: Database.Database): Promise<Inserted> {
     log.info('Starting card refresh from Scryfall')
 
-    const meta = (await scryfallGet('/bulk-data/default_cards')) as { download_uri?: string }
-    const downloadUri = meta.download_uri
-    if (!downloadUri) throw new Error('download_uri not found in bulk-data response')
+    const meta = (await scryfallGet('/bulk-data/default_cards')) as { jsonl_download_uri?: string }
+    const downloadUri = meta.jsonl_download_uri
+    if (!downloadUri) {
+        throw new Error('jsonl_download_uri not found in bulk-data response')
+    }
 
     const columns = getTableColumns(db, 'scryfall_cards')
     const stmt = db.prepare(
@@ -144,17 +194,19 @@ export async function refreshCards(db: Database.Database): Promise<Inserted> {
     if (!response.ok) throw new Error(`Failed to download bulk data: ${response.status}`)
     if (!response.body) throw new Error('Response body is null')
 
-    const nodeStream = Readable.fromWeb(response.body as any)
-    const jsonStream = nodeStream.pipe(withParserAsStream()) as AsyncIterable<{ key: number; value: unknown }>
+    const byteStream = Readable.fromWeb(response.body as any)
+    const jsonlStream = byteStream.pipe(createGunzip())
 
     let batch: Record<string, unknown>[] = []
     let inserted = 0
 
-    for await (const { value } of jsonStream) {
-        const card = value as Record<string, unknown>
-        if (!card.id) continue
-        if (card.digital) continue
-        if (typeof card.set === 'string' && EXCLUDED_CODES.has(card.set.toUpperCase())) continue
+    for await (const card of readJsonLines(jsonlStream)) {
+        if (!card.id || card.digital) {
+            continue
+        }
+        if (typeof card.set === 'string' && EXCLUDED_CODES.has(card.set.toUpperCase())) {
+            continue
+        }
 
         batch.push(buildCardRow(card, columns))
 
