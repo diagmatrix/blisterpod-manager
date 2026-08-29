@@ -11,7 +11,7 @@ import {
 } from '../../../tests/main/ipc-harness'
 import { createTestDb, seedDb } from '../../../tests/main/sqlite'
 
-// Exercises the three export handlers end to end: real schema from db/tables +
+// Exercises the three export handlers end to end: real schema from db/model +
 // db/views, the real db/queries/export_*.sql, and a real file on disk. Only the
 // failure injection is synthetic (dropping a table, or aiming at a directory
 // that does not exist), because both failure modes are ones the handlers

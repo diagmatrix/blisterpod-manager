@@ -32,7 +32,7 @@ You are an Electron expert reviewer focused on security, architecture, and the s
 
 ### Database Best Practices
 - **`better-sqlite3`**: Synchronous in main, never in renderer
-- **Schema initialization**: On startup, main process must execute all `.sql` files from `db/tables/` and `db/views/`
+- **Schema initialization**: On startup, main process must run the pending migrations from `db/migrations/`, then execute all `.sql` files from `db/views/`
 - **JSON columns**: Stored as serialized strings in SQLite; parse before sending to renderer
 - **Constraints**: Respect `quantity_nonfoil >= 0`, `quantity_foil >= 0`, `total > 0`
 - **Error handling**: Catch constraint violations and return meaningful IPC messages

@@ -8,7 +8,7 @@ import {
 import { createTestDb, seedDb } from '../../../tests/main/sqlite'
 
 // Tier 2 smoke test: proves the whole integration path is wired --
-// real schema from db/tables + db/views, real queries from db/queries, and the
+// real schema from db/model + db/views, real queries from db/queries, and the
 // ipcMain.handle closures reachable through the harness.
 describe('db integration harness', () => {
     let db: Database.Database

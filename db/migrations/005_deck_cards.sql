@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS deck_cards (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    deck_id INTEGER REFERENCES decks (id),
+    deck_id INTEGER,
     oracle_id TEXT NOT NULL,
-    preferred_printing TEXT REFERENCES scryfall_cards(id),
+    preferred_printing TEXT,
     zone TEXT NOT NULL,
     quantity_nonfoil INTEGER NOT NULL DEFAULT 0,
     quantity_foil INTEGER NOT NULL DEFAULT 0,

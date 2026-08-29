@@ -88,7 +88,7 @@ before testing, or `npm run package:post` before `npm run dev`.
 - [src/preload/](src/preload/): Preload bridge exposing `window.api` to the renderer.
 - [src/renderer/](src/renderer/): React UI.
 - [src/models/](src/models/): Types shared across processes.
-- [db/](db/): SQL schema (`tables/`), views (`views/`) and queries (`queries/`).
+- [db/](db/): versioned SQL schema (`migrations/`), views (`views/`) and queries (`queries/`).
 - [resources/](resources/): App icons and other bundled assets.
 - [AGENTS.md](AGENTS.md): AI agents file.
 - [CHANGELOG.md](CHANGELOG.md): Application changelog.
