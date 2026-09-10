@@ -12,6 +12,7 @@ import { registerDuplicateCardsHandlers } from "./duplicates";
 import { registerCollectionHandlers } from "./collection";
 import { DB_PATH_NAME, DIALOG_SHOW_SAVE_NAME } from "../../models/channels";
 import { registerDecksHandlers } from "./decks";
+import { registerScryfallHandlers } from "./scryfall";
 import { MutationResult } from "../../models/responses";
 import { runMigrations } from "./migrations";
 import { QUERIES_DIR, VIEWS_DIR } from "./paths";
@@ -115,4 +116,7 @@ function setUpIPCHandlers(): void {
 
     // Decks handlers
     registerDecksHandlers(db)
+
+    // Scryfall handlers
+    registerScryfallHandlers(db)
 }

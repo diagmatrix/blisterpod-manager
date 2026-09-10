@@ -54,3 +54,7 @@ export const DECKS_DETAIL_NAME = 'decks:detail'
 export const DECKS_UPDATE_NAME = 'decks:update'
 export const DECKS_DELETE_NAME = 'decks:delete'
 export const DECKS_LIST_DETAILS_NAME = 'decks:list-detail'
+
+// Scryfall
+export const SCRYFALL_REFRESH_CARDS_NAME = 'scryfall:refresh-cards'
+export const SCRYFALL_REFRESH_SETS_NAME = 'scryfall:refresh-sets'

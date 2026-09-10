@@ -54,6 +54,8 @@ import {
     DECKS_DELETE_NAME,
     DECKS_UPDATE_NAME,
     DECKS_LIST_DETAILS_NAME,
+    SCRYFALL_REFRESH_CARDS_NAME,
+    SCRYFALL_REFRESH_SETS_NAME,
 } from '../models/channels'
 import { Deck, DeckFolder, InsertDeckParams } from '../models/decks'
 
@@ -160,10 +162,10 @@ contextBridge.exposeInMainWorld('api', {
     // Scryfall data refresh
     refreshManaSymbols: (): Promise<void> =>
         ipcRenderer.invoke('data:refreshManaSymbols'),
-    refreshSets: (): Promise<{ inserted: number }> =>
-        ipcRenderer.invoke('data:refreshSets'),
-    refreshCards: (): Promise<{ inserted: number }> =>
-        ipcRenderer.invoke('data:refreshCards'),
+    refreshSets: (excludedCodes?: string[]): Promise<InsertResult> =>
+        ipcRenderer.invoke(SCRYFALL_REFRESH_SETS_NAME, excludedCodes),
+    refreshCards: (excludedCodes?: string[]): Promise<InsertResult> =>
+        ipcRenderer.invoke(SCRYFALL_REFRESH_CARDS_NAME, excludedCodes),
 
     // CCMG font
     downloadCCMGFont: (): Promise<void> =>

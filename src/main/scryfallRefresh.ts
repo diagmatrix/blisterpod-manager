@@ -1,23 +1,20 @@
 import { Readable } from 'node:stream'
 import { createGunzip } from 'node:zlib'
-import Database from 'better-sqlite3'
 import { createLogger } from './logger'
-import { getTableColumns, isEmpty, serializeVal, USER_AGENT } from './utils'
-
-interface Inserted {
-    inserted: number
-    error?: string
-}
+import { serializeVal, USER_AGENT } from './utils'
 
 const log = createLogger('scryfall-refresh')
 
 const SCRYFALL_BASE = 'https://api.scryfall.com'
 const WAIT_MS = 100
-const BATCH_SIZE = 1000
-const EXCLUDED_CODES = new Set(['UNK'])
-const SET_TABLE_NAME = 'scryfall_sets'
-const CARD_TABLE_NAME = 'scryfall_cards'
 const TYPE_LINE_SEPARATOR = ' — '
+const FACE_SEPARATOR = ' // '
+
+interface ScryfallPage {
+    data: Record<string, unknown>[]
+    has_more: boolean
+    next_page?: string
+}
 
 let lastRequestAt = 0
 
@@ -64,7 +61,57 @@ async function* readJsonLines(stream: NodeJS.ReadableStream): AsyncGenerator<Rec
     }
 }
 
-function buildSetRow(setJson: Record<string, unknown>, columns: string[]): Record<string, unknown> {
+async function* fetchPages(startUrl: string): AsyncGenerator<Record<string, unknown>> {
+    let url: string | undefined = startUrl
+
+    while (url) {
+        const page = (await scryfallGet(url)) as ScryfallPage
+        for (const item of page.data ?? []) {
+            yield item
+        }
+        url = page.has_more ? page.next_page : undefined
+    }
+}
+
+export function fetchAllSets(): AsyncGenerator<Record<string, unknown>> {
+    return fetchPages('/sets')
+}
+
+export function fetchSearchPages(searchURI: string): AsyncGenerator<Record<string, unknown>> {
+    return fetchPages(searchURI)
+}
+
+export async function fetchSet(setCode: string): Promise<Record<string, unknown>> {
+    return (await scryfallGet(`/sets/${setCode.toLowerCase()}`)) as Record<string, unknown>
+}
+
+export async function fetchCard(setCode: string, collectorNumber: string): Promise<Record<string, unknown>> {
+    return (await scryfallGet(`/cards/${setCode.toLowerCase()}/${collectorNumber}`)) as Record<string, unknown>
+}
+
+export async function* streamBulkCards(): AsyncGenerator<Record<string, unknown>> {
+    const meta = (await scryfallGet('/bulk-data/default_cards')) as { jsonl_download_uri?: string }
+    const downloadUri = meta.jsonl_download_uri
+    if (!downloadUri) {
+        throw new Error('jsonl_download_uri not found in bulk-data response')
+    }
+
+    log.info('Downloading bulk card data', { uri: downloadUri })
+    const response = await fetch(downloadUri, {
+        headers: { 'User-Agent': USER_AGENT },
+    })
+    if (!response.ok) {
+        throw new Error(`Failed to download bulk data: ${response.status}`)
+    }
+    if (!response.body) {
+        throw new Error('Response body is null')
+    }
+
+    const byteStream = Readable.fromWeb(response.body as any)
+    yield* readJsonLines(byteStream.pipe(createGunzip()))
+}
+
+export function buildSetRow(setJson: Record<string, unknown>, columns: string[]): Record<string, unknown> {
     const row: Record<string, unknown> = {}
 
     if (setJson.id) {
@@ -84,13 +131,13 @@ function buildSetRow(setJson: Record<string, unknown>, columns: string[]): Recor
     return row
 }
 
-function parseCardTypes(cardTypesToParse: string, isSubtypes: boolean = false): string[] {
-    const parseFace = (face: string): string[] => {
+export function parseCardTypes(cardTypesToParse: string, isSubtypes: boolean = false): string[] | null {
+    const parseFace = (face: string): string[] | null => {
         const faceParts = face.split(TYPE_LINE_SEPARATOR)
 
         const idxToParse = !isSubtypes ? 0 : faceParts.length > 1 ? 1 : -1
         if (idxToParse < 0) {
-            return []
+            return null
         }
 
         return faceParts[idxToParse]
@@ -102,13 +149,32 @@ function parseCardTypes(cardTypesToParse: string, isSubtypes: boolean = false): 
     const cardTypeFaces = cardTypesToParse.split('//')
     const cardTypes: string[] = []
     for (const face of cardTypeFaces) {
-        cardTypes.push(...parseFace(face.trim()))
+        const parsedFace = parseFace(face.trim())
+        if (parsedFace) {
+            cardTypes.push(...parsedFace)
+        }
+    }
+
+    if (cardTypes.length === 0) {
+        return null
     }
 
     return [...new Set<string>(cardTypes)]
 }
 
-function buildCardRow(cardJson: Record<string, unknown>, columns: string[]): Record<string, unknown> {
+export function getTypeLine(cardJson: Record<string, unknown>): string {
+    if (typeof cardJson.type_line === 'string' && cardJson.type_line.length > 0) {
+        return cardJson.type_line
+    }
+
+    const faces = Array.isArray(cardJson.card_faces) ? cardJson.card_faces : []
+    return faces
+        .map((face) => (face as Record<string, unknown> | null)?.type_line)
+        .filter((typeLine): typeLine is string => typeof typeLine === 'string' && typeLine.length > 0)
+        .join(FACE_SEPARATOR)
+}
+
+export function buildCardRow(cardJson: Record<string, unknown>, columns: string[]): Record<string, unknown> {
     const row: Record<string, unknown> = {}
     for (const col of columns) {
         let val: unknown
@@ -119,210 +185,15 @@ function buildCardRow(cardJson: Record<string, unknown>, columns: string[]): Rec
                 ? cardJson.collector_number.replace(/\D/g, '')
                 : ''
             val = digits ? parseInt(digits, 10) : null
-        } else if (col === 'card_types') {
-            const rawCardTypes = typeof cardJson.type_line === 'string'
-                ? cardJson.type_line : ''
-            val = rawCardTypes ? parseCardTypes(rawCardTypes) : null
-        } else if (col === 'card_subtypes') {
-            const rawCardTypes = typeof cardJson.type_line === 'string'
-                ? cardJson.type_line : ''
-            val = rawCardTypes ? parseCardTypes(rawCardTypes, true) : null
+        } else if (col === 'type_line') {
+            val = getTypeLine(cardJson) || null
+        } else if (col === 'card_types' || col === 'card_subtypes') {
+            const rawCardTypes = getTypeLine(cardJson)
+            val = rawCardTypes ? parseCardTypes(rawCardTypes, col === 'card_subtypes') : null
         } else {
             val = cardJson[col]
         }
         row[col] = serializeVal(val ?? null)
     }
     return row
-}
-
-export async function refreshSets(db: Database.Database): Promise<Inserted> {
-    log.info('Starting set refresh from Scryfall')
-
-    const columns = getTableColumns(db, 'scryfall_sets')
-    const stmt = db.prepare(
-        `INSERT OR REPLACE INTO scryfall_sets (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`
-    )
-    const insertBatch = db.transaction((rows: Record<string, unknown>[]) => {
-        for (const row of rows) stmt.run(columns.map((c) => row[c]))
-    })
-
-    let url: string | null = '/sets'
-    let inserted = 0
-
-    while (url) {
-        const page = (await scryfallGet(url)) as { data: Record<string, unknown>[]; has_more: boolean; next_page?: string }
-
-        const rows: Record<string, unknown>[] = []
-        for (const setJson of page.data ?? []) {
-            if (setJson.digital) continue
-            const row = buildSetRow(setJson, columns)
-            if (!isEmpty(row) || !EXCLUDED_CODES.has(String(row.code))) {
-                rows.push(row)
-            }
-        }
-
-        insertBatch(rows)
-        inserted += rows.length
-        url = page.has_more && page.next_page ? page.next_page : null
-    }
-
-    log.info('Set refresh complete', { inserted })
-    return { inserted }
-}
-
-export async function refreshCards(db: Database.Database): Promise<Inserted> {
-    log.info('Starting card refresh from Scryfall')
-
-    const meta = (await scryfallGet('/bulk-data/default_cards')) as { jsonl_download_uri?: string }
-    const downloadUri = meta.jsonl_download_uri
-    if (!downloadUri) {
-        throw new Error('jsonl_download_uri not found in bulk-data response')
-    }
-
-    const columns = getTableColumns(db, 'scryfall_cards')
-    const stmt = db.prepare(
-        `INSERT OR REPLACE INTO scryfall_cards (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`
-    )
-    const insertBatch = db.transaction((rows: Record<string, unknown>[]) => {
-        for (const row of rows) stmt.run(columns.map((c) => row[c]))
-    })
-
-    log.info('Downloading bulk card data', { uri: downloadUri })
-    const response = await fetch(downloadUri, {
-        headers: { 'User-Agent': USER_AGENT },
-    })
-    if (!response.ok) throw new Error(`Failed to download bulk data: ${response.status}`)
-    if (!response.body) throw new Error('Response body is null')
-
-    const byteStream = Readable.fromWeb(response.body as any)
-    const jsonlStream = byteStream.pipe(createGunzip())
-
-    let batch: Record<string, unknown>[] = []
-    let inserted = 0
-
-    for await (const card of readJsonLines(jsonlStream)) {
-        if (!card.id || card.digital) {
-            continue
-        }
-        if (typeof card.set === 'string' && EXCLUDED_CODES.has(card.set.toUpperCase())) {
-            continue
-        }
-
-        batch.push(buildCardRow(card, columns))
-
-        if (batch.length >= BATCH_SIZE) {
-            insertBatch(batch)
-            inserted += batch.length
-            log.debug('Card batch inserted', { inserted })
-            batch = []
-        }
-    }
-
-    if (batch.length > 0) {
-        insertBatch(batch)
-        inserted += batch.length
-    }
-
-    log.info('Card refresh complete', { inserted })
-    return { inserted }
-}
-
-export async function getSet(db: Database.Database, setCode: string): Promise<boolean> {
-    log.info('Starting set retrieval from Scryfall')
-    const url = `/sets/${setCode.toLowerCase()}`
-
-    let setToInsert: Record<string, unknown> = {}
-    let dbColumns: string[] = []
-    try {
-        dbColumns = getTableColumns(db, SET_TABLE_NAME)
-        const scryfallSet = await scryfallGet(url) as Record<string, unknown>
-        setToInsert = buildSetRow(scryfallSet, dbColumns)
-        if (isEmpty(setToInsert)) {
-            throw new Error('Unable to build set')
-        }
-    } catch (err) {
-        log.error('Failed to retrieve and build set')
-        return Promise.reject(`Set could not be fetched: ${err}`)
-    }
-
-    const sql = `INSERT OR REPLACE INTO scryfall_sets (${dbColumns.join(', ')}) VALUES (${dbColumns.map(() => '?').join(', ')})`
-    const values = dbColumns.map((col) => setToInsert[col])
-    try {
-        db.prepare(sql).run(values)
-        log.info('Set stored in database')
-        return true
-    } catch (err) {
-        log.error('Failed to store set in databse')
-        return Promise.reject(`Set could not be stored in database: ${err}`)
-    }
-}
-
-export async function getSetCards(db: Database.Database, searchURI: string): Promise<Inserted> {
-    log.info('Starting card retrieval from Scryfall')
-
-    const dbColumns = getTableColumns(db, CARD_TABLE_NAME)
-    const stmt = db.prepare(`INSERT OR REPLACE INTO scryfall_cards (${dbColumns.join(', ')}) VALUES (${dbColumns.map(() => '?').join(', ')})`)
-    const insertTransaction = db.transaction((rows: Record<string, unknown>[]) => {
-        for (const r of rows) {
-            stmt.run(dbColumns.map(c => r[c]))
-        }
-    })
-
-    let inserted = 0
-    let scryfallURL: string | undefined = searchURI
-    let errors: string | undefined
-    while (scryfallURL) {
-        try {
-            const page = await scryfallGet(scryfallURL) as { data: Record<string, unknown>[]; has_more: boolean; next_page?: string }
-            const cards = (page.data ?? []).map(card => buildCardRow(card, dbColumns))
-            insertTransaction(cards)
-
-            inserted += cards.length
-            if (page.has_more) {
-                scryfallURL = page.next_page
-            }
-        } catch (err) {
-            log.error(`Error retrieving and inserting batch: ${err}`)
-            if (!errors) {
-                errors = (err as Error).message
-            } else {
-                errors += `, ${(err as Error).message}`
-            }
-
-            scryfallURL = undefined
-        }
-    }
-
-    log.info('Cards fetched and stored in databse')
-    return {inserted: inserted, error: errors}
-}
-
-export async function getCard(db: Database.Database, setCode: string, collectorNumber: string): Promise<boolean> {
-    log.info('Starting card retrieval from Scryfall')
-    const url = `/cards/${setCode.toLowerCase()}/${collectorNumber}`
-
-    let cardToInsert: Record<string, unknown> = {}
-    let dbColumns: string[] = []
-    try {
-        dbColumns = getTableColumns(db, CARD_TABLE_NAME)
-        const scryfallSet = await scryfallGet(url) as Record<string, unknown>
-        cardToInsert = buildCardRow(scryfallSet, dbColumns)
-        if (isEmpty(cardToInsert)) {
-            throw new Error('Unable to build card')
-        }
-    } catch (err) {
-        log.error('Failed to retrieve and build card')
-        return Promise.reject(`Card could not be fetched: ${err}`)
-    }
-
-    const sql = `INSERT OR REPLACE INTO scryfall_cards (${dbColumns.join(', ')}) VALUES (${dbColumns.map(() => '?').join(', ')})`
-    const values = dbColumns.map((col) => cardToInsert[col])
-    try {
-        db.prepare(sql).run(values)
-        log.info('Card stored in database')
-        return true
-    } catch (err) {
-        log.error('Failed to store card in databse')
-        return Promise.reject(`Card could not be stored in database: ${err}`)
-    }
 }

@@ -52,8 +52,8 @@ export interface ElectronAPI {
     refreshSetSymbols: () => Promise<string>
     keyruneVersion: () => Promise<KeyruneVersion>
     refreshManaSymbols: () => Promise<void>
-    refreshSets: () => Promise<{ inserted: number }>
-    refreshCards: () => Promise<{ inserted: number }>
+    refreshSets: (excludedCodes?: string[]) => Promise<InsertResult>
+    refreshCards: (excludedCodes?: string[]) => Promise<InsertResult>
     downloadCCMGFont: () => Promise<void>
     ccmgFontStatus: () => Promise<{ downloaded: boolean }>
     getAppIcon: () => Promise<string>
