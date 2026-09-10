@@ -15,6 +15,7 @@ import type {
     MutationResult,
     AddResult,
     InsertResult,
+    RefreshResult,
     DeleteResult,
     MergeResult,
     ExportResult,
@@ -164,7 +165,7 @@ contextBridge.exposeInMainWorld('api', {
         ipcRenderer.invoke('data:refreshManaSymbols'),
     refreshSets: (excludedCodes?: string[]): Promise<InsertResult> =>
         ipcRenderer.invoke(SCRYFALL_REFRESH_SETS_NAME, excludedCodes),
-    refreshCards: (excludedCodes?: string[]): Promise<InsertResult> =>
+    refreshCards: (excludedCodes?: string[]): Promise<RefreshResult> =>
         ipcRenderer.invoke(SCRYFALL_REFRESH_CARDS_NAME, excludedCodes),
 
     // CCMG font

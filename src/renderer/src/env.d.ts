@@ -14,6 +14,7 @@ import type {
     MutationResult,
     AddResult,
     InsertResult,
+    RefreshResult,
     DeleteResult,
     MergeResult,
     ExportResult,
@@ -53,7 +54,7 @@ export interface ElectronAPI {
     keyruneVersion: () => Promise<KeyruneVersion>
     refreshManaSymbols: () => Promise<void>
     refreshSets: (excludedCodes?: string[]) => Promise<InsertResult>
-    refreshCards: (excludedCodes?: string[]) => Promise<InsertResult>
+    refreshCards: (excludedCodes?: string[]) => Promise<RefreshResult>
     downloadCCMGFont: () => Promise<void>
     ccmgFontStatus: () => Promise<{ downloaded: boolean }>
     getAppIcon: () => Promise<string>

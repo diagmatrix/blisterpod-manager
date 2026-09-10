@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database, { Transaction } from "better-sqlite3";
 import { createLogger } from "../logger";
 import { SCRYFALL_REFRESH_CARDS_NAME, SCRYFALL_REFRESH_SETS_NAME } from "../../models/channels";
 import { ipcMain } from "electron";
@@ -12,12 +12,16 @@ import {
     fetchSet,
     streamBulkCards,
 } from "../scryfallRefresh";
-import { InsertResult } from "../../models/responses";
+import { InsertResult, RefreshResult } from "../../models/responses";
+import { readQueryFile } from ".";
 
 const BATCH_SIZE = 1000
 const EXCLUDED_CODES = new Set(['UNK'])
 const SET_TABLE_NAME = 'scryfall_sets'
 const CARD_TABLE_NAME = 'scryfall_cards'
+const REFRESH_IDS_TABLE_QUERY = 'refresh_scryfall_ids.sql'
+const DELETE_STALE_QUERY = 'delete_stale_scryfall_cards.sql'
+const MIN_SNAPSHOT_RATIO = 0.9
 
 const logger = createLogger('db:scryfall')
 
@@ -38,6 +42,44 @@ function buildInserter(db: Database.Database, tableName: string): Inserter {
     })
 
     return { columns, insertBatch }
+}
+function resetSnapshotIds(db: Database.Database): Transaction<(ids: string[]) => void> {
+    try {
+        const sql = readQueryFile(REFRESH_IDS_TABLE_QUERY)
+        logger.info('Resetting snapshot ids table', sql)
+        db.exec(sql)
+    } catch (err) {
+        logger.error(`Error resetting snapshot ids table: ${err}`)
+        throw err
+    }
+
+    const stmt = db.prepare(`INSERT OR IGNORE INTO refresh_scryfall_ids (id) VALUES (?)`)
+    return db.transaction((ids: string[]) => {
+        for (const id of ids) {
+            stmt.run(id)
+        }
+    })
+}
+
+function dropSnapshotIds(db: Database.Database): void {
+    db.exec(`DROP TABLE IF EXISTS refresh_scryfall_ids`)
+}
+
+export function pruneStaleCards(db: Database.Database): { deleted: number, warning?: string } {
+    const { snapshot } = db.prepare(`SELECT count(*) AS snapshot FROM refresh_scryfall_ids`).get() as { snapshot: number }
+    const { stored } = db.prepare(`SELECT count(*) AS stored FROM ${CARD_TABLE_NAME}`).get() as { stored: number }
+
+    if (snapshot < stored * MIN_SNAPSHOT_RATIO) {
+        const warning = `Skipping prune: The cards DB and the Snapshot differ too much: ${stored} vs ${snapshot}`
+        logger.warn(warning)
+        return { deleted: 0, warning }
+    }
+
+    const prune = db.transaction(() => db.prepare(readQueryFile(DELETE_STALE_QUERY)).run().changes)
+    const deleted = prune()
+
+    logger.info('Pruned cards missing from the Scryfall snapshot', { deleted })
+    return { deleted }
 }
 
 export async function refreshSets(db: Database.Database, excludedCodes: string[] = []): Promise<InsertResult> {
@@ -78,40 +120,56 @@ export async function refreshSets(db: Database.Database, excludedCodes: string[]
     return { inserted }
 }
 
-export async function refreshCards(db: Database.Database, excludedCodes: string[] = []): Promise<InsertResult> {
+export async function refreshCards(db: Database.Database, excludedCodes: string[] = []): Promise<RefreshResult> {
     logger.info('Starting card refresh from Scryfall')
 
     const excludedSets = new Set([...EXCLUDED_CODES, ...excludedCodes.map((code) => code.toUpperCase())])
     const { columns, insertBatch } = buildInserter(db, CARD_TABLE_NAME)
+    const insertSnapshotIds = resetSnapshotIds(db)
 
     let batch: Record<string, unknown>[] = []
+    let idBatch: string[] = []
     let inserted = 0
+    try {
+        for await (const card of streamBulkCards()) {
+            if (typeof card.id === 'string') {
+                idBatch.push(card.id)
+            }
+            if (idBatch.length >= BATCH_SIZE) {
+                insertSnapshotIds(idBatch)
+                idBatch = []
+            }
 
-    for await (const card of streamBulkCards()) {
-        if (!card.id || card.digital) {
-            continue
+            // Skip cards without IDs, digital cards and excluded sets
+            if (!card.id || card.digital || (typeof card.set === 'string' && excludedSets.has(card.set.toUpperCase()))) {
+                continue
+            }
+
+            batch.push(buildCardRow(card, columns))
+
+            if (batch.length >= BATCH_SIZE) {
+                insertBatch(batch)
+                inserted += batch.length
+                logger.debug('Card batch inserted', { inserted })
+                batch = []
+            }
         }
-        if (typeof card.set === 'string' && excludedSets.has(card.set.toUpperCase())) {
-            continue
-        }
 
-        batch.push(buildCardRow(card, columns))
-
-        if (batch.length >= BATCH_SIZE) {
+        if (batch.length > 0) {
             insertBatch(batch)
             inserted += batch.length
-            logger.debug('Card batch inserted', { inserted })
-            batch = []
         }
-    }
+        if (idBatch.length > 0) {
+            insertSnapshotIds(idBatch)
+        }
 
-    if (batch.length > 0) {
-        insertBatch(batch)
-        inserted += batch.length
-    }
+        const { deleted, warning } = pruneStaleCards(db)
 
-    logger.info('Card refresh complete', { inserted })
-    return { inserted }
+        logger.info('Card refresh complete', { inserted, deleted })
+        return { inserted, deleted, warning }
+    } finally {
+        dropSnapshotIds(db)
+    }
 }
 
 export async function getSet(db: Database.Database, setCode: string): Promise<boolean> {
@@ -149,8 +207,6 @@ export async function getSetCards(db: Database.Database, searchURI: string): Pro
     let inserted = 0
     let error: string | undefined
 
-    // Whatever was fetched before a failure is kept, matching the previous page-by-page
-    // behaviour where earlier pages stayed committed.
     try {
         for await (const card of fetchSearchPages(searchURI)) {
             batch.push(buildCardRow(card, columns))
@@ -203,12 +259,12 @@ export async function getCard(db: Database.Database, setCode: string, collectorN
 
 export function registerScryfallHandlers(db: Database.Database): void {
     // Refresh the available cards
-    ipcMain.handle(SCRYFALL_REFRESH_CARDS_NAME, async (_, excludedCodes: string[] = []): Promise<InsertResult> => {
+    ipcMain.handle(SCRYFALL_REFRESH_CARDS_NAME, async (_, excludedCodes: string[] = []): Promise<RefreshResult> => {
         try {
             return await refreshCards(db, excludedCodes)
         } catch (err) {
             logger.error(`Error refreshing cards: ${err}`)
-            return { inserted: 0, error: (err as Error).message }
+            return { inserted: 0, deleted: 0, error: (err as Error).message }
         }
     })
 

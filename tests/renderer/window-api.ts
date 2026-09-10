@@ -79,7 +79,7 @@ export function defaultWindowApi(): ElectronAPI {
         keyruneVersion: vi.fn(async () => ({ downloaded: '1.0.0' })),
         refreshManaSymbols: vi.fn(async () => {}),
         refreshSets: vi.fn(async () => ({ inserted: 0 })),
-        refreshCards: vi.fn(async () => ({ inserted: 0 })),
+        refreshCards: vi.fn(async () => ({ inserted: 0, deleted: 0 })),
         downloadCCMGFont: vi.fn(async () => {}),
         ccmgFontStatus: vi.fn(async () => ({ downloaded: true })),
 

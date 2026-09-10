@@ -27,6 +27,10 @@ export interface DeleteResult {
     error?: string
 }
 
+export interface RefreshResult extends InsertResult {
+    deleted: number
+}
+
 export interface MergeResult {
     merged: number
     error?: string
