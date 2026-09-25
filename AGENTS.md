@@ -44,6 +44,7 @@
 - `cards` enforces quantity invariants in SQL: non-negative each, and combined quantity must be `> 0`.
 - Many Scryfall structured fields are persisted as JSON text (serialized in TS); treat them as JSON strings at boundaries.
 - Scryfall refresh logic intentionally excludes digital cards and set code `UNK`, and throttles requests by 100ms in API paging paths (`src/main/scryfallRefresh.ts`).
+- **`card_types`/`card_subtypes` are empty until a card refresh runs.** `006_scryfall_cards_card_types.sql` adds the two columns and stops there, and the only thing that fills them is `refreshCards` — which the user triggers by hand. So on any database created before 006 the card type filter (`buildCardTypesCondition` in `querybuilder.ts`, the chips in `CardFilters`) matches nothing at all until a full Scryfall refresh. **The deferred fix is a migration that backfills both columns from `type_line`**, which has existed since 003, mirroring `parseCardTypes` in `src/main/scryfallRefresh.ts`: split faces on ` // `, split each face on the em dash `—` into types and subtypes, split those on spaces, dedupe, and store JSON arrays (`NULL`, not `[]`, when a face has no subtype section). Until then, treat "the filter returns nothing" as a stale-database symptom, not a query bug.
 
 ## Testing (and its known debt)
 

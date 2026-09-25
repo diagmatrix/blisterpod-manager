@@ -20,6 +20,10 @@ export const COLOR_IDENTITY_MISSING_SEARCH_CONDITION = 'instr(color_identity, ?)
 export const COLOR_IDENTITY_TOTAL_SEARCH_CONDITION = 'json_array_length(color_identity) = ?'
 export const COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION = 'json_array_length(color_identity) <= ?'
 export const LAYOUT_FILTER_CONDITION = 'is_token = ?'
+export const CARD_TYPE_SEARCH_CONDITION = '( instr(lower(card_types), ?) > 0 OR instr(lower(card_subtypes), ?) > 0 )'
+
+export const MAX_CARD_TYPES = 10
+const CARD_TYPE_PATTERN = /^[a-z][a-z' -]*$/
 
 interface Query {
     sql: string
@@ -88,6 +92,21 @@ function buildColorIdentityCondition(colors: string[], colorMode: string): Query
     }
 }
 
+function buildCardTypesCondition(cardTypes: string[]): Query {
+    const sqlConditions: string[] = []
+    const values: string[] = []
+
+    for (const cardType of cardTypes) {
+        sqlConditions.push(CARD_TYPE_SEARCH_CONDITION)
+        values.push(`"${cardType}"`, `"${cardType}"`)
+    }
+
+    return {
+        sql: sqlConditions.join(' AND '),
+        values: values
+    }
+}
+
 function buildLayoutCondition(layoutFilter: string): Query {
     const layoutFilterValue = layoutFilter === 'cards' ? 0 : 1
 
@@ -131,6 +150,14 @@ function validateSearchParams(params: CardSearchParams): CardSearchParams {
         colorMode = VALID_COLOR_MODES.includes(colorModeRaw) ? colorModeRaw : DEFAULT_COLOR_MODE
     }
 
+    const cardTypes: string[] = []
+    for (const cardType of params.cardTypes ?? []) {
+        const normalised = cardType.trim().replace(/\s+/g, ' ').toLowerCase()
+        if (CARD_TYPE_PATTERN.test(normalised) && !cardTypes.includes(normalised) && cardTypes.length < MAX_CARD_TYPES) {
+            cardTypes.push(normalised)
+        }
+    }
+
     const page = params.page ?? 1
     const pageSize = Math.min(params.pageSize ?? 60, MAX_PAGE_SIZE)
     const setCode = params.setCode ? params.setCode.toUpperCase() : params.setCode
@@ -160,6 +187,7 @@ function validateSearchParams(params: CardSearchParams): CardSearchParams {
         colorIdentity: colorIdentity,
         colorMode: colorMode,
         layoutFilter: layoutFilter,
+        cardTypes: cardTypes,
         sort: sort,
         page: page,
         pageSize: pageSize
@@ -187,6 +215,10 @@ function buildQueryConditions(params: CardSearchParams): Query {
 
     if (params.layoutFilter && params.layoutFilter !== 'all') {
         conditions.push(buildLayoutCondition(params.layoutFilter))
+    }
+
+    if (params.cardTypes && params.cardTypes.length > 0) {
+        conditions.push(buildCardTypesCondition(params.cardTypes))
     }
 
     return {

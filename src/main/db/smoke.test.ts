@@ -49,6 +49,52 @@ describe('db integration harness', () => {
         expect(result.rows[0].name).toBe('Boros Reckoner')
     })
 
+    // The card type filter reaches into the JSON the views expose, so it is only
+    // really proven against the real schema.
+    describe('filtering the catalogue by card type', () => {
+        async function searchTypes(cardTypes: string[]): Promise<string[]> {
+            const result = await ipc.invoke<{ rows: { name: string }[] }>(
+                CARDS_SEARCH_NAME,
+                { cardTypes, layoutFilter: 'all' },
+            )
+            expect(loggedErrors()).toEqual([])
+            return result.rows.map((row) => row.name)
+        }
+
+        it('matches a type', async () => {
+            expect(await searchTypes(['creature'])).toEqual(['Boros Reckoner'])
+        })
+
+        it('matches a subtype through the same box', async () => {
+            expect(await searchTypes(['minotaur'])).toEqual(['Boros Reckoner'])
+        })
+
+        it('matches a card whose subtypes are NULL', async () => {
+            expect(await searchTypes(['land'])).toEqual(['Wastes'])
+        })
+
+        it('ANDs several types together', async () => {
+            expect(await searchTypes(['legendary', 'planeswalker'])).toEqual(['Gideon, Ally of Zendikar'])
+            expect(await searchTypes(['creature', 'planeswalker'])).toEqual([])
+        })
+
+        it('matches a whole type, not a fragment of one', async () => {
+            expect(await searchTypes(['wall'])).toEqual(['Boros Reckoner'])
+            expect(await searchTypes(['creat'])).toEqual([])
+            expect(await searchTypes(['ino'])).toEqual([])
+        })
+
+        it('filters the collection by type as well', async () => {
+            const result = await ipc.invoke<{ rows: { name: string }[] }>(
+                COLLECTION_LIST_NAME,
+                { cardTypes: ['basic'], layoutFilter: 'all' },
+            )
+
+            expect(loggedErrors()).toEqual([])
+            expect(result.rows.map((row) => row.name)).toEqual(['Wastes'])
+        })
+    })
+
     it('lists the seeded collection joined against the scryfall catalogue', async () => {
         const result = await ipc.invoke<{ rows: unknown[], total: number }>(
             COLLECTION_LIST_NAME,

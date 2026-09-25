@@ -15,6 +15,8 @@ SELECT
     c.quantity_nonfoil + c.quantity_foil                       AS total,
     sc.color_identity,
     sc.rarity,
+    coalesce(sc.card_types, '[]')                              AS card_types,
+    coalesce(sc.card_subtypes, '[]')                           AS card_subtypes,
     coalesce(sc.cmc, 0)                                        AS mana_value,
     CASE
         WHEN sc.set_type = 'token'

@@ -17,17 +17,22 @@ INSERT INTO scryfall_sets (
 
 INSERT INTO scryfall_cards (
     id, oracle_id, name, set_name, set_code, set_type, collector_number,
-    rarity, color_identity, cmc, released_at, prices, image_uris, digital, lang
+    rarity, color_identity, cmc, released_at, prices, image_uris, digital, lang,
+    type_line, card_types, card_subtypes
 ) VALUES
     ('aaaaaaaa-0000-0000-0000-000000000001', 'oracle-boros-reckoner', 'Boros Reckoner',
      'Gatecrash', 'GTC', 'expansion', '54', 'rare', '["R","W"]', 3, '2013-02-01',
-     '{"eur":"4.50","eur_foil":"12.00"}', '{"normal":"https://example.invalid/reckoner.jpg"}', 0, 'en'),
+     '{"eur":"4.50","eur_foil":"12.00"}', '{"normal":"https://example.invalid/reckoner.jpg"}', 0, 'en',
+     'Creature — Wall Minotaur', '["Creature"]', '["Wall","Minotaur"]'),
     ('aaaaaaaa-0000-0000-0000-000000000002', 'oracle-gideon', 'Gideon, Ally of Zendikar',
      'Battle for Zendikar', 'BFZ', 'expansion', '163', 'mythic', '["W"]', 4, '2015-10-02',
-     '{"eur":"9.00","eur_foil":"20.00"}', '{"normal":"https://example.invalid/gideon.jpg"}', 0, 'en'),
+     '{"eur":"9.00","eur_foil":"20.00"}', '{"normal":"https://example.invalid/gideon.jpg"}', 0, 'en',
+     'Legendary Planeswalker — Gideon', '["Legendary","Planeswalker"]', '["Gideon"]'),
+    -- No subtype section at all, which is why card_subtypes is NULL rather than '[]'.
     ('aaaaaaaa-0000-0000-0000-000000000003', 'oracle-wastes', 'Wastes',
      'Battle for Zendikar', 'BFZ', 'expansion', '184', 'common', '[]', 0, '2015-10-02',
-     '{"eur":"0.30","eur_foil":"1.10"}', '{"normal":"https://example.invalid/wastes.jpg"}', 0, 'en');
+     '{"eur":"0.30","eur_foil":"1.10"}', '{"normal":"https://example.invalid/wastes.jpg"}', 0, 'en',
+     'Basic Land', '["Basic","Land"]', NULL);
 
 INSERT INTO cards (set_code, collector_number, quantity_nonfoil, quantity_foil) VALUES
     ('GTC', '54', 2, 1),

@@ -15,6 +15,8 @@ SELECT
     END                                      AS image_url,
     sc.rarity,
     sc.color_identity,
+    coalesce(sc.card_types, '[]')            AS card_types,
+    coalesce(sc.card_subtypes, '[]')         AS card_subtypes,
     coalesce(sc.prices ->> 'eur', 0)         AS value_nonfoil,
     coalesce(sc.prices ->> 'eur_foil', 0)    AS value_foil,
     sc.collector_number_normalised,
