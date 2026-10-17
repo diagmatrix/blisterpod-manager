@@ -11,14 +11,15 @@ import { registerMissingCardsHandlers } from "./missing";
 import { registerDuplicateCardsHandlers } from "./duplicates";
 import { registerCollectionHandlers } from "./collection";
 import { DB_PATH_NAME, DIALOG_SHOW_SAVE_NAME } from "../../models/channels";
+import { registerDecksHandlers } from "./decks";
+import { registerScryfallHandlers } from "./scryfall";
+import { MutationResult } from "../../models/responses";
+import { runMigrations } from "./migrations";
+import { QUERIES_DIR, VIEWS_DIR } from "./paths";
 
 // Separate database there so development work never touches the real collection.
 const DB_NAME = IS_DEV ? 'test_collection.db' : 'collection.db'
 const DB_PATH = join(app.getPath('userData'), DB_NAME)
-const SQL_DIR = join(app.getAppPath(), 'db')
-const TABLES_DIR = join(SQL_DIR, 'tables')
-const VIEWS_DIR = join(SQL_DIR, 'views')
-const QUERIES_DIR = join(SQL_DIR, 'queries')
 
 const logger = createLogger('db')
 
@@ -29,7 +30,12 @@ async function executeSQLFilesFromDir(db: Database.Database, dirPath: string): P
         if (filePath.endsWith('.sql')) {
             logger.debug(`Executing SQL file: ${filePath}`)
             const sql = readFileSync(filePath, 'utf-8')
-            db.exec(sql)
+            try {
+                db.exec(sql)
+            } catch (err) {
+                logger.error(`Failed to execute SQL file ${filePath}: ${err}`)
+                throw err
+            }
         }
     }
 }
@@ -50,10 +56,24 @@ export async function initDatabase(): Promise<void> {
     db = new Database(DB_PATH)
     db.pragma('journal_mode = WAL')
 
-    await executeSQLFilesFromDir(db, TABLES_DIR)
+    await runMigrations(db)
     await executeSQLFilesFromDir(db, VIEWS_DIR)
 
     setUpIPCHandlers()
+}
+
+export function createDeleteTransaction(db: Database.Database, sql: string, id: string | number, objectName?: string): () => MutationResult {
+    const transaction = db.transaction(() => {
+        try {
+            db.prepare(sql).run(id)
+            return { success: true }
+        } catch (err) {
+            logger.error(`Error deleting ${objectName ?? 'object'}: ${err}`)
+            return { success: false, error: (err as Error).message }
+        }
+    })
+
+    return transaction
 }
 
 export function getDb(): Database.Database {
@@ -93,4 +113,10 @@ function setUpIPCHandlers(): void {
 
     // Duplicate cards handlers
     registerDuplicateCardsHandlers(db)
+
+    // Decks handlers
+    registerDecksHandlers(db)
+
+    // Scryfall handlers
+    registerScryfallHandlers(db)
 }

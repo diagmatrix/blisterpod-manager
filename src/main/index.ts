@@ -3,12 +3,11 @@ import { app, BrowserWindow, Menu, nativeTheme, ipcMain, protocol } from 'electr
 import { join } from 'path'
 import { readFileSync } from 'fs'
 import Store from 'electron-store'
-import { initDatabase, getDb } from './db'
+import { initDatabase } from './db'
 import { initCardImageProtocol } from './cardImages'
 import { initKeyruneProtocol, downloadKeyruneAssets, getKeyruneVersion } from './keyruneAssets'
 import { initFontProtocol, downloadCCMGFont, getCCMGFontStatus } from './ccmgFont'
 import { initManaSymbolProtocol, downloadManaSymbols } from './manaSymbols'
-import { refreshSets, refreshCards } from './scryfallRefresh'
 import { getIconPath, IS_DEV } from './utils'
 import type { WindowBounds, AppSettings, LogEntry } from '../models/app'
 
@@ -133,8 +132,6 @@ async function createWindow() {
 ipcMain.handle('data:refreshSetSymbols', () => downloadKeyruneAssets())
 ipcMain.handle('data:refreshManaSymbols', () => downloadManaSymbols())
 ipcMain.handle('data:keyruneVersion', () => ({ downloaded: getKeyruneVersion() }))
-ipcMain.handle('data:refreshSets', () => refreshSets(getDb()))
-ipcMain.handle('data:refreshCards', () => refreshCards(getDb()))
 ipcMain.handle('data:downloadCCMGFont', () => downloadCCMGFont())
 ipcMain.handle('data:ccmgFontStatus', () => getCCMGFontStatus())
 ipcMain.handle('app:icon', () => {

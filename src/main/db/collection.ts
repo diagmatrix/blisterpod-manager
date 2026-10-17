@@ -4,7 +4,7 @@ import { ipcMain } from "electron";
 import { CardSearchParams, CollectionAddParams, CollectionUpdateParams } from "../../models/search";
 import { buildFullQuery } from "./querybuilder";
 import { CollectionCard } from "../../models/cards";
-import { readQueryFile } from ".";
+import { createDeleteTransaction, readQueryFile } from ".";
 import { AddResult, DeleteResult, InsertResult, MutationResult, PaginatedResult } from "../../models/responses";
 import {
     COLLECTION_LIST_NAME,
@@ -173,16 +173,7 @@ export function registerCollectionHandlers(db: Database.Database): void {
     ipcMain.handle(COLLECTION_DELETE_NAME, (_, id: number): MutationResult => {
         const sql = 'DELETE FROM cards WHERE id = ?'
         logger.info(COLLECTION_DELETE_NAME, sql)
-
-        const deleteTransaction = db.transaction(() => {
-            try {
-                db.prepare(sql).run(id)
-                return { success: true }
-            } catch (err) {
-                logger.error(`Error deleting card: ${err}`)
-                return { success: false, error: (err as Error).message }
-            }
-        })
+        const deleteTransaction = createDeleteTransaction(db, sql, id, 'card')
 
         return deleteTransaction()
     })

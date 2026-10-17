@@ -39,15 +39,31 @@ export interface LaunchedApp {
     close: () => Promise<void>
 }
 
+// Sorted because migrations must run in order. Their NNN_ prefixes are
+// zero-padded, so a plain lexicographic sort is also the numeric one.
 function execSqlDir(db: DatabaseSync, dirPath: string): void {
-    for (const name of readdirSync(dirPath).filter((f) => f.endsWith('.sql'))) {
+    for (const name of readdirSync(dirPath).filter((f) => f.endsWith('.sql')).sort()) {
         db.exec(readFileSync(join(dirPath, name), 'utf-8'))
     }
 }
 
+/** Highest NNN_ prefix in `db/migrations`, i.e. the version the app expects. */
+function latestSchemaVersion(migrationsDir: string): number {
+    const versions = readdirSync(migrationsDir)
+        .filter((name) => name.endsWith('.sql'))
+        .map((name) => Number(name.split('_')[0]))
+        .filter((version) => Number.isInteger(version))
+    return versions.length > 0 ? Math.max(...versions) : 0
+}
+
 function seedUserData(userDataDir: string): void {
+    const migrationsDir = join(REPO_ROOT, 'db', 'migrations')
     const db = new DatabaseSync(join(userDataDir, 'collection.db'))
-    execSqlDir(db, join(REPO_ROOT, 'db', 'tables'))
+    execSqlDir(db, migrationsDir)
+    // Stamp what the migrations just applied. Without this the seeded profile
+    // looks like a version-0 database, and the app re-runs every migration on
+    // launch -- an ALTER TABLE ... ADD COLUMN would then fail as a duplicate.
+    db.exec(`PRAGMA user_version = ${latestSchemaVersion(migrationsDir)};`)
     execSqlDir(db, join(REPO_ROOT, 'db', 'views'))
     // Same fixture the Vitest integration tests use.
     db.exec(readFileSync(join(REPO_ROOT, 'tests', 'fixtures', 'collection.sql'), 'utf-8'))

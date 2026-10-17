@@ -59,9 +59,8 @@ export function renderWithProviders(
 }
 
 /**
- * `userEvent` wired to Vitest's fake timers. Needed by anything touching the
- * 1000ms debounce in `useCardFilters`; without `advanceTimers` the default
- * userEvent delay deadlocks against frozen time.
+ * `userEvent` wired to Vitest's fake timers. Needed by any test that freezes time,
+ * because without `advanceTimers` the default userEvent delay deadlocks against it.
  */
 export function setupUser(): ReturnType<typeof userEvent.setup> {
     return userEvent.setup({ advanceTimers: vi.advanceTimersByTime.bind(vi) })

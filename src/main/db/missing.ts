@@ -3,7 +3,7 @@ import { createLogger } from "../logger"
 import { ipcMain } from "electron"
 import { MissingCard } from "../../models/cards"
 import { readQueryFile } from "."
-import { getCard, getSet, getSetCards } from "../scryfallRefresh"
+import { getCard, getSet, getSetCards } from "./scryfall"
 import { CardDetailParams, SetCodeParams } from "../../models/search"
 import { InsertResult, MutationResult } from "../../models/responses"
 import {

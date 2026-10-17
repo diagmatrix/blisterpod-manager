@@ -15,13 +15,11 @@ import type {
     MutationResult,
     AddResult,
     InsertResult,
+    RefreshResult,
     DeleteResult,
     MergeResult,
     ExportResult,
 } from '../models/responses'
-// Channel names only ever come from '../models/channels': importing them from the
-// main-process modules pulls those modules' node dependencies into this bundle,
-// which a preload script cannot require.
 import {
     DIALOG_SHOW_SAVE_NAME,
     COLLECTION_LIST_NAME,
@@ -51,7 +49,16 @@ import {
     COLLECTION_EXPORT_MOXFIELD_NAME,
     COLLECTION_EXPORT_MANABOX_NAME,
     DB_PATH_NAME,
+    DECKS_LIST_NAME,
+    DECKS_CREATE_NAME,
+    DECKS_DETAIL_NAME,
+    DECKS_DELETE_NAME,
+    DECKS_UPDATE_NAME,
+    DECKS_LIST_DETAILS_NAME,
+    SCRYFALL_REFRESH_CARDS_NAME,
+    SCRYFALL_REFRESH_SETS_NAME,
 } from '../models/channels'
+import { Deck, DeckFolder, InsertDeckParams } from '../models/decks'
 
 contextBridge.exposeInMainWorld('api', {
     // Settings
@@ -130,6 +137,20 @@ contextBridge.exposeInMainWorld('api', {
     exportCollectionManabox: (filePath: string): Promise<ExportResult> =>
         ipcRenderer.invoke(COLLECTION_EXPORT_MANABOX_NAME, filePath),
 
+    // Decks
+    decksList: (): Promise<PaginatedResult<DeckFolder>> =>
+        ipcRenderer.invoke(DECKS_LIST_NAME),
+    decksCreate: (params: InsertDeckParams): Promise<MutationResult> =>
+        ipcRenderer.invoke(DECKS_CREATE_NAME, params),
+    decksDetail: (deckId: string): Promise<Deck | null> =>
+        ipcRenderer.invoke(DECKS_DETAIL_NAME, deckId),
+    decksUpdate: (deckId: string, params: InsertDeckParams): Promise<MutationResult> =>
+        ipcRenderer.invoke(DECKS_UPDATE_NAME, deckId, params),
+    decksDelete: (deckId: string): Promise<MutationResult> =>
+        ipcRenderer.invoke(DECKS_DELETE_NAME, deckId),
+    decksListDetails: (detailColumn: string): Promise<string[]> =>
+        ipcRenderer.invoke(DECKS_LIST_DETAILS_NAME, detailColumn),
+
     // Logging
     logMessage: (entry: LogEntry): void => ipcRenderer.send('log:message', entry),
 
@@ -142,10 +163,10 @@ contextBridge.exposeInMainWorld('api', {
     // Scryfall data refresh
     refreshManaSymbols: (): Promise<void> =>
         ipcRenderer.invoke('data:refreshManaSymbols'),
-    refreshSets: (): Promise<{ inserted: number }> =>
-        ipcRenderer.invoke('data:refreshSets'),
-    refreshCards: (): Promise<{ inserted: number }> =>
-        ipcRenderer.invoke('data:refreshCards'),
+    refreshSets: (excludedCodes?: string[]): Promise<InsertResult> =>
+        ipcRenderer.invoke(SCRYFALL_REFRESH_SETS_NAME, excludedCodes),
+    refreshCards: (excludedCodes?: string[]): Promise<RefreshResult> =>
+        ipcRenderer.invoke(SCRYFALL_REFRESH_CARDS_NAME, excludedCodes),
 
     // CCMG font
     downloadCCMGFont: (): Promise<void> =>

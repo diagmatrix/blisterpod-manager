@@ -1,9 +1,10 @@
 /**
  * Builds a real in-memory SQLite database from the repo's own schema files.
  *
- * Mirrors `executeSQLFilesFromDir` in `src/main/db/index.ts`: tables first, then
- * views. Reuses the app's own `walkDir` so the traversal order cannot drift from
- * what the app actually does at startup.
+ * Mirrors `initDatabase()` in `src/main/db/index.ts`: the app's own
+ * `runMigrations()` first, then `db/views/`. Calling the real runner rather than
+ * re-walking the directory means the test schema cannot drift from what the app
+ * actually produces at startup -- including its `user_version`.
  *
  * better-sqlite3 is deliberately NOT mocked -- running the real schema is what
  * makes this tier worth having. It exercises the
@@ -18,6 +19,7 @@ import Database from 'better-sqlite3'
 import { readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { walkDir } from '../../src/main/utils'
+import { runMigrations } from '../../src/main/db/migrations'
 
 const REPO_ROOT = resolve(import.meta.dirname, '../..')
 const DB_DIR = join(REPO_ROOT, 'db')
@@ -31,10 +33,10 @@ async function execSqlDir(db: Database.Database, dirPath: string): Promise<void>
     }
 }
 
-/** Fresh in-memory database with `db/tables` and `db/views` applied. */
+/** Fresh in-memory database with `db/migrations` and `db/views` applied. */
 export async function createTestDb(): Promise<Database.Database> {
     const db = new Database(':memory:')
-    await execSqlDir(db, join(DB_DIR, 'tables'))
+    await runMigrations(db)
     await execSqlDir(db, join(DB_DIR, 'views'))
     return db
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CardSearchParams, ColorMode, SortParams } from '../../models/search'
-import { BASE_QUERY, buildFullQuery, COLOR_IDENTITY_MISSING_SEARCH_CONDITION, COLOR_IDENTITY_SEARCH_CONDITION, COLOR_IDENTITY_TOTAL_SEARCH_CONDITION, LAYOUT_FILTER_CONDITION, MAX_PAGE_SIZE, NAME_SEARCH_CONDITION, SET_CODE_SEARCH_CONDITION, VALID_TABLE_NAMES } from './querybuilder'
+import { BASE_QUERY, buildFullQuery, CARD_TYPE_SEARCH_CONDITION, MAX_CARD_TYPES, COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION, COLOR_IDENTITY_MISSING_SEARCH_CONDITION, COLOR_IDENTITY_SEARCH_CONDITION, COLOR_IDENTITY_TOTAL_SEARCH_CONDITION, LAYOUT_FILTER_CONDITION, MAX_PAGE_SIZE, NAME_SEARCH_CONDITION, SET_CODE_SEARCH_CONDITION, VALID_TABLE_NAMES } from './querybuilder'
 import { getColorsComplement } from '../../models/mana'
 
 interface TestValidationParams {
@@ -180,6 +180,67 @@ describe('query builder', () => {
         })
     })
 
+    describe('card type conditions', () => {
+        function cardTypeSQL(times: number): string {
+            return new Array<string>(times).fill(CARD_TYPE_SEARCH_CONDITION).join(' AND ')
+        }
+
+        /** Each condition binds the quoted type twice: once for types, once for subtypes. */
+        function cardTypeValues(cardTypes: string[]): string[] {
+            return cardTypes.flatMap((cardType) => [`"${cardType}"`, `"${cardType}"`])
+        }
+
+        it.each<[string, string[], string[]]>([
+            ['a single type', ['creature'], ['creature']],
+            ['several types, ANDed', ['legendary', 'creature'], ['legendary', 'creature']],
+            ['a subtype typed as a type', ['elf'], ['elf']],
+            ['mixed case, folded down', ['Creature', 'ARTIFACT'], ['creature', 'artifact']],
+            ['surrounding and repeated whitespace', ['  planes  walker  '], ['planes walker']],
+            ['a duplicate that differs only in case', ['Creature', 'creature'], ['creature']],
+            ['a multi-word type', ["urza's"], ["urza's"]],
+        ])('builds a query from %s', (_label, cardTypes, expectedTypes) => {
+            const params: CardSearchParams = { cardTypes: cardTypes }
+            const expectedSQL = `${BASE_SQL} WHERE ${cardTypeSQL(expectedTypes.length)} LIMIT ? OFFSET ?`
+
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: [...cardTypeValues(expectedTypes), ...BASE_VALUES],
+                expectedSQL: expectedSQL
+            })
+        })
+
+        it.each([
+            ['an empty string', ''],
+            ['whitespace only', '   '],
+            ['a leading digit', '2creature'],
+            ['a JSON quote that would break out of the element match', 'creature","artifact'],
+            ['a wildcard', 'creat%'],
+        ])('ignores %s', (_label, cardType) => {
+            const params: CardSearchParams = { cardTypes: [cardType] }
+
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: BASE_VALUES,
+                expectedSQL: `${BASE_SQL} LIMIT ? OFFSET ?`
+            })
+        })
+
+        it('caps how many types one query can carry', () => {
+            const cardTypes = Array.from({ length: MAX_CARD_TYPES + 3 }, (_, i) => `type${'a'.repeat(i + 1)}`)
+            const params: CardSearchParams = { cardTypes: cardTypes }
+            const expectedSQL = `${BASE_SQL} WHERE ${cardTypeSQL(MAX_CARD_TYPES)} LIMIT ? OFFSET ?`
+
+            validateQuery({
+                params: params,
+                tableName: TABLE_NAME,
+                expectedValues: [...cardTypeValues(cardTypes.slice(0, MAX_CARD_TYPES)), ...BASE_VALUES],
+                expectedSQL: expectedSQL
+            })
+        })
+    })
+
     describe('color conditions', () => {
         it.each<[string[], ColorMode, string, (string|number)[]]>([
             // Color identity filter with 'atLeast'
@@ -200,7 +261,7 @@ describe('query builder', () => {
             [
                 BASE_COLOR_IDENTITY,
                 'atMost',
-                `${COLOR_IDENTITY_TOTAL_SEARCH_CONDITION} AND ${colorIdentitySQL(COLOR_IDENTITY_MISSING_SEARCH_CONDITION, BASE_COLOR_IDENTITY_COMPLEMENT.length)}`,
+                `${COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION} AND ${colorIdentitySQL(COLOR_IDENTITY_MISSING_SEARCH_CONDITION, BASE_COLOR_IDENTITY_COMPLEMENT.length)}`,
                 [BASE_COLOR_IDENTITY.length, ...BASE_COLOR_IDENTITY_COMPLEMENT]
             ],
             // Color identity filter with 'atLeast' and duplicated colors
@@ -245,7 +306,7 @@ describe('query builder', () => {
             [
                 [...BASE_COLOR_IDENTITY, 'C'],
                 'atMost',
-                `${COLOR_IDENTITY_TOTAL_SEARCH_CONDITION} AND ${colorIdentitySQL(COLOR_IDENTITY_MISSING_SEARCH_CONDITION, BASE_COLOR_IDENTITY_COMPLEMENT.length)}`,
+                `${COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION} AND ${colorIdentitySQL(COLOR_IDENTITY_MISSING_SEARCH_CONDITION, BASE_COLOR_IDENTITY_COMPLEMENT.length)}`,
                 [BASE_COLOR_IDENTITY.length, ...BASE_COLOR_IDENTITY_COMPLEMENT]
             ],
             // Colorless color identity filter with 'exactly'
@@ -255,11 +316,11 @@ describe('query builder', () => {
                 `${COLOR_IDENTITY_TOTAL_SEARCH_CONDITION}`,
                 [0]
             ],
-            // Colorless color identity filter with 'atMost'
+            // Colorless color identity filter with 'atMost'.
             [
                 ['C'],
                 'atMost',
-                `${COLOR_IDENTITY_TOTAL_SEARCH_CONDITION}`,
+                `${COLOR_IDENTITY_AT_MOST_SEARCH_CONDITION}`,
                 [0]
             ],
         ])('builds a query with color identity conditions that include colorless', (colorIdenitity: string[], colorMode: ColorMode, sql: string, vales: (string|number)[]) => {

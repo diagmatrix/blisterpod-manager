@@ -52,3 +52,19 @@ export function parseJsonArray(value: string | null | undefined): string[] {
         return []
     }
 }
+
+export function capitalize(str: string): string {
+    if (!str) {
+        return str
+    }
+
+    const words = str.split(' ')
+    const capitalizedWords = words.map((word) => {
+        if (word.length === 0) {
+            return word
+        }
+        return word[0].toUpperCase() + word.slice(1)
+    })
+
+    return capitalizedWords.join(' ')
+}

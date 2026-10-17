@@ -60,6 +60,7 @@ export interface CardSearchParams {
     colorIdentity?: string[]
     colorMode?: ColorMode
     layoutFilter?: LayoutFilter
+    cardTypes?: string[]
     sort?: SortParams[]
     page?: number
     pageSize?: number
@@ -72,6 +73,8 @@ export interface CardFiltersState {
     raritiesInput: string[]
     colorIdentityInput: string[]
     colorMode: ColorMode
+    cardTypesInput: string[]
+    cardTypeDraft: string
 }
 
 export interface CardFiltersHandlers {
@@ -81,4 +84,7 @@ export interface CardFiltersHandlers {
     toggleRarity: (r: string) => void
     toggleColorIdentity: (c: string) => void
     setColorMode: (m: ColorMode) => void
+    setCardTypeDraft: (v: string) => void
+    addCardType: (t: string) => void
+    removeCardType: (t: string) => void
 }

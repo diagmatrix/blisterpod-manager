@@ -37,6 +37,23 @@ describe('<CollectionPage />', () => {
         expect(screen.getByRole('button', { name: 'Remove Value from sorting' })).toHaveTextContent('1')
     })
 
+    it('keeps the pending filters out of the query until Filter is pressed', async () => {
+        await renderPage()
+
+        await user.type(screen.getByPlaceholderText('Card type ...'), 'Creature{Enter}')
+        await user.click(screen.getByRole('button', { name: 'Rare' }))
+
+        expect(api.collectionList).toHaveBeenCalledTimes(1)
+
+        await user.click(screen.getByRole('button', { name: 'Filter' }))
+
+        await waitFor(() => expect(api.collectionList).toHaveBeenCalledTimes(2))
+        expect(vi.mocked(api.collectionList).mock.lastCall?.[0]).toEqual(expect.objectContaining({
+            cardTypes: ['creature'],
+            rarities: ['rare'],
+        }))
+    })
+
     it('keeps the pending chain out of the query until Sort is pressed', async () => {
         await renderPage()
 

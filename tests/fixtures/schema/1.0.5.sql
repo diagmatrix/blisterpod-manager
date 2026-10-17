@@ -1,0 +1,149 @@
+-- FROZEN SNAPSHOT of the schema as v1.0.5 shipped it -- do not update.
+-- Generated from the tag: git show v1.0.5:db/tables/*.sql
+--
+-- migrations.test.ts builds a database from every snapshot in this directory,
+-- upgrades it, and asserts it ends up identical to a fresh install. Editing a
+-- snapshot would make that check vacuous.
+--
+-- Add one file per release, named for the version. If the release stamped a
+-- user_version, end the file with "PRAGMA user_version = N;" so the upgrade
+-- starts from the version that release actually left behind. v1.0.5 predates
+-- the migration runner, so it carries the SQLite default of 0.
+
+-- ===== db/tables/cards.sql @ v1.0.5 =====
+CREATE TABLE IF NOT EXISTS cards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    set_code TEXT NOT NULL,
+    collector_number TEXT NOT NULL,
+    quantity_nonfoil INTEGER NOT NULL DEFAULT 0,
+    quantity_foil INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT NULL,
+    CONSTRAINT quantity_nonfoil_not_negative CHECK ( quantity_nonfoil >= 0 ),
+    CONSTRAINT quantity_foil_not_negative CHECK ( quantity_foil >= 0 ),
+    CONSTRAINT quantity_more_than_zero CHECK ( quantity_nonfoil + quantity_foil > 0 )
+);
+
+CREATE INDEX IF NOT EXISTS cards_set_number ON cards (set_code, collector_number);
+
+-- ===== db/tables/scryfall_cards.sql @ v1.0.5 =====
+CREATE TABLE IF NOT EXISTS scryfall_cards (
+    arena_id INTEGER,
+    id TEXT PRIMARY KEY,
+    lang TEXT,
+    mtgo_id INTEGER,
+    mtgo_foil_id INTEGER,
+    multiverse_ids TEXT,
+    resource_id TEXT,
+    tcgplayer_id INTEGER,
+    tcgplayer_etched_id INTEGER,
+    cardmarket_id TEXT,
+    object TEXT,
+    layout TEXT,
+    oracle_id TEXT,
+    prints_search_uri TEXT,
+    rulings_uri TEXT,
+    scryfall_uri TEXT,
+    uri TEXT,
+    all_parts TEXT,
+    card_faces TEXT,
+    cmc REAL,
+    color_identity TEXT,
+    color_indicator TEXT,
+    colors TEXT,
+    defense TEXT,
+    edhrec_rank INTEGER,
+    game_changer BOOLEAN,
+    hand_modifier TEXT,
+    keywords TEXT,
+    legalities TEXT,
+    life_modifier TEXT,
+    loyalty TEXT,
+    mana_cost TEXT,
+    name TEXT,
+    oracle_text TEXT,
+    penny_rank INTEGER,
+    power TEXT,
+    produced_mana TEXT,
+    reserved BOOLEAN,
+    toughness TEXT,
+    type_line TEXT,
+    artist TEXT,
+    artist_ids TEXT,
+    attraction_lights TEXT,
+    booster BOOLEAN,
+    border_color TEXT,
+    card_back_id TEXT,
+    collector_number TEXT,
+    content_warning BOOLEAN,
+    digital BOOLEAN,
+    finishes TEXT,
+    flavor_name TEXT,
+    flavor_text TEXT,
+    frame_effects TEXT,
+    frame TEXT,
+    full_art BOOLEAN,
+    games TEXT,
+    highres_image BOOLEAN,
+    illustration_id TEXT,
+    image_status TEXT,
+    image_uris TEXT,
+    oversized BOOLEAN,
+    prices TEXT,
+    printed_name TEXT,
+    printed_text TEXT,
+    printed_type_line TEXT,
+    promo BOOLEAN,
+    promo_types TEXT,
+    purchase_uris TEXT,
+    rarity TEXT,
+    related_uris TEXT,
+    released_at DATE,
+    reprint BOOLEAN,
+    scryfall_set_uri TEXT,
+    set_name TEXT,
+    set_search_uri TEXT,
+    set_type TEXT,
+    set_uri TEXT,
+    set_code TEXT, -- Differs from the Scryfall object (set is reserved)
+    set_id TEXT,
+    story_spotlight BOOLEAN,
+    textless BOOLEAN,
+    variation BOOLEAN,
+    variation_of TEXT,
+    security_stamp TEXT,
+    watermark TEXT,
+    preview TEXT,
+    foil BOOLEAN,
+    nonfoil BOOLEAN,
+    collector_number_normalised INTEGER -- Normalised collector number
+);
+
+CREATE INDEX IF NOT EXISTS scryfall_cards_set_number ON scryfall_cards (set_code, collector_number);
+CREATE INDEX IF NOT EXISTS scryfall_cards_oracle_id ON scryfall_cards (oracle_id);
+
+-- ===== db/tables/scryfall_sets.sql @ v1.0.5 =====
+CREATE TABLE IF NOT EXISTS scryfall_sets (
+    object TEXT NOT NULL,
+    id TEXT NOT NULL PRIMARY KEY,
+    code TEXT NOT NULL,
+    mtgo_code TEXT,
+    arena_code TEXT,
+    tcgplayer_id INTEGER,
+    name TEXT NOT NULL,
+    set_type TEXT NOT NULL,
+    released_at DATE,
+    block_code TEXT,
+    block TEXT,
+    parent_set_code TEXT,
+    card_count INTEGER NOT NULL,
+    printed_size INTEGER,
+    digital BOOLEAN NOT NULL,
+    foil_only BOOLEAN NOT NULL,
+    nonfoil_only BOOLEAN NOT NULL,
+    scryfall_uri TEXT NOT NULL,
+    uri TEXT NOT NULL,
+    icon_svg_uri TEXT NOT NULL,
+    search_uri TEXT NOT NULL
+);
+

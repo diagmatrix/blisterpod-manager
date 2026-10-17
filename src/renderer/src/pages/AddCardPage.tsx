@@ -17,7 +17,7 @@ import { useCardImagePreview } from '@/components/CardImagePreview'
 import { SetSymbol } from '@/components/SetSymbol'
 import { ManaSymbols } from '@/components/ManaSymbols'
 import { Pagination } from '@/components/Pagination'
-import { useCardSearch } from '@/hooks/useCardSearch'
+import { isNarrowedSearch, useCardSearch } from '@/hooks/useCardSearch'
 import { ImageGridSkeleton, TableSkeleton } from '@/components/skeletons'
 import { usePagination } from '@/hooks/usePagination'
 import { usePageViewState } from '@/hooks/usePageViewState'
@@ -133,9 +133,9 @@ export default function AddCardPage() {
     const onFilterCommit = useCallback(() => setPage(1), [setPage])
     const {
         filtersState, filtersHandlers,
-        searchCardName, searchSet, layoutFilter, rarities, colorIdentity, colorMode,
-        reset: resetFilters,
-    }: UseCardFiltersReturn = useCardFilters({ isFilteringCollection: false, onCommit: onFilterCommit })
+        searchCardName, searchSet, layoutFilter, rarities, colorIdentity, colorMode, cardTypes,
+        commit: commitFilters, reset: resetFilters,
+    }: UseCardFiltersReturn = useCardFilters({ onCommit: onFilterCommit })
 
     /** Card retrieval */
     const queryClient = useQueryClient()
@@ -146,11 +146,12 @@ export default function AddCardPage() {
         colorIdentity: colorIdentity.length > 0 ? colorIdentity : undefined,
         colorMode: colorIdentity.length > 0 ? colorMode : undefined,
         layoutFilter: layoutFilter || 'all',
+        cardTypes: cardTypes.length > 0 ? cardTypes : undefined,
         sort,
         page,
         pageSize,
     }
-    const hasFilter = !!(searchParams.cardName || searchParams.setCode)
+    const hasFilter = isNarrowedSearch(searchParams)
     const { rows, total, isLoading } = useCardSearch(searchParams)
 
     /** Reset button */
@@ -249,7 +250,14 @@ export default function AddCardPage() {
 
                 <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
                     <SectionHeader label="Filter by" expanded={isFilterExpanded} onToggle={toggleFilter} />
-                    {isFilterExpanded && <CardFilters state={filtersState} handlers={filtersHandlers} showLayoutFilter={true} />}
+                    {isFilterExpanded && (
+                        <CardFilters
+                            state={filtersState}
+                            handlers={filtersHandlers}
+                            onCommit={commitFilters}
+                            showLayoutFilter={true}
+                        />
+                    )}
                 </div>
 
                 <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
@@ -263,7 +271,7 @@ export default function AddCardPage() {
                     view === 'image' ? <ImageGridSkeleton /> : <TableSkeleton />
                 ) : !hasFilter ? (
                     <div className="min-h-[50vh] flex items-center justify-center text-sm text-muted-foreground">
-                        Enter a name or set code to search the local card catalog
+                        Set a filter and press Filter to search the local card catalog
                     </div>
                 ) : rows.length === 0 ? (
                     <div className="min-h-[50vh] flex items-center justify-center text-sm text-muted-foreground">

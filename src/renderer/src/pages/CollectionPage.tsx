@@ -160,16 +160,16 @@ export default function CollectionPage() {
     const onFilterCommit = useCallback(() => setPage(1), [setPage])
     const {
         filtersState, filtersHandlers,
-        searchCardName, searchSet, layoutFilter, rarities, colorIdentity, colorMode,
-        reset: resetFilters,
+        searchCardName, searchSet, layoutFilter, rarities, colorIdentity, colorMode, cardTypes,
+        commit: commitFilters, reset: resetFilters,
     }: UseCardFiltersReturn = useCardFilters({ initialSet, onCommit: onFilterCommit })
 
     /** Card retrieval */
     const { data, isLoading, isError, error } = useQuery({
-        queryKey: ['collection', page, pageSize, sort, searchCardName, searchSet, layoutFilter, rarities, colorIdentity, colorMode],
+        queryKey: ['collection', page, pageSize, sort, searchCardName, searchSet, layoutFilter, rarities, colorIdentity, colorMode, cardTypes],
         queryFn: () =>
             window.api.collectionList({
-                page, pageSize, sort, cardName: searchCardName, setCode: searchSet, layoutFilter, rarities, colorIdentity, colorMode,
+                page, pageSize, sort, cardName: searchCardName, setCode: searchSet, layoutFilter, rarities, colorIdentity, colorMode, cardTypes,
             }),
         placeholderData: keepPreviousData,
     })
@@ -229,7 +229,14 @@ export default function CollectionPage() {
             {/* Filter section */}
             <div className="rounded-md border border-border px-3 py-2 flex flex-col gap-2">
                 <SectionHeader label="Filter by" expanded={isFilterExpanded} onToggle={toggleFilter} />
-                {isFilterExpanded && <CardFilters state={filtersState} handlers={filtersHandlers} showLayoutFilter />}
+                {isFilterExpanded && (
+                    <CardFilters
+                        state={filtersState}
+                        handlers={filtersHandlers}
+                        onCommit={commitFilters}
+                        showLayoutFilter
+                    />
+                )}
             </div>
 
             {/* Sort section */}

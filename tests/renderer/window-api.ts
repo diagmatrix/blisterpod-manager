@@ -64,6 +64,13 @@ export function defaultWindowApi(): ElectronAPI {
         missingFetchCards: vi.fn(async () => ({ inserted: 0 })),
         missingFetchCard: vi.fn(async () => ({ success: true })),
 
+        decksList: vi.fn(async () => emptyPage),
+        decksCreate: vi.fn(async () => ({ success: true })),
+        decksDetail: vi.fn(async () => null),
+        decksUpdate: vi.fn(async () => ({ success: true })),
+        decksDelete: vi.fn(async () => ({ success: true })),
+        decksListDetails: vi.fn(async () => []),
+
         logMessage: vi.fn(),
         logPath: vi.fn(async () => 'C:/tmp/test.log'),
         dbPath: vi.fn(async () => 'C:/tmp/db.db'),
@@ -72,7 +79,7 @@ export function defaultWindowApi(): ElectronAPI {
         keyruneVersion: vi.fn(async () => ({ downloaded: '1.0.0' })),
         refreshManaSymbols: vi.fn(async () => {}),
         refreshSets: vi.fn(async () => ({ inserted: 0 })),
-        refreshCards: vi.fn(async () => ({ inserted: 0 })),
+        refreshCards: vi.fn(async () => ({ inserted: 0, deleted: 0 })),
         downloadCCMGFont: vi.fn(async () => {}),
         ccmgFontStatus: vi.fn(async () => ({ downloaded: true })),
 

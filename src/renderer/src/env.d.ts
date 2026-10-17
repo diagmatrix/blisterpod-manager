@@ -14,10 +14,12 @@ import type {
     MutationResult,
     AddResult,
     InsertResult,
+    RefreshResult,
     DeleteResult,
     MergeResult,
     ExportResult,
 } from '../../models/responses'
+import type { Deck, DeckFolder, InsertDeckParams } from '../../models/decks'
 
 export interface ElectronAPI {
     settingsGet: <K extends keyof AppSettings>(key: K) => Promise<AppSettings[K]>
@@ -51,8 +53,8 @@ export interface ElectronAPI {
     refreshSetSymbols: () => Promise<string>
     keyruneVersion: () => Promise<KeyruneVersion>
     refreshManaSymbols: () => Promise<void>
-    refreshSets: () => Promise<{ inserted: number }>
-    refreshCards: () => Promise<{ inserted: number }>
+    refreshSets: (excludedCodes?: string[]) => Promise<InsertResult>
+    refreshCards: (excludedCodes?: string[]) => Promise<RefreshResult>
     downloadCCMGFont: () => Promise<void>
     ccmgFontStatus: () => Promise<{ downloaded: boolean }>
     getAppIcon: () => Promise<string>
@@ -62,6 +64,12 @@ export interface ElectronAPI {
     exportCollection: (filePath: string) => Promise<ExportResult>
     exportCollectionMoxfield: (filePath: string) => Promise<ExportResult>
     exportCollectionManabox: (filePath: string) => Promise<ExportResult>
+    decksList: () => Promise<PaginatedResult<DeckFolder>>
+    decksCreate: (params: InsertDeckParams) => Promise<MutationResult>
+    decksDetail: (deckId: string) => Promise<Deck | null>
+    decksUpdate: (deckId: string, params: InsertDeckParams) => Promise<MutationResult>
+    decksDelete: (deckId: string) => Promise<MutationResult>
+    decksListDetails: (detailColumn: string) => Promise<string[]>
 }
 
 declare global {

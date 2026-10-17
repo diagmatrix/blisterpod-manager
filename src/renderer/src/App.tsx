@@ -14,6 +14,8 @@ import { Toaster } from '@/components/ui/sonner'
 import { injectKeyruneCSS } from '@/lib/keyruneCSS'
 import { applyCCMGFont } from '@/lib/ccmgFont'
 import { FirstRunDialog } from '@/components/FirstRunDialog'
+import DecksPage from './pages/DecksPage'
+import DeckDetailPage from '@/pages/DeckDetailPage'
 
 function App() {
     const [showFirstRun, setShowFirstRun] = useState(false)
@@ -36,14 +38,16 @@ function App() {
                 <ScrollToTop />
                 <Routes>
                     <Route element={<Layout />}>
-                        <Route path="/" element={<Navigate to="/statistics" replace />} />
+                        <Route path="/" element={<Navigate to="/home" replace />} />
                         <Route path="/collection" element={<CollectionPage />} />
                         <Route path="/add-card" element={<AddCardPage />} />
                         <Route
                             path="/card-detail/:setCode/:collectorNumber"
                             element={<CardDetailPage />}
                         />
-                        <Route path="/statistics" element={<DashboardPage />} />
+                        <Route path="/home" element={<DashboardPage />} />
+                        <Route path="/decks" element={<DecksPage />} />
+                        <Route path="/decks/:id" element={<DeckDetailPage />} />
                         <Route path="/collection-errors" element={<CollectionErrorsPage />} />
                         <Route path="/settings" element={<SettingsPage />} />
                         <Route path="/about" element={<AboutPage />} />

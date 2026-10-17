@@ -15,14 +15,11 @@ SELECT
     END                                      AS image_url,
     sc.rarity,
     sc.color_identity,
+    coalesce(sc.card_types, '[]')            AS card_types,
+    coalesce(sc.card_subtypes, '[]')         AS card_subtypes,
     coalesce(sc.prices ->> 'eur', 0)         AS value_nonfoil,
     coalesce(sc.prices ->> 'eur_foil', 0)    AS value_foil,
-    CASE
-        WHEN instr(sc.collector_number, '-') > 0
-            THEN cast(substr(sc.collector_number, instr(sc.collector_number, '-') + 1) AS integer)
-        ELSE
-            cast(sc.collector_number AS integer)
-    END AS collector_number_normalised,
+    sc.collector_number_normalised,
     sc.released_at,
     CASE
         WHEN sc.set_type = 'token'

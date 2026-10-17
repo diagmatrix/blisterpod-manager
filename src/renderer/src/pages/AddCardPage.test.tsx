@@ -5,9 +5,6 @@ import { mockWindowApi, type ElectronAPI } from '../../../../tests/renderer/wind
 import type { SortParams } from '../../../models/search'
 import AddCardPage, { DEFAULT_SORT } from './AddCardPage'
 
-/** Real time has to pass for the 1000ms filter debounce plus the 500ms search one. */
-const DEBOUNCES_MS = 4000
-
 /** The page-level button, told apart from the one `CardSort` renders by its tooltip. */
 const PAGE_RESET = 'Reset filters and sort'
 
@@ -32,12 +29,13 @@ describe('<AddCardPage />', () => {
         user = userEvent.setup()
     })
 
-    /** The search only runs once a name or set narrows it, so every case starts here. */
+    /** The search only runs once a name or set narrows it and Filter commits it, so every case starts here. */
     async function renderPageAndSearch() {
         renderWithProviders(<AddCardPage />)
         await user.type(screen.getByPlaceholderText('Card name ...'), 'Jace')
+        await user.click(screen.getByRole('button', { name: 'Filter' }))
 
-        await waitFor(() => expect(api.cardSearch).toHaveBeenCalledTimes(1), { timeout: DEBOUNCES_MS })
+        await waitFor(() => expect(api.cardSearch).toHaveBeenCalledTimes(1))
     }
 
     it('searches with the default sort chain', async () => {
@@ -112,6 +110,39 @@ describe('<AddCardPage />', () => {
 
         // The search only runs again once a filter narrows it, and it comes back with the default chain.
         await user.type(screen.getByPlaceholderText('Card name ...'), 'Jace')
-        await waitFor(() => expect(lastSort(api)).toEqual(DEFAULT_SORT), { timeout: DEBOUNCES_MS })
+        await user.click(screen.getByRole('button', { name: 'Filter' }))
+        await waitFor(() => expect(lastSort(api)).toEqual(DEFAULT_SORT))
+    })
+
+    it('searches on a card type alone, with no name or set code', async () => {
+        renderWithProviders(<AddCardPage />)
+
+        await user.type(screen.getByPlaceholderText('Card type ...'), 'Creature{Enter}')
+        await user.click(screen.getByRole('button', { name: 'Filter' }))
+
+        await waitFor(() => expect(api.cardSearch).toHaveBeenCalledTimes(1))
+        expect(vi.mocked(api.cardSearch).mock.lastCall?.[0]).toEqual(expect.objectContaining({
+            cardTypes: ['creature'],
+            cardName: undefined,
+            setCode: undefined,
+        }))
+    })
+
+    it('leaves the search alone until the pending filters are committed', async () => {
+        await renderPageAndSearch()
+
+        await user.type(screen.getByPlaceholderText('Card type ...'), 'Creature{Enter}')
+        await user.click(screen.getByRole('button', { name: 'Mythic' }))
+
+        expect(screen.getByRole('button', { name: 'Remove creature type' })).toBeInTheDocument()
+        expect(api.cardSearch).toHaveBeenCalledTimes(1)
+
+        await user.click(screen.getByRole('button', { name: 'Filter' }))
+
+        await waitFor(() => expect(api.cardSearch).toHaveBeenCalledTimes(2))
+        expect(vi.mocked(api.cardSearch).mock.lastCall?.[0]).toEqual(expect.objectContaining({
+            cardTypes: ['creature'],
+            rarities: ['mythic'],
+        }))
     })
 })

@@ -55,20 +55,40 @@ describe('useCardSearch', () => {
         expect(result.current.rows).toEqual([])
     })
 
-    it('waits out the debounce before a filter change reaches the query', async () => {
+    it.each<[string, CardSearchParams]>([
+        ['a card type', { cardTypes: ['creature'] }],
+        ['a rarity', { rarities: ['mythic'] }],
+        ['a color identity', { colorIdentity: ['U'] }],
+    ])('runs on %s alone, with no name or set code', async (_label, filter) => {
+        const api = mockWindowApi()
+
+        renderCardSearch({ ...NO_FILTER, ...filter })
+        await advance(0)
+
+        expect(api.cardSearch).toHaveBeenCalledWith(expect.objectContaining(filter))
+    })
+
+    it('stays idle for options that narrow nothing on their own', async () => {
+        const api = mockWindowApi()
+
+        renderCardSearch({ ...NO_FILTER, layoutFilter: 'tokens', colorMode: 'exactly' })
+        await advance(0)
+
+        expect(api.cardSearch).not.toHaveBeenCalled()
+    })
+
+    // The Filter button is what debounces now: params only change when the user commits them.
+    it('sends a filter change straight through', async () => {
         const api = mockWindowApi()
 
         const { rerender } = renderCardSearch(NO_FILTER)
         rerender(FILTERED)
+        await advance(0)
 
-        await advance(400)
-        expect(api.cardSearch).not.toHaveBeenCalled()
-
-        await advance(200)
         expect(api.cardSearch).toHaveBeenCalledWith(expect.objectContaining({ cardName: 'Jace' }))
     })
 
-    it('sends a sort change straight through, without the filter debounce', async () => {
+    it('sends a sort change straight through as well', async () => {
         const api = mockWindowApi()
 
         const { rerender } = renderCardSearch(FILTERED)
